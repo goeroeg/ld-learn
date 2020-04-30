@@ -1,4 +1,4 @@
-import * as THREE from '../node_modules/three/build/three.module.js';
+// import * as THREE from '../node_modules/three/build/three.module.js';
 
 export function addCrossHair(camera) {
     let material = new THREE.LineBasicMaterial({ color: 0xaabb99, linewidth: 1.5 });

@@ -107,4 +107,6 @@ dist
 .vscode/
 
 # LDraw lib
-ldraw/
+ldraw/p/
+ldraw/parts/
+ldraw/*.ldr
