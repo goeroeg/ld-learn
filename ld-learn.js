@@ -334,7 +334,7 @@ function initGUI() {
 function initScene() {
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color( 0xaaaaaa );
+    scene.background = new THREE.Color( 0x606060 );
 
     scene.fog = new THREE.Fog(0xcccccc, 2000, 12000);// .FogExp2( 0xcccccc, 0.0003);
 
@@ -401,7 +401,7 @@ function initScene() {
 }
 
 function addSun() {
-    let light = new THREE.DirectionalLight(0xffffff, 1); //1);
+    let light = new THREE.DirectionalLight(0xffffff, 0); //1);
     light.position.set(2500, 5000, 1000);
     light.castShadow = true;
     let size = WORLD.plateSize * WORLD.plateCounter;
