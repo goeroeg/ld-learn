@@ -2,7 +2,7 @@
 
 // THREE.Cache.enabled = true;
 
-const fontPath = './node_modules/three/examples/fonts/droid/droid_sans_regular.typeface.json';
+const fontPath = './web_modules/three/examples/fonts/droid/droid_sans_regular.typeface.json';
 
 var height = 20,
     size = 70,
