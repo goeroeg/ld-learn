@@ -1,6 +1,6 @@
 import * as THREE from './node_modules/three/build/three.module.js';
 import { GUI } from './node_modules/three/examples/jsm/libs/dat.gui.module.js';
-import { MapControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
+//import { MapControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from './node_modules/three/examples/jsm/controls/PointerLockControls.js';
 import { MathExercise } from './exercises/Maths.js';
 import { OperatorType } from './exercises/Maths.js';
@@ -628,6 +628,7 @@ function evaluateAnswer(obj) {
         }
     }
     exerciseMeshes = [];
+    currentHighlight = null;
     window.setTimeout(createExercise, 1500);
 }
 

@@ -8,7 +8,7 @@ export const plateCounter = 7;
 
 export var worldPlates = 4.5;
 
-export const roadPlates = worldPlates - 1.5;
+export const roadPlates = worldPlates - 0.5;
 
 export var model;
 
@@ -37,8 +37,7 @@ export function initScene(onLoad, onProgress, onError) {
 
     lDrawLoader
         .setPath( "ldraw/" )
-        //.load( "/models/ambient.ldr", function ( group2 ) {
-        .load( "../gfx/models/ambient.ldr_Packed.mpd", function ( group2 ) {
+        .load( "models/ambient.ldr_Packed.mpd", function ( group2 ) {
 
             model = group2;
 
@@ -260,7 +259,7 @@ export function initRoads(onLoad, onProgress, onError) {
 
     lDrawLoader
         .setPath( "ldraw/" )
-        .load( "../gfx/models/roads.ldr_Packed.mpd", function ( roads ) {
+        .load( "models/roads.ldr_Packed.mpd", function ( roads ) {
 
             // Convert from LDraw coordinates: rotate 180 degrees around OX
             roads.rotateX(-Math.PI);

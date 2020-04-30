@@ -5,19 +5,21 @@
   "main": "main.js",
   "scripts": {
     "serve": "http-server .",
-    "start" : "electron .",
-    "postinstall": ""
+    "start": "electron .",
+    "postinstall": "node gfx/packLDrawModel.js gfx/models/"
   },
-  "dependencies" :
-      { "three" : "^0.115.0"      
-      , "electron" : "^8.2.0"
-      },
-  "devDependencies" :
-    { "http-server" : "^0.11.1"
-    },
+  "dependencies": {
+    "three": "^0.115.0",
+    "electron": "^8.2.0"
+  },
+  "devDependencies": {
+    "http-server": "^0.11.1",
+    "sync-request": "^6.1.0",
+    "extract-zip": "^1.0.0"
+  },
   "build": {
-      "appId": "ld-learn"
-    },
+    "appId": "ld-learn"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/goeroeg/ld-learn.git"

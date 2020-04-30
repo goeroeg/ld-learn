@@ -20,7 +20,7 @@ export function initCar(index, onLoad, onProgress, onError) {
 
     lDrawLoader
         .setPath( "ldraw/" )        
-        .load( "../gfx/models/car_"+ index +".ldr_Packed.mpd", function ( model ) {
+        .load( "models/car_"+ index +".ldr_Packed.mpd", function ( model ) {
 
             console.log(model);
 
@@ -42,7 +42,13 @@ export function initCar(index, onLoad, onProgress, onError) {
                 if (c.isMesh)
                 {
                     if (c.parent.userData.constructionStep == stepBody) {
-                        car.body.push(c);                    
+                        car.body.push(c);
+                        
+                        let r = Math.random();
+                        let g = Math.random();
+                        let b = Math.random();
+
+                        c.material[0].color.setRGB(r,g,b);
                     }
     
                     if (c.parent.userData.constructionStep == stepRightWheels) {                       
