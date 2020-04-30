@@ -500,8 +500,8 @@ function createExercise() {
         scene.remove(exerciseGroup);
     }
 
-    let x = new MathExercise(OperatorType.Substraction, 10, 10, 5); //, 10);
-    // let x = new MathExercise(OperatorType.Multiplication, 10, 100, 5); //, 10);
+    // let x = new MathExercise(OperatorType.Substraction, 10, 10, 5); //, 10);
+    let x = new MathExercise(OperatorType.Multiplication, 10, 100, 5); //, 10);
     // let x = new MathExercise(OperatorType.Addition, 10, 10, 5); //, 10);
     exerciseGroup = new THREE.Group();
     let xtext = createText(x.description, function(mesh){
