@@ -4,7 +4,7 @@ An Edu-shooter using three.js and the LDraw™-Library to exercise some maths.
 
 ## Try it online
 
-[You can try the game here.](ld-learn.html)
+[You can try the game online here.](https://goeroeg.github.io/ld-learn/ld-learn.html)
 
 ## Starting for developers
 
