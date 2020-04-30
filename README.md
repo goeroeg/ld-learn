@@ -18,13 +18,13 @@ Have fun :)
 
 ---
 
-## Licences and attributions
+## Licenses and attributions
 
 The [LDraw™ library](https://www.ldraw.org/) under Creative Commons Attribution License 2.0 ([CC BY 2.0](https://creativecommons.org/licenses/by/2.0/))
 
 LDraw™ is a trademark owned and licensed by the Estate of James Jessiman
 
-[three.js](https://threejs.org/) as MIT licence (no attribution needed, but I think they deserve it :) )
+[three.js](https://threejs.org/) as MIT license (no extra attribution needed, but I think they deserve it :) )
 
 Sounds from [OrangeFreeSounds](http://www.orangefreesounds.com/) under Attribution-NonCommercial 4.0 International ([CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/))
 
