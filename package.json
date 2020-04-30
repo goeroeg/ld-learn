@@ -1,0 +1,32 @@
+{
+  "name": "ld-learn",
+  "description": "An Edu-shooter using LDRAW objects.",
+  "version": "0.1.0",
+  "main": "main.js",
+  "scripts": {
+    "serve": "http-server .",
+    "start" : "electron .",
+    "postinstall": ""
+  },
+  "dependencies" :
+      { "three" : "^0.115.0"      
+      , "electron" : "^8.2.0"
+      },
+  "devDependencies" :
+    { "http-server" : "^0.11.1"
+    },
+  "build": {
+      "appId": "ld-learn"
+    },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/goeroeg/ld-learn.git"
+  },
+  "keywords": [],
+  "author": "goeroeg",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/goeroeg/ld-learn/issues"
+  },
+  "homepage": "https://github.com/goeroeg/ld-learn"
+}
