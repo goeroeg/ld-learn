@@ -1,7 +1,8 @@
-import * as THREE from './node_modules/three/build/three.module.js';
-import { GUI } from './node_modules/three/examples/jsm/libs/dat.gui.module.js';
-//import { MapControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
-import { PointerLockControls } from './node_modules/three/examples/jsm/controls/PointerLockControls.js';
+// import * as THREE from './node_modules/three/build/three.module.js';
+// import { GUI } from './node_modules/three/examples/jsm/libs/dat.gui.module.js';
+import { GUI } from './web_modules/three/examples/jsm/libs/dat.gui.module.js';
+// import { MapControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
+import { PointerLockControls } from './web_modules/three/examples/jsm/controls/PointerLockControls.js';
 import { MathExercise } from './exercises/Maths.js';
 import { OperatorType } from './exercises/Maths.js';
 import { GamepadControls } from './gfx/GamepadControls.js';

@@ -2,7 +2,11 @@
 
 An Edu-shooter using three.js and the LDraw™-Library to exercise some maths.
 
-## Starting
+## Try it online
+
+[You can try the game here.](ld-learn.html)
+
+## Starting for developers
 
 run ```npm install```
 
@@ -16,11 +20,12 @@ Have fun :)
 
 ## Licences and attributions
 
-The [LDraw™ library](https://www.ldraw.org/) under Creative Commons Attribution Licence 2.0 ([CC BY 2.0](https://creativecommons.org/licenses/by/2.0/))
+The [LDraw™ library](https://www.ldraw.org/) under Creative Commons Attribution License 2.0 ([CC BY 2.0](https://creativecommons.org/licenses/by/2.0/))
 
 LDraw™ is a trademark owned and licensed by the Estate of James Jessiman
 
-Sounds from [OrangeFreeSounds](http://www.orangefreesounds.com/) under Attribution-NonCommercial 4.0 International ([CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/))
+[three.js](https://threejs.org/) as MIT licence (no attribution needed, but I think they deserve it :) )
 
+Sounds from [OrangeFreeSounds](http://www.orangefreesounds.com/) under Attribution-NonCommercial 4.0 International ([CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/))
 
 LEGO® is a registered trademark of the [LEGO Group](https://www.lego.com/), which does not sponsor, endorse, or authorize this project.
