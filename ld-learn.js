@@ -14,6 +14,8 @@ import { initCar } from './gfx/Cars.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
+var dirLight;
+
 var mouse = new THREE.Vector2();
 
 var ambientSound;
@@ -55,9 +57,18 @@ var absMaxDistance = 0.5 * WORLD.plateSize;
 
 var progressBarDiv;
 
-var gameSettings = { playerCount: 1};
+var resolutions = [{ x:0, y:0 }, {x:640, y:480 }, { x:1024, y:768 },{ x:1920, y:1080 }]
+var resolutionNames  = {Auto:0, Low: 1, Medium:2, HD: 3 };
 
-var gui, playersFolder, gfxFolder, gameFolder, playerInfo;
+var gfxSettings = { resolution: resolutionNames.Auto, fullScreen: false, shadows:3 , antiAlias:true }
+var gameSettings = { itemAmount:100 };
+var playerSettings = {name:'Player', grade:0 , color:0x00ff00}
+
+var gui, playersFolder, gfxFolder, gameFolder;
+
+var playerInfo = document.getElementById('playerInfo');
+var blocker = document.getElementById( 'blocker' );
+var instructions = document.getElementById( 'instructions' );
 
 const okColor = 0x00ff00, wrongColor = 0xff0000, selectedEmissive = 0x0000ff;
 
@@ -75,6 +86,7 @@ const chrActions = {
     carsMax : 50   //50
 }
 
+
 init();
 
 function init() {
@@ -83,7 +95,7 @@ function init() {
     initAudio(camera);
     initGUI();
 
-    initPlayers(gameSettings.playerCount);
+    // initPlayers(gameSettings.playerCount);
         
     createExercise();
 
@@ -93,16 +105,20 @@ function init() {
 
 function initControls() {
 
-    playerInfo = document.getElementById('playerInfo');
-
     renderer = new THREE.WebGLRenderer( { antialias: true } );
     renderer.setPixelRatio( window.devicePixelRatio );
+
     renderer.setSize( window.innerWidth, window.innerHeight );
+
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMap.autoUpdate = true;
     // renderer.physicallyCorrectLights = true;
-    document.body.appendChild( renderer.domElement );
+        
+    renderer.domElement.setAttribute('style', "position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; margin: auto");
+    document.body.insertBefore( renderer.domElement, document.getElementById( 'blocker' ));
+
+    // document.body.appendChild(renderer.domElement);
 
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 12000 );
 
@@ -121,9 +137,6 @@ function initControls() {
 
     scene.add( controls.getObject() );
 
-    var blocker = document.getElementById( 'blocker' );
-    var instructions = document.getElementById( 'instructions' );
-
     instructions.addEventListener( 'click', function () {
 
         controls.lock();  
@@ -132,8 +145,7 @@ function initControls() {
 
     controls.addEventListener( 'lock', function () {
 
-        instructions.style.display = 'none';
-        blocker.style.display = 'none';
+        updateBlocker(true);
 
         if (ambientSound && chrystalCount >= chrActions.plantsMin) ambientSound.play();
 
@@ -147,8 +159,7 @@ function initControls() {
 
     controls.addEventListener( 'unlock', function () {
 
-        blocker.style.display = 'block';
-        instructions.style.display = '';
+        updateBlocker(false);
 
         if (ambientSound) ambientSound.pause();
 
@@ -247,6 +258,16 @@ function initControls() {
     
 }
 
+function updateBlocker(hide) {
+    if (hide) {
+        instructions.style.display = 'none';
+        blocker.style.display = 'none';
+    } else {
+        blocker.style.display = 'block';
+        instructions.style.display = '';
+    }
+}
+
 function initAudio(camera) {
     // create an AudioListener and add it to the camera
     var listener = new THREE.AudioListener();
@@ -321,13 +342,62 @@ function initGUI() {
     gui = new GUI();
 
     gfxFolder = gui.addFolder ("Graphics settings");
+
+    
+    gfxFolder.add(gfxSettings, "resolution", resolutionNames).name("Resolution").onChange(function(value) {
+        // update resolution 
+        onWindowResize();
+    });
+    
+    
+    /*
+    gfxFolder.add(gfxSettings, "fullScreen").name("Full screen").onChange(function(value) {
+        if (value) {
+            openFullscreen();
+        } else {
+            closeFullscreen();
+        }
+    }).listen()
+    */
+    
+    
+    gfxFolder.add(gfxSettings, "shadows", 1, 4, 1).name("Shadows").onChange(function(value) {
+        // update shadows
+        console.log('shadows: ' + value);
+        switch(value) {    
+            case 1 :
+                renderer.shadowMap.type = THREE.BasicShadowMap;
+                break;       
+            case 2 :            
+                renderer.shadowMap.type = THREE.PCFShadowMap;
+                break;
+            case 3 :
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                break;
+            case 3 :
+                renderer.shadowMap.type = THREE.VSMShadowMap;
+                break;
+        }
+        renderer.shadowMap.needsUpdate = true;
+        render();
+    });
+    
+
+    /*
+    gfxFolder.add(gfxSettings, "antiAlias").name("Antialias").onChange(function(value) {
+        // reset context
+    });
+    */
+
     gameFolder = gui.addFolder("Game settings");
 
-    gameFolder.add(gameSettings, "playerCount", 1, 8).step(1).onChange(function(value) {
-         initPlayers(value);
-      });
+    gameFolder.add(gameSettings, "itemAmount", 10, 200).step(10).name("Obj density %");
       
     playersFolder = gui.addFolder("Players");
+    playersFolder.add(playerSettings, "name").name("Name").onChange(function(value) {
+        updatePlayerInfo();
+    });
+
     playersFolder.open();
 }
 
@@ -371,15 +441,7 @@ function initScene() {
     //scene.add(light);
 
 
-    progressBarDiv = document.createElement( 'div' );
-    progressBarDiv.innerText = "Loading...";
-    progressBarDiv.style.fontSize = "3em";
-    progressBarDiv.style.color = "#888";
-    progressBarDiv.style.display = "block";
-    progressBarDiv.style.position = "absolute";
-    progressBarDiv.style.top = "50%";
-    progressBarDiv.style.width = "100%";
-    progressBarDiv.style.textAlign = "center";
+    
 
     showProgressBar();
 
@@ -397,30 +459,31 @@ function initScene() {
 
         hideProgressBar();
         render();
+        updateBlocker(false);
     }, onProgress, onError );
 }
 
 function addSun() {
-    let light = new THREE.DirectionalLight(0xffffff, 0); //1);
-    light.position.set(2500, 5000, 1000);
-    light.castShadow = true;
+    dirLight = new THREE.DirectionalLight(0xffffff, 0); //1);
+    dirLight.position.set(2500, 5000, 1000);
+    dirLight.castShadow = true;
     let size = WORLD.plateSize * WORLD.plateCounter;
-    light.shadow.camera.left = -size;
-    light.shadow.camera.right = size;
-    light.shadow.camera.bottom = -size;
-    light.shadow.camera.top = size;
-    light.shadow.camera.near = 3800;
-    light.shadow.camera.far = 7800;
-    light.shadow.bias = 0.0001;
+    dirLight.shadow.camera.left = -size;
+    dirLight.shadow.camera.right = size;
+    dirLight.shadow.camera.bottom = -size;
+    dirLight.shadow.camera.top = size;
+    dirLight.shadow.camera.near = 3800;
+    dirLight.shadow.camera.far = 7800;
+    dirLight.shadow.bias = 0.0001;
 
     // scene.add (new THREE.CameraHelper(light.shadow.camera));
 
     var SHADOW_MAP_WIDTH = 4096, SHADOW_MAP_HEIGHT = 4096;
-    light.shadow.mapSize.width = SHADOW_MAP_WIDTH;
-    light.shadow.mapSize.height = SHADOW_MAP_HEIGHT;
-    scene.add(light);
+    dirLight.shadow.mapSize.width = SHADOW_MAP_WIDTH;
+    dirLight.shadow.mapSize.height = SHADOW_MAP_HEIGHT;
+    scene.add(dirLight);
 
-    let action = mixer.clipAction(ANIM.createHighlightAnimation(1, 1), light);
+    let action = mixer.clipAction(ANIM.createHighlightAnimation(1, 1), dirLight);
     action.clampWhenFinished = true;
     action.setLoop(THREE.LoopOnce).setDuration(5).play();
 }
@@ -501,8 +564,8 @@ function createExercise() {
     }
 
     // let x = new MathExercise(OperatorType.Substraction, 10, 10, 5); //, 10);
-    let x = new MathExercise(OperatorType.Multiplication, 10, 100, 5); //, 10);
-    // let x = new MathExercise(OperatorType.Addition, 10, 10, 5); //, 10);
+    //let x = new MathExercise(OperatorType.Multiplication, 10, 100, 5); //, 10);
+    let x = new MathExercise(OperatorType.Addition, 10, 10, 5); //, 10);
     exerciseGroup = new THREE.Group();
     let xtext = createText(x.description, function(mesh){
         if (tickSound)  mesh.add(tickSound);
@@ -570,6 +633,18 @@ function onError() {
 
 function showProgressBar() {
 
+    if (!progressBarDiv) {
+        progressBarDiv = document.createElement( 'div' );
+        progressBarDiv.innerText = "Loading...";
+        progressBarDiv.style.fontSize = "3em";
+        progressBarDiv.style.color = "#888";
+        progressBarDiv.style.display = "block";
+        progressBarDiv.style.position = "absolute";
+        progressBarDiv.style.top = "50%";
+        progressBarDiv.style.width = "100%";
+        progressBarDiv.style.textAlign = "center";
+    }
+
     document.body.appendChild( progressBarDiv );
 
 }
@@ -587,9 +662,30 @@ function updateProgressBar( fraction ) {
 }
 
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    
+    let res = {x: resolutions[gfxSettings.resolution].x, y: resolutions[gfxSettings.resolution].y};
+
+    if (res.x == 0) {
+        res.x = window.innerWidth;
+    } 
+    if (res.y == 0) {
+        res.y = window.innerHeight;
+    } 
+
+    res.x = Math.min(res.x, window.innerWidth);
+    res.y = Math.min(res.y, window.innerHeight);
+
+    camera.aspect = res.x / res.y;
     camera.updateProjectionMatrix();
-    renderer.setSize( window.innerWidth, window.innerHeight );
+
+    renderer.setSize( res.x, res.y, true );    
+
+    var style = window.getComputedStyle(renderer.domElement);
+
+    playerInfo.style.marginLeft = style.marginLeft;
+    playerInfo.style.marginTop = style.marginTop;
+
+    gfxSettings.fullScreen = (window.screen.width == window.innerWidth); // API not working when triggered with F11
 }
 
 function onDocumentMouseMove( event ) {
@@ -722,7 +818,7 @@ function performChrystalAction() {
         if (ambientSound && !ambientSound.isPlaying) ambientSound.play();
     
         if ( chrystalCount <= chrActions.plantsMax) {
-            WORLD.populatePlants(3, 10, mixer);
+            WORLD.populatePlants(Math.round(5 * gameSettings.itemAmount), Math.round(10 * gameSettings.itemAmount), mixer);
         }
     }
 
@@ -851,6 +947,7 @@ function render() {
     renderer.render( scene, camera );
 }
 
+/*
 function initPlayers(count)
 {
     if (players) {
@@ -882,8 +979,38 @@ function initPlayers(count)
     updatePlayerInfo();
 }
 
+*/
+
 function updatePlayerInfo() {
     if (playerInfo) {
-        playerInfo.innerHTML = currentPlayer.name + ": " + chrystalCount + " ("+ chrystals.size +")";
+        playerInfo.innerHTML = playerSettings.name + ": " + chrystalCount + " ("+ chrystals.size +")";
     }
 }
+
+/* View in fullscreen */
+function openFullscreen() {
+    console.log("Opening FS");
+    if (document.body.requestFullscreen) {
+        document.body.requestFullscreen();
+    } else if (document.body.mozRequestFullScreen) { /* Firefox */
+        document.body.mozRequestFullScreen();
+    } else if (document.body.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+        document.body.webkitRequestFullscreen();
+    } else if (document.body.msRequestFullscreen) { /* IE/Edge */
+        document.body.msRequestFullscreen();
+    }
+  }
+  
+/* Close fullscreen */
+function closeFullscreen() {
+    console.log("Closing FS");
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.mozCancelFullScreen) { /* Firefox */
+      document.mozCancelFullScreen();
+    } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+      document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) { /* IE/Edge */
+      document.msExitFullscreen();
+    }
+  }
