@@ -9,11 +9,11 @@
     "postinstall": "node gfx/packLDrawModel.js gfx/models/"
   },
   "dependencies": {
-    "three": "^0.115.0",
-    "electron": "^8.2.0"
+    "three": "^0.115.0"
   },
   "devDependencies": {
     "http-server": "^0.12.3",
+    "electron": "^8.2.0",
     "sync-request": "^6.1.0"
   },
   "build": {

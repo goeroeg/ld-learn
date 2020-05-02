@@ -24,11 +24,15 @@ Have fun :)
 
 ## Licenses and attributions
 
+This project is completely non-commercial, free and just for fun.
+
 The [LDraw™ library](https://www.ldraw.org/) under Creative Commons Attribution License 2.0 ([CC BY 2.0](https://creativecommons.org/licenses/by/2.0/))
 
 LDraw™ is a trademark owned and licensed by the Estate of James Jessiman
 
 [three.js](https://threejs.org/) as MIT license (no extra attribution needed, but I think they deserve it :) )
+
+[dat.gui](https://github.com/dataarts/dat.gui) under Apache License 2.0 (js module used from the three.js lib)
 
 Sounds from [OrangeFreeSounds](http://www.orangefreesounds.com/) under Attribution-NonCommercial 4.0 International ([CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/))
 
@@ -36,6 +40,6 @@ LEGO® is a registered trademark of the [LEGO Group](https://www.lego.com/), whi
 
 ## Privacy policy
 
-The application stores no private data - the name is only used for display and not stored, the grade is only used as internal settings and also not persisted.
+The application stores no private data - the name is only used for display. All data stored is used only by the client (localStorage).
 
 [See also the GitHub privacy policy for visitors here...](https://help.github.com/en/github/site-policy/github-privacy-statement#github-pages)

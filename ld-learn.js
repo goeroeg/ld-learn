@@ -61,7 +61,13 @@ var resolutions = [{ x:0, y:0 }, {x:640, y:480 }, { x:1024, y:768 },{ x:1920, y:
 var resolutionNames  = {Auto:0, Low: 1, Medium:2, HD: 3 };
 
 var gfxSettings = { resolution: resolutionNames.Auto, fullScreen: false, shadows:3 , antiAlias:true }
-var gameSettings = { itemAmount:100 };
+var gameSettings = { 
+    itemAmount:100 , 
+    add : true, addMax : 100, addResMax : 100, 
+    sub : true, subMax : 100, subResMax : 100,
+    multi : true, multiMax : 10, multiResMax : 100,
+    div : false, divMax : 100, divResMax : 10, 
+    numChoices : 5 };
 var playerSettings = {name:'Player', grade:0 , color:0x00ff00}
 
 var gui, playersFolder, gfxFolder, gameFolder;
@@ -341,15 +347,19 @@ function initGUI() {
 
     gui = new GUI();
 
-    gfxFolder = gui.addFolder ("Graphics settings");
+    gui.useLocalStorage = true;
 
+    gui.remember(gfxSettings);
+    gui.remember(gameSettings);
+    gui.remember(playerSettings);
+
+    gfxFolder = gui.addFolder ("Graphics settings");
     
     gfxFolder.add(gfxSettings, "resolution", resolutionNames).name("Resolution").onChange(function(value) {
         // update resolution 
         onWindowResize();
     });
-    
-    
+        
     /*
     gfxFolder.add(gfxSettings, "fullScreen").name("Full screen").onChange(function(value) {
         if (value) {
@@ -360,7 +370,7 @@ function initGUI() {
     }).listen()
     */
     
-    
+    /* removed as it doesn't really impact performance and also the vosible results are very similar
     gfxFolder.add(gfxSettings, "shadows", 1, 4, 1).name("Shadows").onChange(function(value) {
         // update shadows
         console.log('shadows: ' + value);
@@ -381,24 +391,58 @@ function initGUI() {
         renderer.shadowMap.needsUpdate = true;
         render();
     });
-    
+    */
 
     /*
     gfxFolder.add(gfxSettings, "antiAlias").name("Antialias").onChange(function(value) {
-        // reset context
+        // reset context - so it's a bit complex
     });
     */
 
     gameFolder = gui.addFolder("Game settings");
 
     gameFolder.add(gameSettings, "itemAmount", 10, 200).step(10).name("Obj density %");
-      
-    playersFolder = gui.addFolder("Players");
+
+    playersFolder = gui.addFolder("Player settings");
     playersFolder.add(playerSettings, "name").name("Name").onChange(function(value) {
         updatePlayerInfo();
     });
+    // playersFolder.add(playerSettings, "grade", 0, 4).step(1).name("Grade (difficulty)");
 
-    playersFolder.open();
+    // playersFolder.open();
+
+    var exFolder = gui.addFolder("Exercise settings");
+
+    var additionFolder = exFolder.addFolder("Addition (+)");
+    additionFolder.add(gameSettings, "add").name("Enabled");
+    additionFolder.add(gameSettings, "addMax", [10, 100]).name("Operand max");
+    additionFolder.add(gameSettings, "addResMax", [10, 20, 100, 200]).name("Result max");
+    additionFolder.open();
+    
+    var subtractionFolder = exFolder.addFolder("Subtraction (-)");
+    subtractionFolder.add(gameSettings, "sub").name("Enabled");
+    subtractionFolder.add(gameSettings, "subMax", [10, 20, 100]).name("Operand max");
+    // subtractionFolder.add(gameSettings, "subResMax", [10, 100]).name("Result max");
+    subtractionFolder.open();
+
+    var multiplicationFolder = exFolder.addFolder("Multiplication (x)");
+    multiplicationFolder.add(gameSettings, "multi").name("Enabled");
+    multiplicationFolder.add(gameSettings, "multiMax", [10, 100]).name("Operand max");
+    // multiplicationFolder.add(gameSettings, "multiResMax", [10, 100]).name("Result max");
+    multiplicationFolder.open();
+      
+    var divisionFolder = exFolder.addFolder("Division (/)");
+    divisionFolder.add(gameSettings, "div").name("Enabled");
+    // divisionFolder.add(gameSettings, "divMax", [10, 100]).name("Operand max");
+    divisionFolder.add(gameSettings, "divResMax", [10, 100]).name("Result max");
+    divisionFolder.open();
+
+    // exFolder.add(gameSettings, "numChoices", 2, 5).step(1).name("Choices");
+
+    // exFolder.open();
+    
+    updatePlayerInfo();
+
 }
 
 function initScene() {
@@ -562,9 +606,23 @@ function createExercise() {
         scene.remove(exerciseGroup);
     }
 
-    // let x = new MathExercise(OperatorType.Substraction, 10, 10, 5); //, 10);
-    //let x = new MathExercise(OperatorType.Multiplication, 10, 100, 5); //, 10);
-    let x = new MathExercise(OperatorType.Addition, 10, 10, 5); //, 10);
+    let ops = [];
+
+    if (gameSettings.add) ops.push({op : OperatorType.Addition, max: gameSettings.addMax, maxr: gameSettings.addResMax});
+    if (gameSettings.sub) ops.push({op : OperatorType.Substraction, max: gameSettings.subMax, maxr: gameSettings.subResMax});
+    if (gameSettings.multi) ops.push({op : OperatorType.Multiplication, max: gameSettings.multiMax, maxr: gameSettings.multiResMax});
+    if (gameSettings.div) ops.push({op : OperatorType.Division, max: gameSettings.divMax, maxr: gameSettings.divResMax});
+
+    if (ops.length == 0) {
+        ops.push({op: OperatorType.Addition, max:10, maxr: 10}); // fallback if nothing selected
+    }
+
+    let rnd = Math.floor(Math.random() * (ops.length));
+    
+    let op = ops[rnd];
+
+    let x = new MathExercise(op.op, parseInt(op.max), parseInt(op.maxr), gameSettings.numChoices);
+
     exerciseGroup = new THREE.Group();
     let xtext = createText(x.description, function(mesh){
         if (tickSound)  mesh.add(tickSound);
@@ -598,6 +656,7 @@ function createExercise() {
                 wrongIdx++;
             }
         }
+        
 
         rtext.translateX((idx++ * 150) - 300);
         resultsGroup.add(rtext);
@@ -685,6 +744,8 @@ function onWindowResize() {
     playerInfo.style.marginTop = style.marginTop;
 
     gfxSettings.fullScreen = (window.screen.width == window.innerWidth); // API not working when triggered with F11
+
+    render();
 }
 
 function onDocumentMouseMove( event ) {
