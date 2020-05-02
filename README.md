@@ -2,9 +2,13 @@
 
 An Edu-shooter using three.js and the LDraw™-Library to exercise some maths.
 
+---
+
 ## Try it online
 
 [You can try the game online here.](https://goeroeg.github.io/ld-learn/ld-learn.html)
+
+---
 
 ## Starting for developers
 
@@ -33,4 +37,5 @@ LEGO® is a registered trademark of the [LEGO Group](https://www.lego.com/), whi
 ## Privacy policy
 
 The application stores no private data - the name is only used for display and not stored, the grade is only used as internal settings and also not persisted.
-The GitHub privacy policy for visitors can be found here: https://help.github.com/en/github/site-policy/github-privacy-statement#github-pages
+
+[See also the GitHub privacy policy for visitors here...](https://help.github.com/en/github/site-policy/github-privacy-statement#github-pages)
