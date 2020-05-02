@@ -22,7 +22,7 @@ export function initCar(index, onLoad, onProgress, onError) {
         .setPath( "ldraw/" )        
         .load( "models/car_"+ index +".ldr_Packed.mpd", function ( model ) {
 
-            console.log(model);
+            // console.log(model);
 
             // Convert from LDraw coordinates: rotate 180 degrees around OX
             // model.rotateX(Math.PI);

@@ -506,12 +506,12 @@ function createSky() {
 function addChrystal() {
     let newChrystal = WORLD.chrystal.clone();
 
-    let parcelIdx = Math.floor(Math.random() * (WORLD.freeParcels.length));
+    if (WORLD.freeParcels.length > 0) {
 
-    let parcel = WORLD.freeParcels[parcelIdx];
-    WORLD.freeParcels.splice(parcelIdx, 1);
+        let parcelIdx = Math.floor(Math.random() * (WORLD.freeParcels.length));
 
-    if (parcel) {
+        let parcel = WORLD.freeParcels[parcelIdx];
+        WORLD.freeParcels.splice(parcelIdx, 1);
 
         parcel.occupied = true;
 
@@ -550,9 +550,8 @@ function addChrystal() {
 
         updatePlayerInfo();
     } else {
-        console.log('No free parcel found for chrystal!');
-        console.log(parcelIdx);
-        console.log(WORLD.freeParcels);        
+        console.log('No free parcel found for chrystal!');     
+        console.log(WORLD.parcels);  
     }
 
 }
@@ -818,7 +817,7 @@ function performChrystalAction() {
         if (ambientSound && !ambientSound.isPlaying) ambientSound.play();
     
         if ( chrystalCount <= chrActions.plantsMax) {
-            WORLD.populatePlants(Math.round(5 * gameSettings.itemAmount), Math.round(10 * gameSettings.itemAmount), mixer);
+            WORLD.populatePlants(Math.round(5 * (gameSettings.itemAmount/100)), Math.round(10 * (gameSettings.itemAmount/100)), mixer);
         }
     }
 

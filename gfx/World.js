@@ -46,7 +46,7 @@ export function initScene(onLoad, onProgress, onError) {
 
             // Adjust materials
 
-            console.log(model);
+            // console.log(model);
 
             model.traverse( c => { 
                 c.visible = !c.isLineSegments; 
@@ -108,7 +108,7 @@ export function createPlates() {
     worldPlates = 4.5;
 }
 
-function debugParcel(x, z, color = 0xffffff) {
+export function debugParcel(x, z, color = 0xffffff) {
         let mat = new THREE.MeshBasicMaterial({color: color, transparent: true, opacity:0.5});
         let geo = new THREE.BoxBufferGeometry(parcelSize, parcelSize, parcelSize);        
         let mesh = new THREE.Mesh(geo, mat);
@@ -208,7 +208,7 @@ export function populatePlants(min, max, mixer) {
                     // add an animation
                     let action = mixer.clipAction(ANIM.createGrowAnimation(20), newPlant);
                     action.clampWhenFinished = true;
-                    action.setLoop(THREE.LoopOnce).startAt(mixer.time + i*5).play();
+                    action.setLoop(THREE.LoopOnce).play();// .startAt(mixer.time + i*5).play();
                 }
             }
         }
