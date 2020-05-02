@@ -208,7 +208,7 @@ export function populatePlants(min, max, mixer) {
                     // add an animation
                     let action = mixer.clipAction(ANIM.createGrowAnimation(20), newPlant);
                     action.clampWhenFinished = true;
-                    action.setLoop(THREE.LoopOnce).play();// .startAt(mixer.time + i*5).play();
+                    action.setLoop(THREE.LoopOnce).startAt(mixer.time + i).play();
                 }
             }
         }
