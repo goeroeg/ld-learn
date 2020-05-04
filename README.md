@@ -2,11 +2,25 @@
 
 An Edu-shooter using three.js and the LDraw™-Library to exercise some maths.
 
+![screenshot](/doc/img/screenshot.jpg)
+
 ---
 
 ## Try it online
 
 [You can try the game online here.](https://goeroeg.github.io/ld-learn/ld-learn.html)
+
+---
+
+## System requirements
+
+The game should run on all modern PCs or laptops, however a dedicated graphics card is recommended.
+
+Mobile devices are not supported yet.
+
+Online version tested with Chromium and Firefox, but you can try others with WebGL support too.
+
+Gamepad support tested with Chrome(-ium).
 
 ---
 
