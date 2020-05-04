@@ -20,9 +20,18 @@
 				display: inline-block;
 				}
 
-				a:hover, a:active {
+			a:hover, a:active {
 				background-color: rgba(255,255,255,0.3);
 				}
+
+			kbd {
+				font-size: 75%;
+				border-radius: 3px;
+				box-shadow: 0.5px 0.5px 2px lightcyan;
+				border: 1px solid yellowgreen;		
+				display: inline-block;
+				padding: 1px 10px;
+			}
 
 			#playerInfo {
 				position: absolute;
@@ -40,16 +49,27 @@
 				position: fixed;
 				width: 100%;
 				height: 100%;
-				background-color: rgba(0,0,0,0.5);
+				background-color: rgba(0,0,0,0.7);
 			}
 
-			#instructions {				
+			#instructions span {
+					display: inline-block;
+					line-height: 1.8;
+				}
+				
+			#instructions small {
+				font-size: 67%;
+				}
+			#instructions {		
+				
 				width: 100%;
 				height: 100%;
 
 				display: -webkit-box;
 				display: -moz-box;
 				display: box;
+
+				text-shadow: 0 0 1px cyan, 0 0 5px darkcyan;
 
 				-webkit-box-orient: horizontal;
 				-moz-box-orient: horizontal;
@@ -66,8 +86,8 @@
 				color: #ffffff;
 				text-align: center;
 				font-family: Arial;
-				font-size: 14px;
-				line-height: 24px;
+				font-size: 20px;
+				line-height: 28px;
 
 				cursor: pointer;
 			}
@@ -78,23 +98,28 @@
 		<div id="blocker">
 
 			<div id="instructions">
-				<span style="font-size:36px">Click to play</span>
-				<br /><br />
-				Move: WASD<br/>
-				Jump: SPACE<br/>
-				Look: MOUSE<br/>
+				<span style="font-size:36px">&#9658; Click to play</span>
+				<br/><br/>
+				Move:&nbsp;<span><kbd>W</kbd><br/><kbd>A</kbd>&nbsp;<kbd>S</kbd>&nbsp;<kbd>D</kbd></span>
+				&nbsp;or&nbsp;
+				<span><kbd>&#9651</kbd><br/><kbd>&#9665</kbd>&nbsp;<kbd>&#9661</kbd>&nbsp;<kbd>&#9655</kbd><br/></span>
+				<br/><br/>
+				Jump:&nbsp;<kbd>SPACE</kbd><br/>
 				<br/>
-				Release controls: ESC
+				Look: &#128432 mouse<br/>
+				Select: left-click<br/>
+				<br/>
+				Release controls:&nbsp;<kbd>ESC</kbd>
 				<br/>							
-				Toggle Fullscreen: F11 (on most browsers/systems)				
+				Toggle Fullscreen:&nbsp;<kbd>F11</kbd>&nbsp;<small><i>(in most browsers)</i></small>				
 				<br/><br/>							
-				<a href="https://goeroeg.github.io/ld-learn/" target="_blank"><i>More info and licenses</i></a>
+				<a href="https://goeroeg.github.io/ld-learn/" target="_blank">&#9432; <i>More info and licenses</i></a>
 			</div>
 
 		</div>
 		<div id="playerInfo">Player:</div>
-		<script type="module" src="https://threejs.org/build/three.min.js"></script> 
-		<!-- <script type="module" src="./node_modules/three/build/three.min.js"></script> --> <!--use this for local/electron-->
+		<script type="module" src="https://threejs.org/build/three.min.js"></script>
+		<!-- <script type="module" src="./node_modules/three/build/three.min.js"></script> -->  <!--use this for local/electron-->
 		<script type="module" src="ld-learn.js"></script>
     </body>
 </html>
