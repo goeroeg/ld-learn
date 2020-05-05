@@ -57,7 +57,6 @@ export function initCar(index, onLoad, onProgress, onError) {
                     if (c.parent.userData.constructionStep == stepLeftWheels) {                       
                         car.lWheels.push(c);                    
                     }
-
                 }
 
                 c.castShadow = true; 

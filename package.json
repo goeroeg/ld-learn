@@ -6,7 +6,7 @@
   "scripts": {
     "serve": "http-server .",
     "start": "electron .",
-    "postinstall": "node gfx/packLDrawModel.js gfx/models/"
+    "packldr": "node gfx/packLDrawModel.js gfx/models/"
   },
   "dependencies": {
     "three": "^0.115.0"

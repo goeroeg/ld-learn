@@ -92,7 +92,6 @@ const chrActions = {
     carsMax : 50   //50
 }
 
-
 init();
 
 function init() {
@@ -153,7 +152,7 @@ function initControls() {
 
         updateBlocker(true);
 
-        if (ambientSound && chrystalCount >= chrActions.plantsMin) ambientSound.play();
+        if (ambientSound && chrystalCount >= chrActions.plantsMin && !ambientSound.isPlaying) ambientSound.play();
 
         document.addEventListener( 'click', onDocumentClick, false );
 
@@ -167,7 +166,7 @@ function initControls() {
 
         updateBlocker(false);
 
-        if (ambientSound) ambientSound.pause();
+        if (ambientSound && ambientSound.isPlaying) ambientSound.pause();
 
         clock.stop();
 
@@ -205,6 +204,14 @@ function initControls() {
                 canJump = false;
                 break;
 
+
+            case 8: // back
+                if (clock.running) {
+                    clock.stop();
+                } else {
+                    clock.start();
+                }
+                break;
         }
 
     };
@@ -719,8 +726,8 @@ function updateProgressBar( fraction ) {
 
 }
 
-function onWindowResize() {
-    
+function onWindowResize() {    
+
     let res = {x: resolutions[gfxSettings.resolution].x, y: resolutions[gfxSettings.resolution].y};
 
     if (res.x == 0) {
@@ -736,7 +743,7 @@ function onWindowResize() {
     camera.aspect = res.x / res.y;
     camera.updateProjectionMatrix();
 
-    renderer.setSize( res.x, res.y, true );    
+    renderer.setSize( res.x, res.y, false );    
 
     var style = window.getComputedStyle(renderer.domElement);
 
@@ -844,7 +851,7 @@ function checkChrystals() {
 
         if (collectSound) {
             if (collectSound.isPlaying) collectSound.stop();
-         collectSound.play();
+            collectSound.play();
         }
         chrystalCount++;
 
@@ -886,10 +893,12 @@ function performChrystalAction() {
         WORLD.prepareRoads();
     }
     if (chrystalCount == chrActions.initRoads) {
+        showProgressBar();
         WORLD.initRoads(function (newModel) {
+            hideProgressBar();
             // play transition sound
             if (newItemSound && !newItemSound.isPlaying)
-                newItemSound.play();
+                newItemSound.play();                
         }, onProgress, onError);
     }
     if (chrystalCount >= chrActions.carsMin && chrystalCount <= chrActions.carsMax) {
@@ -898,7 +907,11 @@ function performChrystalAction() {
 }
 
 function addCar() {
-    initCar(0, function (car) {
+
+    let carIdx = (Math.floor(chrystalCount / 2)) % 2;
+
+    showProgressBar();
+    initCar(carIdx, function (car) {
         WORLD.model.add(car);
 
         let ccw = (chrystalCount % 2 == 0); // every second counter-clockwise
@@ -916,7 +929,8 @@ function addCar() {
             var action = mixer.clipAction(ANIM.createRotationCcwAnimation(1, 'z'), wheel);
             action.setLoop(THREE.LoopRepeat).setDuration(1).play();
         }
-    });
+        hideProgressBar();
+    } , onProgress, onError);
 }
 
 function checkExerciseIntersections() {
@@ -934,7 +948,7 @@ function checkExerciseIntersections() {
             if (intersects[0].object != currentHighlight)
             {
                 if (tickSound) {
-                    if (tickSound.isPlaying) tickSound.stop;
+                    if (tickSound.isPlaying) tickSound.stop();
                     tickSound.play();
                 } 
                 currentHighlight = intersects[0].object;
