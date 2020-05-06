@@ -3,44 +3,37 @@ import { Exercise } from './Exercise.js';
 const OperatorType = { Addition:1, Substraction:2, Multiplication:3, Division:4 };
 
 class MathExercise extends Exercise {
-    constructor( opType, range, resultRange = 0, numResults = 5, first) {
+    constructor( opType, operator, range, resultRange = 0, numResults = 5, first) {
         super();
         this.opType = opType;
 
-        if (opType == OperatorType.Division && numResults > range) {
-             numResults = range;
+        if (opType == OperatorType.Division)
+        { 
+            range = resultRange;
+            numResults = Math.min(numResults, range);
         };
 
-        let operator;
-
         let results = new Set();
-        
-        if (opType == OperatorType.Multiplication) {
-            this.first = (first === undefined ? Math.floor(Math.random() * ( range + 1 )) : first);
-        }
-        
-        do {
-            if (opType != OperatorType.Multiplication) {
-                this.first = (first === undefined ? Math.floor(Math.random() * ( range + 1 )) : first);
-            }
 
-            this.second = Math.floor(Math.random() * ( range + 1 ));
-            this.result = Math.floor(Math.random() * ( resultRange + 1 ));
+        this.first = (typeof first !== 'undefined' ? first : Math.floor(Math.random() * ( range + 1 )));
 
+        let counter = 0;
+
+        do {            
+            this.second = Math.floor(Math.random() * range ) + 1; // avoid 0
+            
             switch (opType) {
                 case OperatorType.Addition : 
-                    operator = '+';
                     if (resultRange > 0) {
-                        if (this.first > this.result) {
-                            this.swapResultAndFirst();
-                        }
+                        this.first = Math.floor(Math.random() *  range ) + 1; // enable more results, avoid 0
+                        this.result = Math.floor(Math.random() * ( resultRange - this.first + 1 )) + this.first;
                         this.second = this.result - this.first;                        
                     } else {
                         this.result = this.first + this.second;
                     }
                     break;
+
                 case OperatorType.Substraction :
-                    operator = '-';
                     if (this.first < this.second) { // ensure result is positive
                         let temp = this.second;
                         this.second = this.first;
@@ -48,36 +41,25 @@ class MathExercise extends Exercise {
                     }
                     this.result = this.first - this.second;
                     break;
+
                 case OperatorType.Multiplication :
-                    operator = 'x';
                     if (this.first == 0) this.first = 1;
                     this.result = this.first * this.second;
                     break;
-                case OperatorType.Division :
-                    operator = '/';
-                    
-                    this.first = Math.floor(Math.random() * (range + 1));
-                    while (this.second == 0) {
-                        this.second = Math.floor(Math.random() * (range + 1));
-                    };
 
-                    this.result = this.first * this.second;
-                    this.swapResultAndFirst(); // exchange for a division without remainder
+                case OperatorType.Division :
+                    this.result = Math.floor(Math.random() * ( resultRange + 1 ));
+                    this.first = this.second * this.result;                    
                     break;
             }
             results.add(this.result);
+            counter++; // avoid infinite loops
 
-        } while (results.size < numResults);
+        } while (results.size < numResults && counter < 100);
         
         this.results = shuffle(Array.from(results));
 
-        this.description = this.first + ' ' + operator + ' ' + this.second;
-    }
-
-    swapResultAndFirst() {
-        let temp = this.first;
-        this.first = this.result;
-        this.result = temp;
+        this.description = this.first + ' ' + operator + ' ' + this.second; // + " = ?";
     }
 }
 

@@ -63,10 +63,10 @@ var resolutionNames  = {Auto:0, Low: 1, Medium:2, HD: 3 };
 var gfxSettings = { resolution: resolutionNames.Auto, fullScreen: false, shadows:3 , antiAlias:true }
 var gameSettings = { 
     itemAmount:100 , 
-    add : true, addMax : 100, addResMax : 100, 
-    sub : true, subMax : 100, subResMax : 100,
-    multi : true, multiMax : 10, multiResMax : 100,
-    div : false, divMax : 100, divResMax : 10, 
+    add : true, addMax : 100, addResMax : 100, addSym: '+',
+    sub : true, subMax : 100, subResMax : 100, subSym: '-',
+    multi : true, multiMax : 10, multiResMax : 100, multiSym: '·',
+    div : false, divMax : 100, divResMax : 10, divSym: ':',
     numChoices : 5 };
 var playerSettings = {name:'Player', grade:0 , color:0x00ff00}
 
@@ -435,6 +435,7 @@ function initGUI() {
     var multiplicationFolder = exFolder.addFolder("Multiplication (x)");
     multiplicationFolder.add(gameSettings, "multi").name("Enabled");
     multiplicationFolder.add(gameSettings, "multiMax", [10, 100]).name("Operand max");
+    multiplicationFolder.add(gameSettings, "multiSym", [ '·', 'x', '*' ]).name("Symbol");
     // multiplicationFolder.add(gameSettings, "multiResMax", [10, 100]).name("Result max");
     multiplicationFolder.open();
       
@@ -442,6 +443,7 @@ function initGUI() {
     divisionFolder.add(gameSettings, "div").name("Enabled");
     // divisionFolder.add(gameSettings, "divMax", [10, 100]).name("Operand max");
     divisionFolder.add(gameSettings, "divResMax", [10, 100]).name("Result max");
+    divisionFolder.add(gameSettings, "divSym", [ ':', '/' ]).name("Symbol");
     divisionFolder.open();
 
     // exFolder.add(gameSettings, "numChoices", 2, 5).step(1).name("Choices");
@@ -615,26 +617,28 @@ function createExercise() {
 
     let ops = [];
 
-    if (gameSettings.add) ops.push({op : OperatorType.Addition, max: gameSettings.addMax, maxr: gameSettings.addResMax});
-    if (gameSettings.sub) ops.push({op : OperatorType.Substraction, max: gameSettings.subMax, maxr: gameSettings.subResMax});
-    if (gameSettings.multi) ops.push({op : OperatorType.Multiplication, max: gameSettings.multiMax, maxr: gameSettings.multiResMax});
-    if (gameSettings.div) ops.push({op : OperatorType.Division, max: gameSettings.divMax, maxr: gameSettings.divResMax});
+    if (gameSettings.add) ops.push({ op: OperatorType.Addition, sym: gameSettings.addSym, max: gameSettings.addMax, maxr: gameSettings.addResMax });
+    if (gameSettings.sub) ops.push({ op: OperatorType.Substraction, sym: gameSettings.subSym, max: gameSettings.subMax, maxr: gameSettings.subResMax });
+    if (gameSettings.multi) ops.push({ op: OperatorType.Multiplication, sym: gameSettings.multiSym, max: gameSettings.multiMax, maxr: gameSettings.multiResMax });
+    if (gameSettings.div) ops.push({ op: OperatorType.Division, sym: gameSettings.divSym, max: gameSettings.divMax, maxr: gameSettings.divResMax });
 
     if (ops.length == 0) {
-        ops.push({op: OperatorType.Addition, max:10, maxr: 10}); // fallback if nothing selected
+        ops.push({op: OperatorType.Addition, sym: gameSettings.addSym,  max:10, maxr: 10}); // fallback if nothing selected
     }
 
     let rnd = Math.floor(Math.random() * (ops.length));
     
     let op = ops[rnd];
 
-    let x = new MathExercise(op.op, parseInt(op.max), parseInt(op.maxr), gameSettings.numChoices);
+    console.log(op);
+
+    let x = new MathExercise(op.op, op.sym, parseInt(op.max), parseInt(op.maxr), gameSettings.numChoices);
 
     exerciseGroup = new THREE.Group();
     let xtext = createText(x.description, function(mesh){
         if (tickSound)  mesh.add(tickSound);
     });
-    xtext.position.y = 100;
+    xtext.position.y = 120;
     exerciseGroup.add(xtext);
     let resultsGroup = new THREE.Group();
     let idx = 0;
