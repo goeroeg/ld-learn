@@ -90,9 +90,9 @@ const chrActions = {
     createFences : 2,
     plantsMin : 4,
     plantsMax : 20,
-    prepareRoads : 4, //18
-    initRoads : 4, //20
-    carsMin : 5,   //21
+    prepareRoads : 18, //18
+    initRoads : 20, //20
+    carsMin : 21,   //21
     carsMax : 50   //50
 }
 
