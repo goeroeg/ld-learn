@@ -11,6 +11,7 @@ import { addCrossHair } from './gfx/CrossHair.js';
 import * as WORLD from './gfx/World.js';
 import * as ANIM from './gfx/Animations.js';
 import { initCar } from './gfx/Cars.js';
+import { initGuy } from './gfx/Guy.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
@@ -31,6 +32,9 @@ var wrongSounds = [];
 var motorSounds = [];
 
 var clock = new THREE.Clock();
+
+var playerGuy;
+const guyOffset = 20;
 
 var mixer;
 var players = [];
@@ -57,7 +61,7 @@ var exerciseGroup;
 var exerciseMeshes;
 var currentHighlight;
 
-var absMaxDistance = 0.5 * WORLD.plateSize;
+var absMaxDistance = 0.5 * WORLD.plateSize - guyOffset;
 
 var progressBarDiv;
 
@@ -85,9 +89,9 @@ const okColor = 0x00ff00, wrongColor = 0xff0000, selectedEmissive = 0x0000ff;
 var textEmissive = 0x000000;
 
 const chrActions = {
-    createSky : 3,
     createPlates : 1,
     createFences : 2,
+    createSky : 3,
     plantsMin : 4,
     plantsMax : 20,
     prepareRoads : 18, //18
@@ -101,11 +105,9 @@ init();
 function init() {
     initScene();
     initControls();
-    initAudio(camera);
+    initAudio();
     initGUI();
 
-    // initPlayers(gameSettings.playerCount);
-        
     createExercise();
 
     //render(); // remove when using next line for animation loop (requestAnimationFrame)
@@ -278,9 +280,7 @@ function initControls() {
     */
     //
     window.addEventListener( 'resize', onWindowResize, false );
-
     // document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-    
 }
 
 function updateBlocker(hide) {
@@ -293,7 +293,7 @@ function updateBlocker(hide) {
     }
 }
 
-function initAudio(camera) {
+function initAudio() {
     // create an AudioListener and add it to the camera
     listener = new THREE.AudioListener();
     camera.add( listener );
@@ -518,18 +518,63 @@ function initScene() {
         scene.remove(WORLD.model);
     }
 
+    mixer = new THREE.AnimationMixer(scene);
+
     WORLD.initScene(function ( newModel ) {
         scene.add(newModel);        
-        mixer = new THREE.AnimationMixer(newModel);
-
-        absMaxDistance = WORLD.worldPlates * WORLD.plateSize;
+        
+        absMaxDistance = WORLD.worldPlates * WORLD.plateSize - guyOffset;
 
         // addChrystal();
 
         hideProgressBar();
         render();
         updateBlocker(false);
+
     }, onProgress, onError );
+
+    initGuy(function (guy) {
+        playerGuy = guy;
+        scene.add(playerGuy);
+
+        updateControls(0);
+        initPlayerGuyAnim();
+        
+    }, onProgress, onError);
+}
+
+function initPlayerGuyAnim() {
+    playerGuy.anims = [];
+    var action = mixer.clipAction(ANIM.createWalkAnimation(1, Math.PI / 6, 'x'), playerGuy.rleg);
+    action.setLoop(THREE.LoopRepeat).setDuration(0.6);
+    playerGuy.anims.push(action);
+    action = mixer.clipAction(ANIM.createWalkAnimation(1, -Math.PI / 6, 'x'), playerGuy.lleg);
+    action.setLoop(THREE.LoopRepeat).setDuration(0.6);
+    playerGuy.anims.push(action);
+    action = mixer.clipAction(ANIM.createWalkAnimation(1, -Math.PI / 12, 'x'), playerGuy.rarm);
+    action.setLoop(THREE.LoopRepeat).setDuration(0.6);
+    playerGuy.anims.push(action);
+    action = mixer.clipAction(ANIM.createWalkAnimation(1, Math.PI / 12, 'x'), playerGuy.larm);
+    action.setLoop(THREE.LoopRepeat).setDuration(0.6);
+    playerGuy.anims.push(action);
+
+    playerGuy.walk = function () {
+        playerGuy.isWalking = true;        
+        for (let anim of playerGuy.anims) {
+            if (anim.isRunning()) {
+                anim.fadeIn(0.3);
+            } else {
+                anim.reset().play();
+            }
+        }
+    };
+    playerGuy.stop = function () {
+        for (let anim of playerGuy.anims) {
+            anim.fadeOut(0.3);
+            // anim.stop();
+        }
+        playerGuy.isWalking = false;
+    };
 }
 
 function addSun() {
@@ -646,7 +691,7 @@ function createExercise() {
     
     let op = ops[rnd];
 
-    console.log(op);
+    // console.log(op);
 
     let x = new MathExercise(op.op, op.sym, parseInt(op.max), parseInt(op.maxr), gameSettings.numChoices);
 
@@ -855,13 +900,13 @@ function checkChrystals() {
 
         // playerInfo.innerHTML = objPos.x + ", " + objPos.z + " -> " + chrPos.x + ", " + chrPos.z;
 
-        if (chrPos.distanceTo( objPos ) < 120 ) {
+        if (chrPos.distanceTo( objPos ) < 100 ) {
             foundChrystal = chr;
-            console.log('Christal found!');
+            // console.log('Christal found!');
             break;
         }
     }
-    if (foundChrystal){
+    if (foundChrystal) {
         chrystals.delete(foundChrystal);
         WORLD.model.remove(foundChrystal);
 
@@ -869,15 +914,16 @@ function checkChrystals() {
         mixer.uncacheRoot(foundChrystal);
         mixer.uncacheRoot(foundChrystal.line);
 
+        let parcel = foundChrystal.parcel;
+        parcel.occupied = false;
+        WORLD.freeParcels.push[parcel];
+
         if (collectSound) {
             if (collectSound.isPlaying) collectSound.stop();
             collectSound.play();
         }
-        chrystalCount++;
 
-        let parcel = foundChrystal.parcel;
-        parcel.occupied = false;
-        WORLD.freeParcels.push[parcel];
+        chrystalCount++;
 
         // update display
         updatePlayerInfo();
@@ -895,7 +941,7 @@ function performChrystalAction() {
 
     if (chrystalCount == chrActions.createPlates) {
         WORLD.createPlates();
-        absMaxDistance = WORLD.worldPlates * WORLD.plateSize;
+        absMaxDistance = WORLD.worldPlates * WORLD.plateSize - guyOffset;
     }
     if (chrystalCount == chrActions.createFences) {
         WORLD.createFences();
@@ -930,7 +976,7 @@ function addCar() {
 
     let carIdx = (Math.floor(chrystalCount / 2)) % 2;
 
-    showProgressBar();
+    // showProgressBar();
     initCar(carIdx, function (car) {
         WORLD.model.add(car);
 
@@ -953,13 +999,13 @@ function addCar() {
         let motorSound = new THREE.PositionalAudio( listener );
         car.add(motorSound);
         motorSound.setBuffer( motorSoundBuffer );
-        motorSound.setRefDistance( 80 );
+        motorSound.setRefDistance( 50 );
         motorSound.setLoop( true );
-        motorSound.setVolume( 0.8 );
+        motorSound.setVolume( 0.7 );
         motorSound.play();
         motorSounds.push(motorSound);
 
-        hideProgressBar();
+        // hideProgressBar();
     } , onProgress, onError);
 }
 
@@ -990,6 +1036,7 @@ function checkExerciseIntersections() {
     }
 }
 
+const playerCamHeight = 85;
 function updateControls(delta) {
 
     velocity.x -= velocity.x * 10.0 * delta;
@@ -1000,7 +1047,6 @@ function updateControls(delta) {
     direction.normalize(); // this ensures consistent movements in all directions
     if (moveForward || moveBackward) {
         velocity.z -= direction.z * 4000.0 * delta;
-        if (walkSound && !walkSound.isPlaying) walkSound.play();
     }
     if (moveLeft || moveRight)
         velocity.x -= direction.x * 4000.0 * delta;
@@ -1016,9 +1062,9 @@ function updateControls(delta) {
     controls.moveRight(-velocity.x * delta);
     controls.moveForward(-velocity.z * delta);
     controls.getObject().position.y += (velocity.y * delta); // new behavior
-    if (controls.getObject().position.y < 85) {
+    if (controls.getObject().position.y < playerCamHeight) {
         velocity.y = 0;
-        controls.getObject().position.y = 85;
+        controls.getObject().position.y = playerCamHeight;
         canJump = true;
     }
 
@@ -1039,6 +1085,28 @@ function updateControls(delta) {
         checkChrystals();
     }
 
+    if (playerGuy) {
+        var euler = controls.getObject().rotation.clone();
+
+        playerGuy.position.x = pos.x;
+        playerGuy.position.z = pos.z;
+        playerGuy.position.y = pos.y - playerCamHeight;
+
+        euler.reorder("YXZ");
+        euler.x = 0;
+        euler.z = Math.PI;
+
+        playerGuy.setRotationFromEuler(euler, "YXZ");
+
+        playerGuy.translateZ(guyOffset); 
+
+        if (moveForward || moveBackward || moveLeft || moveRight) {
+                if (!playerGuy.isWalking) playerGuy.walk();
+                if (walkSound && !walkSound.isPlaying) walkSound.play();
+            } else {
+                if (playerGuy.isWalking) playerGuy.stop();                
+            }
+    }
 }
 
 function highlightMesh(mesh, colorHex)

@@ -15,7 +15,7 @@ class MathExercise extends Exercise {
 
         let results = new Set();
 
-        this.first = (typeof first !== 'undefined' ? first : Math.floor(Math.random() * ( range + 1 )));
+        this.first = (typeof first !== 'undefined' ? first : Math.floor(Math.random() * range) + 1 );
 
         let counter = 0;
 
@@ -24,17 +24,16 @@ class MathExercise extends Exercise {
             
             switch (opType) {
                 case OperatorType.Addition : 
-                    if (resultRange > 0) {
-                        this.first = Math.floor(Math.random() *  range ) + 1; // enable more results, avoid 0
-                        this.result = Math.floor(Math.random() * ( resultRange - this.first + 1 )) + this.first;
-                        this.second = this.result - this.first;                        
-                    } else {
-                        this.result = this.first + this.second;
-                    }
+                    this.result = this.first + this.second;
+                    if (resultRange > 0 && this.result > resultRange) {                                                                                                
+                        this.first = Math.floor(Math.random() * (range - 1)) + 1; // make sure that more results are possible
+                        this.result = Math.floor(Math.random() * ( resultRange - this.first )) + this.first + 1;
+                        this.second = this.result - this.first;
+                    }                                            
                     break;
 
                 case OperatorType.Substraction :
-                    if (this.first < this.second) { // ensure result is positive
+                    if ( this.first < this.second ) { // ensure result is positive
                         let temp = this.second;
                         this.second = this.first;
                         this.first = temp;
