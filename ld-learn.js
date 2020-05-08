@@ -18,13 +18,17 @@ var dirLight;
 
 var mouse = new THREE.Vector2();
 
+var listener;
 var ambientSound;
+var motorSoundBuffer;
 var walkSound;
 var tickSound;
 var collectSound;
 var newItemSound;
 var okSounds = [];
 var wrongSounds = [];
+
+var motorSounds = [];
 
 var clock = new THREE.Clock();
 
@@ -86,9 +90,9 @@ const chrActions = {
     createFences : 2,
     plantsMin : 4,
     plantsMax : 20,
-    prepareRoads : 18, //18
-    initRoads : 20, //20
-    carsMin : 21,   //21
+    prepareRoads : 4, //18
+    initRoads : 4, //20
+    carsMin : 5,   //21
     carsMax : 50   //50
 }
 
@@ -154,6 +158,10 @@ function initControls() {
 
         if (ambientSound && chrystalCount >= chrActions.plantsMin && !ambientSound.isPlaying) ambientSound.play();
 
+        for (let ms of motorSounds) {
+            if (!ms.isPlaying) ms.play();
+        }
+
         document.addEventListener( 'click', onDocumentClick, false );
 
         clock.start();
@@ -167,6 +175,10 @@ function initControls() {
         updateBlocker(false);
 
         if (ambientSound && ambientSound.isPlaying) ambientSound.pause();
+
+        for (let ms of motorSounds) {
+            if (ms.isPlaying) ms.pause();
+        }
 
         clock.stop();
 
@@ -283,7 +295,7 @@ function updateBlocker(hide) {
 
 function initAudio(camera) {
     // create an AudioListener and add it to the camera
-    var listener = new THREE.AudioListener();
+    listener = new THREE.AudioListener();
     camera.add( listener );
 
     listener.setVolume = 0;
@@ -303,6 +315,10 @@ function initAudio(camera) {
         walkSound.setBuffer( buffer );
         walkSound.setLoop( false );
         walkSound.setVolume( 0.5 );        
+    });
+
+    audioLoader.load( 'sounds/motor.ogg', function( buffer ) {     
+       motorSoundBuffer = buffer;
     });
 
     audioLoader.load( 'sounds/collect.ogg', function( buffer ) {        
@@ -933,6 +949,16 @@ function addCar() {
             var action = mixer.clipAction(ANIM.createRotationCcwAnimation(1, 'z'), wheel);
             action.setLoop(THREE.LoopRepeat).setDuration(1).play();
         }
+
+        let motorSound = new THREE.PositionalAudio( listener );
+        car.add(motorSound);
+        motorSound.setBuffer( motorSoundBuffer );
+        motorSound.setRefDistance( 80 );
+        motorSound.setLoop( true );
+        motorSound.setVolume( 0.8 );
+        motorSound.play();
+        motorSounds.push(motorSound);
+
         hideProgressBar();
     } , onProgress, onError);
 }
