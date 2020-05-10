@@ -161,6 +161,7 @@ function initControls() {
         updateBlocker(true);
 
         if (ambientSound && chrystalCount >= chrActions.plantsMin && !ambientSound.isPlaying) ambientSound.play();
+        if (sphereSound && chrystalCount >= chrActions.musicSphere && !sphereSound.isPlaying) sphereSound.play();
 
         for (let ms of motorSounds) {
             if (!ms.isPlaying) ms.play();
@@ -179,6 +180,7 @@ function initControls() {
         updateBlocker(false);
 
         if (ambientSound && ambientSound.isPlaying) ambientSound.pause();
+        if (sphereSound && sphereSound.isPlaying) sphereSound.pause();
 
         for (let ms of motorSounds) {
             if (ms.isPlaying) ms.pause();
