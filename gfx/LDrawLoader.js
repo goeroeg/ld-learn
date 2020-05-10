@@ -927,7 +927,7 @@ var LDrawLoader = ( function () {
 
 				case LDrawLoader.FINISH_TYPE_DEFAULT:
 
-					material = new THREE.MeshStandardMaterial( { color: colour, roughness: 0.3, envMapIntensity: 0.3, metalness: 0 } );
+					material = new THREE.MeshStandardMaterial( { color: colour, roughness: 0.6, envMapIntensity: 0.3, metalness: 0 } );
 					break;
 
 				case LDrawLoader.FINISH_TYPE_PEARLESCENT:

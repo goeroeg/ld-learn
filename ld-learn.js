@@ -21,6 +21,7 @@ var mouse = new THREE.Vector2();
 
 var listener;
 var ambientSound;
+var sphereSound;
 var motorSoundBuffer;
 var walkSound;
 var tickSound;
@@ -97,7 +98,8 @@ const chrActions = {
     prepareRoads : 18, //18
     initRoads : 20, //20
     carsMin : 21,   //21
-    carsMax : 50   //50
+    carsMax : 50,   //50
+    musicSphere : 30
 }
 
 init();
@@ -342,6 +344,13 @@ function initAudio() {
         tickSound.setVolume( 0.8 );
     });
 
+    audioLoader.load( 'sounds/sphere-music.ogg', function( buffer ) {        
+        sphereSound = new THREE.PositionalAudio( listener );
+        sphereSound.setBuffer( buffer );
+        sphereSound.setRefDistance(150);
+        sphereSound.setVolume( 0.8 );
+        sphereSound.setLoop( true );
+    });
 
     for (let idx = 1; idx <= 4; idx++)
     {
@@ -617,6 +626,38 @@ function createSky() {
         
 }
 
+function addMusicSphere() {
+    let sphere = WORLD.sphere; // .clone();
+    if (WORLD.freeParcels.length > 0) {
+
+        let parcelIdx = Math.floor(Math.random() * (WORLD.freeParcels.length));
+
+        let parcel = WORLD.freeParcels[parcelIdx];
+        WORLD.freeParcels.splice(parcelIdx, 1);
+
+        parcel.occupied = true;
+
+        sphere.position.x = parcel.x;
+        sphere.position.z = parcel.z;        
+
+        // WORLD.model.add(sphere);
+
+        let light = new THREE.PointLight(0xffa500,  1, 500,  2);
+
+        light.position.x = parcel.x;
+        light.position.z = parcel.z;
+        light.position.y = -80;
+        // cLight.target = sphere;
+        light.castShadow = true;
+
+        light.attach(sphere);
+        WORLD.model.add(light);
+
+        sphere.add(sphereSound);
+        if (!sphereSound.isPlaying) sphereSound.play();
+    }
+}
+
 function addChrystal() {
     let newChrystal = WORLD.chrystal.clone();
 
@@ -635,17 +676,21 @@ function addChrystal() {
         newChrystal.parcel = parcel;
 
         /*
-        let cLight = new THREE.PointLight({color: 0xff00ff, intensity: 0.2, distance: 10, decay: 5.0});
-        cLight.position.y = -5
-        newChrystal.add(cLight);
-*/
+        let light = new THREE.PointLight(0xffffff,  1, 200,  2);        
+        light.position.y = -100;
+        light.castShadow = true;
+        newChrystal.add(light);
+        */
+
         let material = new THREE.LineBasicMaterial({ linewidth: 1 });
         material.color.setHSL(Math.random(), 1, 0.9 );
+
         let geometry = new THREE.Geometry();
         geometry.vertices.push(new THREE.Vector3(0, 0, 0));
         geometry.vertices.push(new THREE.Vector3(0, -2000, 0));
+
         let line = new THREE.Line(geometry, material);
-        line.position.y = -40;
+        line.position.y = -50;
         newChrystal.add(line);
         newChrystal.line = line;
 
@@ -969,6 +1014,10 @@ function performChrystalAction() {
     }
     if (chrystalCount >= chrActions.carsMin && chrystalCount <= chrActions.carsMax) {
         addCar();
+    }
+
+    if (chrystalCount == chrActions.musicSphere) {
+        addMusicSphere();
     }
 }
 

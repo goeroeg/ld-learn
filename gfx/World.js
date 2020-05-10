@@ -14,6 +14,8 @@ export var model;
 
 export var chrystal;
 
+export var sphere;
+
 var plate;
 var fence;
 var plants = [];
@@ -77,9 +79,13 @@ export function initScene(onLoad, onProgress, onError) {
             fence = model.children[1];
 
             chrystal = model.children[2];
+            chrystal.children[0].material[0].emissive.setHex(0xffffff);
+            chrystal.children[0].material[0].emissiveIntensity = 0.3;
         
+            sphere = model.children[3];
+
             // let plants = [];
-            for (let plantIdx = 3; plantIdx < model.children.length; plantIdx++) {
+            for (let plantIdx = 4; plantIdx < model.children.length; plantIdx++) {
                 plants.push(model.children[plantIdx]);        
             }
 
