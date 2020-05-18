@@ -3,12 +3,7 @@ import { LDrawLoader } from './LDrawLoader.js'; // use fixed -
 import * as WORLD from './World.js';
 import * as ANIM from './Animations.js';
 
-const stepBody = 0;
-const stepRightLeg = 1;
-const stepLeftLeg = 2;
-const stepRightArm = 3;
-const stepLeftArm = 4;
-
+export const BodyParts = { Head:0, Torso:1, RightArm:2, RightHand:3, LeftArm:4, LeftHand:5, Hip:6, RightLeg:7, LeftLeg:8 };
 
 export function initGuy(onLoad, onProgress, onError) {    
 
@@ -28,10 +23,9 @@ export function initGuy(onLoad, onProgress, onError) {
             guy.rotateX(-Math.PI);
 
             // Adjust materials
-
-            guy.body = [];
-
             let lhand, rhand;
+
+            guy.bodyParts = new Map();
 
             guy.traverse( c => { 
                 c.visible = !c.isLineSegments; 
@@ -40,47 +34,12 @@ export function initGuy(onLoad, onProgress, onError) {
 
                 if (c.isMesh)
                 {
-                    switch (c.parent.userData.constructionStep) {
-                        case stepBody :
-                            guy.body.push(c);
-                            /*
-                            let r = Math.random();
-                            let g = Math.random();
-                            let b = Math.random();
-
-                            c.material[0].color.setRGB(r,g,b);
-                            */
-                        break;
-        
-                        case stepRightLeg:                     
-                            guy.rleg = c;
-                            break;
-                        
-                        case stepLeftLeg:
-                            guy.lleg = c;
-                            break;
-
-                        case stepRightArm:   
-                            if (guy.rarm) {
-                                rhand = c;
-                            } else {
-                                guy.rarm = c;
-                            }
-                            break;
-                        
-                        case stepLeftArm:   
-                            if (guy.larm) {
-                                lhand = c;
-                            } else {
-                                guy.larm = c;
-                            }
-                            break;
-                    }
+                    guy.bodyParts.set(c.parent.userData.constructionStep, c);
                 }
             } );                        
 
-            guy.larm.attach(lhand);
-            guy.rarm.attach(rhand);
+            guy.bodyParts.get(BodyParts.RightArm).attach(guy.bodyParts.get(BodyParts.RightHand));
+            guy.bodyParts.get(BodyParts.LeftArm).attach(guy.bodyParts.get(BodyParts.LeftHand));
 
             // console.log(guy);
 

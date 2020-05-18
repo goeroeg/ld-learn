@@ -11,7 +11,7 @@ import { addCrossHair } from './gfx/CrossHair.js';
 import * as WORLD from './gfx/World.js';
 import * as ANIM from './gfx/Animations.js';
 import { initCar } from './gfx/Cars.js';
-import { initGuy } from './gfx/Guy.js';
+import { initGuy, BodyParts } from './gfx/Guy.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
@@ -77,7 +77,7 @@ var gameSettings = {
     multi : true, multiMax : 10, multiResMax : 100, multiSym: '·',
     div : false, divMax : 100, divResMax : 10, divSym: ':',
     numChoices : 5 };
-var playerSettings = {name:'Player', grade:0 , color:0x00ff00}
+var playerSettings = {name:'Player', grade:0 , bodyColor: [ 255, 0, 0 ], legsColor: [ 0, 0, 255 ]}
 
 var gui, playersFolder, gfxFolder, gameFolder;
 
@@ -441,6 +441,30 @@ function initGUI() {
     playersFolder.add(playerSettings, "name").name("Name").onChange(function(value) {
         updatePlayerInfo();
     });
+
+    playersFolder.addColor(playerSettings, "bodyColor").name("Body color").onChange(function(value) {
+        if (playerGuy) {
+            let r = value[0] / 255;
+            let g = value[1] / 255;
+            let b = value[2] / 255;
+
+            playerGuy.bodyParts.get(BodyParts.Torso).material[0].color.setRGB(r, g, b);
+            playerGuy.bodyParts.get(BodyParts.RightArm).material[0].color.setRGB(r, g, b);
+            playerGuy.bodyParts.get(BodyParts.LeftArm).material[0].color.setRGB(r, g, b);
+        }
+    });
+    playersFolder.addColor(playerSettings, "legsColor").name("Legs color").onChange(function(value) {
+        if (playerGuy) {
+            let r = value[0] / 255;
+            let g = value[1] / 255;
+            let b = value[2] / 255;
+
+            playerGuy.bodyParts.get(BodyParts.Hip).material[0].color.setRGB(r, g, b);
+            playerGuy.bodyParts.get(BodyParts.RightLeg).material[0].color.setRGB(r, g, b);
+            playerGuy.bodyParts.get(BodyParts.LeftLeg).material[0].color.setRGB(r, g, b);
+        }
+    });
+
     // playersFolder.add(playerSettings, "grade", 0, 4).step(1).name("Grade (difficulty)");
 
     // playersFolder.open();
@@ -507,9 +531,12 @@ function initScene() {
             // var skyMat = new THREE.MeshLambertMaterial({ map: texture, shading: THREE.FlatShading, emissive: 0x00 });
             skyMat.side = THREE.BackSide;
             skyMesh = new THREE.Mesh(skyGeo, skyMat);  
+
         }, xhr => {
             console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
         }, error => { console.log("An error happened" + error); });
+
+    
 
     /*
     var light = new THREE.DirectionalLight(0x002288);
@@ -556,16 +583,16 @@ function initScene() {
 
 function initPlayerGuyAnim() {
     playerGuy.anims = [];
-    var action = mixer.clipAction(ANIM.createWalkAnimation(1, Math.PI / 6, 'x'), playerGuy.rleg);
+    var action = mixer.clipAction(ANIM.createWalkAnimation(1, Math.PI / 6, 'x'), playerGuy.bodyParts.get(BodyParts.RightLeg));
     action.setLoop(THREE.LoopRepeat).setDuration(0.6);
     playerGuy.anims.push(action);
-    action = mixer.clipAction(ANIM.createWalkAnimation(1, -Math.PI / 6, 'x'), playerGuy.lleg);
+    action = mixer.clipAction(ANIM.createWalkAnimation(1, -Math.PI / 6, 'x'), playerGuy.bodyParts.get(BodyParts.LeftLeg));
     action.setLoop(THREE.LoopRepeat).setDuration(0.6);
     playerGuy.anims.push(action);
-    action = mixer.clipAction(ANIM.createWalkAnimation(1, -Math.PI / 12, 'x'), playerGuy.rarm);
+    action = mixer.clipAction(ANIM.createWalkAnimation(1, -Math.PI / 12, 'x'), playerGuy.bodyParts.get(BodyParts.RightArm));
     action.setLoop(THREE.LoopRepeat).setDuration(0.6);
     playerGuy.anims.push(action);
-    action = mixer.clipAction(ANIM.createWalkAnimation(1, Math.PI / 12, 'x'), playerGuy.larm);
+    action = mixer.clipAction(ANIM.createWalkAnimation(1, Math.PI / 12, 'x'), playerGuy.bodyParts.get(BodyParts.LeftArm));
     action.setLoop(THREE.LoopRepeat).setDuration(0.6);
     playerGuy.anims.push(action);
 
