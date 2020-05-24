@@ -27,6 +27,9 @@ Gamepad support tested with Chrome(-ium).
 ## Starting for developers
 
 run ```npm install```
+> this will also download the needed LDraw™ files, but this may take a rather long time
+>
+> I recommend unpacking the contents of the [complete LDraw™ library](http://www.ldraw.org/library/updates/complete.zip) into the ```ldraw``` folder first
 
 then run ```npm run serve``` for a browser version - start a browser at ```http://localhost:8080/ld-learn.html```
 
