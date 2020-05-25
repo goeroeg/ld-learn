@@ -12,6 +12,7 @@ import * as WORLD from './gfx/World.js';
 import * as ANIM from './gfx/Animations.js';
 import { initCar } from './gfx/Cars.js';
 import { initGuy, BodyParts } from './gfx/Guy.js';
+import { updateMapData } from './gfx/MiniMap.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
@@ -65,6 +66,7 @@ var currentHighlight;
 var absMaxDistance = 0.5 * WORLD.plateSize - guyOffset;
 
 var progressBarDiv;
+var miniMap;
 
 var resolutions = [{ x:0, y:0 }, {x:640, y:480 }, { x:1024, y:768 },{ x:1920, y:1080 }]
 var resolutionNames  = {Auto:0, Low: 1, Medium:2, HD: 3 };
@@ -77,7 +79,11 @@ var gameSettings = {
     multi : true, multiMax : 10, multiResMax : 100, multiSym: '·',
     div : false, divMax : 100, divResMax : 10, divSym: ':',
     numChoices : 5 };
-var playerSettings = {name:'Player', grade:0 , bodyColor: [ 255, 0, 0 ], legsColor: [ 0, 0, 255 ]}
+
+const defaultBodyColor = [180, 0, 0];
+const defaultLegsColor = [30, 90, 168];
+
+var playerSettings = {name:'Player' }
 
 var gui, playersFolder, gfxFolder, gameFolder;
 
@@ -285,6 +291,13 @@ function initControls() {
     //
     window.addEventListener( 'resize', onWindowResize, false );
     // document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
+    miniMap = document.getElementById('miniMap');
+
+    miniMap.width = (WORLD.plateCounter * 2 + 1) * WORLD.plateSize / WORLD.parcelSize + 1;
+    miniMap.height = (WORLD.plateCounter * 2 + 1) * WORLD.plateSize / WORLD.parcelSize + 1;
+
+    // console.log(miniMap);
 }
 
 function updateBlocker(hide) {
@@ -442,28 +455,34 @@ function initGUI() {
         updatePlayerInfo();
     });
 
-    playersFolder.addColor(playerSettings, "bodyColor").name("Body color").onChange(function(value) {
-        if (playerGuy) {
-            let r = value[0] / 255;
-            let g = value[1] / 255;
-            let b = value[2] / 255;
+    playerSettings.resetColor = function () {
+        playerSettings.bodyColor = defaultBodyColor;
+        playerSettings.legsColor = defaultLegsColor;
+        
+        updateGuyBodyColor(playerSettings.bodyColor);
+        updateGuyLegsColor(playerSettings.legsColor);
+    }
+    playerSettings.resetColor();
 
-            playerGuy.bodyParts.get(BodyParts.Torso).material[0].color.setRGB(r, g, b);
-            playerGuy.bodyParts.get(BodyParts.RightArm).material[0].color.setRGB(r, g, b);
-            playerGuy.bodyParts.get(BodyParts.LeftArm).material[0].color.setRGB(r, g, b);
+    playersFolder.addColor(playerSettings, "bodyColor").name("Body color").listen().onChange(function(value) {
+        // compatibilty if previously other value stored
+        if (value[0] === undefined) {
+            value = defaultBodyColor;
+            playerSettings.bodyColor = value;
         }
-    });
-    playersFolder.addColor(playerSettings, "legsColor").name("Legs color").onChange(function(value) {
-        if (playerGuy) {
-            let r = value[0] / 255;
-            let g = value[1] / 255;
-            let b = value[2] / 255;
 
-            playerGuy.bodyParts.get(BodyParts.Hip).material[0].color.setRGB(r, g, b);
-            playerGuy.bodyParts.get(BodyParts.RightLeg).material[0].color.setRGB(r, g, b);
-            playerGuy.bodyParts.get(BodyParts.LeftLeg).material[0].color.setRGB(r, g, b);
-        }
+        updateGuyBodyColor(value);        
     });
+    playersFolder.addColor(playerSettings, "legsColor").name("Legs color").listen().onChange(function(value) {
+        if (value[0] === undefined) {
+            value = defaultLegsColor;
+            playerSettings.legsColor = value;
+        }
+
+        updateGuyLegsColor(value);
+    });
+
+    playersFolder.add(playerSettings, "resetColor").name("Reset colors");
 
     // playersFolder.add(playerSettings, "grade", 0, 4).step(1).name("Grade (difficulty)");
 
@@ -502,7 +521,28 @@ function initGUI() {
     // exFolder.open();
     
     updatePlayerInfo();
+}
 
+function updateGuyLegsColor(value) {
+    if (playerGuy) {
+        let r = value[0] / 255;
+        let g = value[1] / 255;
+        let b = value[2] / 255;
+        playerGuy.bodyParts.get(BodyParts.Hip).material[0].color.setRGB(r, g, b);
+        playerGuy.bodyParts.get(BodyParts.RightLeg).material[0].color.setRGB(r, g, b);
+        playerGuy.bodyParts.get(BodyParts.LeftLeg).material[0].color.setRGB(r, g, b);
+    }
+}
+
+function updateGuyBodyColor(value) {
+    if (playerGuy) {
+        let r = value[0] / 255;
+        let g = value[1] / 255;
+        let b = value[2] / 255;
+        playerGuy.bodyParts.get(BodyParts.Torso).material[0].color.setRGB(r, g, b);
+        playerGuy.bodyParts.get(BodyParts.RightArm).material[0].color.setRGB(r, g, b);
+        playerGuy.bodyParts.get(BodyParts.LeftArm).material[0].color.setRGB(r, g, b);
+    }
 }
 
 function initScene() {
@@ -573,6 +613,10 @@ function initScene() {
 
     initGuy(function (guy) {
         playerGuy = guy;
+
+        updateGuyBodyColor(playerSettings.bodyColor);
+        updateGuyLegsColor(playerSettings.legsColor);
+
         scene.add(playerGuy);
 
         updateControls(0);
@@ -960,6 +1004,8 @@ function animate() {
         checkExerciseIntersections();
 
         render();
+
+        updateMapData(miniMap);
     }
 }
 

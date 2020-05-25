@@ -1,6 +1,9 @@
 // import * as THREE from '../node_modules/three/build/three.module.js';
+
 import { LDrawLoader } from './LDrawLoader.js';
 import * as ANIM from './Animations.js';
+
+
 
 export const plateSize = 640;
 export const parcelSize = 80;
@@ -16,6 +19,9 @@ export var chrystal;
 
 export var sphere;
 
+export var sky;
+export var sunSphere;
+
 var plate;
 var fence;
 var plants = [];
@@ -28,7 +34,6 @@ export const smoothNormals = false; // test this later, but takes longer for tes
 
 const fencePlaceholder = 1;
 const roadPlaceholder = 2;
-
 
 export function initScene(onLoad, onProgress, onError) {
     var lDrawLoader = new LDrawLoader();
@@ -69,6 +74,8 @@ export function initScene(onLoad, onProgress, onError) {
                     parcels.push(newParcel);
                 }
             }
+
+            console.log(parcels);
             
             plate = model.children[0];
             plate.traverse( c => { 
@@ -327,3 +334,4 @@ export function getParcelIndex( x, z ) {
     let max = plateSize * (plateCounter + 0.5);
     return (Math.round((x + max) / parcelSize)) * (Math.round((max * 2)/parcelSize) + 1) +  Math.round((z + max) / parcelSize);
 }
+

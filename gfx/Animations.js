@@ -45,6 +45,12 @@ export function createGrowAnimation(period) {
     return new THREE.AnimationClip( 'grow', period, [ xTrack, yTrack, zTrack ] );
 }
 
+export function createColorAnimation(period) {
+    var times = [0, period], values = [0, 1];
+    var colorTrack = new THREE.ColorKeyframeTrack('.color', times, values);
+    return new THREE.AnimationClip( 'color', period, [ colorTrack ] );
+}
+
 export function createWalkAnimation(period, angle, axis) {
     var times = [0, period/4, period/2, (period/4)*3, period], values = [ 0, angle , 0, -angle , 0 ];
     axis = axis || 'x';
