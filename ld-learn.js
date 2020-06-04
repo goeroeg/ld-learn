@@ -119,7 +119,6 @@ function init() {
     createExercise();
 
     //render(); // remove when using next line for animation loop (requestAnimationFrame)
-    animate();
 }
 
 function initControls() {
@@ -155,6 +154,14 @@ function initControls() {
     gpControls = new GamepadControls( controls.getObject() );
 
     scene.add( controls.getObject() );
+
+    let isTouch = ('ontouchstart' in window);
+
+    instructions.addEventListener( 'touch', function () {
+
+        controls.lock();  
+
+    }, false );
 
     instructions.addEventListener( 'click', function () {
 
@@ -294,8 +301,8 @@ function initControls() {
 
     miniMap = document.getElementById('miniMap');
 
-    miniMap.width = (WORLD.plateCounter * 2 + 1) * WORLD.plateSize / WORLD.parcelSize + 1;
-    miniMap.height = (WORLD.plateCounter * 2 + 1) * WORLD.plateSize / WORLD.parcelSize + 1;
+    miniMap.width = 160;
+    miniMap.height = 160;
 
     // console.log(miniMap);
 }
@@ -709,6 +716,7 @@ function addMusicSphere() {
         WORLD.freeParcels.splice(parcelIdx, 1);
 
         parcel.occupied = true;
+        parcel.mapObjId = WORLD.MapObjectId.msphere;
 
         sphere.position.x = parcel.x;
         sphere.position.z = parcel.z;        
@@ -742,6 +750,7 @@ function addChrystal() {
         WORLD.freeParcels.splice(parcelIdx, 1);
 
         parcel.occupied = true;
+        parcel.mapObjId = WORLD.MapObjectId.chrystal;
 
         newChrystal.position.x = parcel.x;
         newChrystal.position.z = parcel.z;
@@ -1005,7 +1014,8 @@ function animate() {
 
         render();
 
-        updateMapData(miniMap);
+        updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);
+
     }
 }
 
@@ -1223,6 +1233,8 @@ function updateControls(delta) {
         playerGuy.setRotationFromEuler(euler, "YXZ");
 
         playerGuy.translateZ(guyOffset); 
+
+        playerGuy.oriY = euler.y - Math.PI/2;        
 
         if (moveForward || moveBackward || moveLeft || moveRight) {
                 if (!playerGuy.isWalking) playerGuy.walk();

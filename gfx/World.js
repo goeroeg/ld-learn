@@ -3,8 +3,6 @@
 import { LDrawLoader } from './LDrawLoader.js';
 import * as ANIM from './Animations.js';
 
-
-
 export const plateSize = 640;
 export const parcelSize = 80;
 export const plateCounter = 7;
@@ -29,6 +27,17 @@ var plants = [];
 export var plates = [];
 export var parcels = [];
 export var freeParcels = [];
+
+export const MapObjectId = {
+    none: 0,
+    exercise: 1,
+    fence: 2,
+    road: 3,
+    plant: 4,
+    chrystal: 5,
+    car: 6,
+    msphere: 7
+};
 
 export const smoothNormals = false; // test this later, but takes longer for testing
 
@@ -98,6 +107,15 @@ export function initScene(onLoad, onProgress, onError) {
 
             // clear model, keep only first plate
             while(model.children.length > 1) model.remove(model.children[1]);
+
+            // reserve exercise parcel
+            
+            //for (let i = 0; i <= 3; i++) {
+                let idx = getParcelIndex(-200, plateSize);
+                let exParcel = parcels[idx];
+                exParcel.occupied = true;
+                exParcel.mapObjId = MapObjectId.exercise;
+            //}
 
             worldPlates = 0.5;
             freeParcels = parcels.filter(parcelFilter);                            
@@ -180,16 +198,22 @@ export function createFences() {
         newFence.position.x = fenceX;
         newFence.position.z = fenceZ;
 
-        parcels[getParcelIndex(fenceX, fenceZ)].occupied = fencePlaceholder;
+        occupyParcel(parcels[getParcelIndex(fenceX, fenceZ)]);
+        
         if (xDir) {
-            parcels[getParcelIndex(fenceX - width, fenceZ)].occupied = fencePlaceholder;
-            parcels[getParcelIndex(fenceX + width, fenceZ)].occupied = fencePlaceholder;
+            occupyParcel(parcels[getParcelIndex(fenceX - width, fenceZ)]);
+            occupyParcel(parcels[getParcelIndex(fenceX + width, fenceZ)]);
         } else {
-            parcels[getParcelIndex(fenceX, fenceZ - width)].occupied = fencePlaceholder;
-            parcels[getParcelIndex(fenceX, fenceZ + width)].occupied = fencePlaceholder;
+            occupyParcel(parcels[getParcelIndex(fenceX, fenceZ - width)]);
+            occupyParcel(parcels[getParcelIndex(fenceX, fenceZ + width)]);
         }
 
         model.add(newFence);
+
+        function occupyParcel(parcel) {
+            parcel.occupied = fencePlaceholder;
+            parcel.mapObjId = MapObjectId.fence;
+        }
     }
 }
 
@@ -210,6 +234,7 @@ export function populatePlants(min, max, mixer) {
                 newPlant.rotateY(Math.floor(Math.random() * 4) * Math.PI);
 
                 parcel.occupied = newPlant;
+                parcel.mapObjId = MapObjectId.plant;
 
                 newPlant.scale.x = 0;
                 newPlant.scale.y = 0;
@@ -257,6 +282,7 @@ export function prepareRoads(mixer) {
             }
         }
         parcel.occupied = roadPlaceholder;
+        parcel.mapObjId = MapObjectId.road;
     }
 }
 

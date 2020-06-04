@@ -2,42 +2,93 @@ import * as WORLD from './World.js';
 
 var mapData = [];
 
-const transparency = 0;
+const transparency = 240;
 
-const defaultColor = [255, 0, 0, transparency];
-const fenceColor = [255, 0, 0, transparency];
-const exerciseColor = [0, 0, 0, transparency];
-const plantColor = [0, 0, 0, transparency];
-const roadColor = [0, 0, 0, transparency];
-const chrystalColor = [0, 0, 0, transparency];
-const playerColor = [0, 0, 0, transparency];
-const carColor = [0, 0, 0, transparency];
+const defaultColor = [0, 133, 43, transparency];    //#00852B
+const fenceColor = [84, 51, 36, transparency];       //#543324
+const exerciseColor = [200, 180, 0, transparency];
+const plantColor = [0, 0, 0, transparency];         //#00451A
+const roadColor = [180, 180, 180, transparency];
+const chrystalColor = [250, 250, 250, transparency];
+const playerColor = [250, 200, 10, transparency];        //#FAC80A
+const carColor = [128, 128, 128, transparency];
+const msphereColor = [255, 158, 43, transparency]; //#FF800D
 
+const mapObjColors = [ 
+    defaultColor, 
+    exerciseColor, 
+    fenceColor, 
+    roadColor, 
+    plantColor, 
+    chrystalColor, 
+    carColor, 
+    msphereColor 
+];
 
-export function updateMapData(canvas) {
+var imgWidth = (WORLD.plateCounter * 2 + 1) * WORLD.plateSize / WORLD.parcelSize + 1;
+var imgHeight = (WORLD.plateCounter * 2 + 1) * WORLD.plateSize / WORLD.parcelSize + 1;
 
-    let ctx = canvas.getContext("2d");
-    // ctx.fillRect(0, 0, canvas.width, canvas.height);
+const mag = 1.2;
 
-    let mapData = ctx.getImageData( 0, 0, canvas.width, canvas.height );
+export function updateMapData(canvas, ori, x, y) {
+
+    let tempc = document.createElement('canvas');
+    tempc.width = imgWidth;
+    tempc.height = imgHeight;
+    
+    let tempctx = tempc.getContext("2d");
+
+    let mapData = tempctx.getImageData( 0, 0, imgWidth, imgHeight );
 
     for (let pIdx = 0; pIdx < WORLD.parcels.length; pIdx++) {
         
         let mIdx = pIdx * 4;
         let color = defaultColor;
 
-        if (WORLD.parcels[pIdx].occupied){
-            color = chrystalColor;
+        if (WORLD.parcels[pIdx].occupied) {
+            color = mapObjColors[WORLD.parcels[pIdx].mapObjId];
         }
 
         for (let cIdx = 0; cIdx < 4; cIdx++) {
             let idx = mIdx + cIdx;
             mapData.data[idx] = color[cIdx];
         }
-
-        // console.log(mapData);
     }
     
-    ctx.putImageData(mapData, 0, 0);
+    tempctx.putImageData(mapData, 0, 0);
+
+    let cwh = canvas.width / 2;
+    let chh = canvas.height / 2;
+
+    let ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.translate(cwh, chh);
+    ctx.rotate(ori);
+    ctx.drawImage(tempc, x, y, imgWidth, imgHeight, -cwh * mag, -chh * mag, canvas.width * mag, canvas.height * mag);
+
+    // Reset transformation matrix to the identity matrix
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    // player origin
+    ctx.fillStyle = 'rgba(' + playerColor[0] + ', ' + playerColor[1] + ', ' + playerColor[2] + ', ' + playerColor[3] / 255 + ')'
+    ctx.beginPath();
+    ctx.moveTo(cwh + 2, chh + 5);
+    ctx.lineTo(cwh, chh);
+    ctx.lineTo(cwh - 2, chh + 5);
+    ctx.closePath();
+    ctx.fill();
+
+    // crop to circle
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.beginPath();
+    ctx.arc(cwh, chh, chh - 2, 0, Math.PI*2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.globalCompositeOperation = 'source-over'; //default
+    ctx.strokeStyle = 'rgba(200, 200, 255, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 }
 
