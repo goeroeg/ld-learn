@@ -10,7 +10,7 @@
 				color: #000;
 				margin: 0px;
   				overflow: hidden;
-			}
+			    }
 
 			a:link, a:visited {
 				color: white;
@@ -104,8 +104,10 @@
 				cursor: pointer;
 			}
 
-			#miniMapDiv {
-				z-index: 200;
+			#guiContainer {
+				position: absolute;
+				top: 0px;
+				right: 20px;
 			}
 		</style>
 	</head>
@@ -136,6 +138,7 @@
 				<br/><br/>							
 				<a href="https://goeroeg.github.io/ld-learn/" target="_blank">&#9432; <i>More info and licenses</i></a>
 			</div>
+			<div id="guiContainer"></div>
 		</div>
 		<script type="module" src="https://threejs.org/build/three.min.js"></script>
 		<!-- <script type="module" src="./node_modules/three/build/three.min.js"></script> -->  <!--use this for local/electron-->

@@ -400,7 +400,7 @@ function initAudio() {
 
 function initGUI() {
 
-    gui = new GUI();
+    gui = new GUI( { autoPlace: false } );
 
     gui.useLocalStorage = true;
 
@@ -527,7 +527,9 @@ function initGUI() {
     // exFolder.add(gameSettings, "numChoices", 2, 5).step(1).name("Choices");
 
     // exFolder.open();
-    
+    let guiContainer = document.getElementById('guiContainer');
+    guiContainer.appendChild(gui.domElement);
+
     updatePlayerInfo();
 }
 
