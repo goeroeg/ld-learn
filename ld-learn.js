@@ -32,6 +32,7 @@ var okSounds = [];
 var wrongSounds = [];
 
 var motorSounds = [];
+var cars = [];
 
 var clock = new THREE.Clock();
 
@@ -616,6 +617,8 @@ function initScene() {
         render();
         updateBlocker(false);
 
+        updateMapData(miniMap, -Math.PI/2, 0, 0);
+
     }, onProgress, onError );
 
     initGuy(function (guy) {
@@ -1014,8 +1017,26 @@ function animate() {
 
         render();
 
+        updateCarPositions();
         updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);
 
+    }
+}
+
+function updateCarPositions() {
+    if (cars.length > 0)
+    {
+        for (let car of cars) {
+            console.log(car.position);
+            let parcel = WORLD.parcels[WORLD.getParcelIndex(car.position.x, car.position.z)];
+            if (parcel !== car.parcel) {
+                if (car.parcel) {
+                    car.parcel.mapObjId = WORLD.MapObjectId.road;                    
+                }
+                car.parcel = parcel;
+                parcel.mapObjId = WORLD.MapObjectId.car;
+            }
+        }
     }
 }
 
@@ -1138,6 +1159,8 @@ function addCar() {
         motorSound.setVolume( 0.7 );
         motorSound.play();
         motorSounds.push(motorSound);
+
+        cars.push(car);
 
         // hideProgressBar();
     } , onProgress, onError);

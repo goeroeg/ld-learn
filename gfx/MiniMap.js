@@ -11,7 +11,7 @@ const plantColor = [0, 0, 0, transparency];         //#00451A
 const roadColor = [180, 180, 180, transparency];
 const chrystalColor = [250, 250, 250, transparency];
 const playerColor = [250, 200, 10, transparency];        //#FAC80A
-const carColor = [128, 128, 128, transparency];
+const carColor = [60, 60, 60, transparency];
 const msphereColor = [255, 158, 43, transparency]; //#FF800D
 
 const mapObjColors = [ 

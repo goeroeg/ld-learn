@@ -282,7 +282,7 @@ export function prepareRoads(mixer) {
             }
         }
         parcel.occupied = roadPlaceholder;
-        parcel.mapObjId = MapObjectId.road;
+        parcel.mapObjId = MapObjectId.none;
     }
 }
 
@@ -334,6 +334,13 @@ export function initRoads(onLoad, onProgress, onError) {
                 for (let z = -roadPlates; z <= roadPlates; z+= 2 * roadPlates ) {
                     replacePlate(straight, x * plateSize, z * plateSize)
                 }
+            }
+
+            for (let parcel of parcels) {
+                if (parcel.occupied == roadPlaceholder) {
+                    parcel.mapObjId = MapObjectId.road;
+                }
+
             }
 
             if (onLoad) onLoad(model);
