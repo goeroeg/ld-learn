@@ -943,9 +943,12 @@ function onWindowResize() {
     renderer.setSize( res.x, res.y, false );    
 
     var style = window.getComputedStyle(renderer.domElement);
-
     playerInfo.style.marginLeft = style.marginLeft;
     playerInfo.style.marginTop = style.marginTop;
+    
+    let miniMapDiv = document.getElementById('miniMapDiv');
+    miniMapDiv.style.marginLeft = style.marginLeft;
+    miniMapDiv.style.marginTop = style.marginTop;
 
     gfxSettings.fullScreen = (window.screen.width == window.innerWidth); // API not working when triggered with F11
 
@@ -1029,7 +1032,6 @@ function updateCarPositions() {
     if (cars.length > 0)
     {
         for (let car of cars) {
-            console.log(car.position);
             let parcel = WORLD.parcels[WORLD.getParcelIndex(car.position.x, car.position.z)];
             if (parcel !== car.parcel) {
                 if (car.parcel) {
