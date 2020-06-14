@@ -36,7 +36,8 @@ export const MapObjectId = {
     plant: 4,
     chrystal: 5,
     car: 6,
-    msphere: 7
+    animal: 7,
+    msphere: 8
 };
 
 export const smoothNormals = false; // test this later, but takes longer for testing
@@ -231,7 +232,7 @@ export function populatePlants(min, max, mixer) {
 
                 newPlant.translateX(Math.floor(Math.random() * 3 - 1) * 20);
                 newPlant.translateZ(Math.floor(Math.random() * 3 - 1) * 20);
-                newPlant.rotateY(Math.floor(Math.random() * 4) * Math.PI);
+                newPlant.rotateY(Math.floor(Math.random() * 4) * Math.PI / 2);
 
                 parcel.occupied = newPlant;
                 parcel.mapObjId = MapObjectId.plant;

@@ -56,7 +56,15 @@ export function createWalkAnimation(period, angle, axis) {
     axis = axis || 'x';
     var trackName = '.rotation[' + axis + ']';
     var track = new THREE.NumberKeyframeTrack(trackName, times, values);
-    return new THREE.AnimationClip("walk", period, [track]);
+    return new THREE.AnimationClip('walk', period, [track]);
+}
+
+export function createHeadAnimation(period, angle, axis) {
+    var times = [0, period / 3, (period / 3) * 2, period], values = [ 0, angle, 0, 0];
+    axis = axis || 'x';
+    var trackName = '.rotation[' + axis + ']';
+    var track = new THREE.NumberKeyframeTrack(trackName, times, values);
+    return new THREE.AnimationClip('head', period, [track]);
 }
 
 export function createRoadAnimation(numSegments, segmentSize, ccw) {

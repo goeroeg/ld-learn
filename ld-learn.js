@@ -13,6 +13,7 @@ import * as ANIM from './gfx/Animations.js';
 import { initCar } from './gfx/Cars.js';
 import { initGuy, BodyParts } from './gfx/Guy.js';
 import { updateMapData } from './gfx/MiniMap.js';
+import { initCow, initHorse } from './gfx/Animals.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
@@ -69,10 +70,10 @@ var absMaxDistance = 0.5 * WORLD.plateSize - guyOffset;
 var progressBarDiv;
 var miniMap;
 
-var resolutions = [{ x:0, y:0 }, {x:640, y:480 }, { x:1024, y:768 },{ x:1920, y:1080 }]
-var resolutionNames  = {Auto:0, Low: 1, Medium:2, HD: 3 };
+var resolutions = [{ x: 0, y: 0 }, {x: 640, y: 480 }, { x: 1024, y: 768 },{ x: 1920, y: 1080 }]
+var resolutionNames  = { Auto: 0, Low: 1, Medium: 2, HD: 3 };
 
-var gfxSettings = { resolution: resolutionNames.Auto, fullScreen: false, shadows:3 , antiAlias:true }
+var gfxSettings = { resolution: resolutionNames.Auto, fullScreen: false, shadows: 3 , antiAlias: true }
 var gameSettings = { 
     itemAmount:100 , 
     add : true, addMax : 100, addResMax : 100, addSym: '+',
@@ -102,10 +103,12 @@ const chrActions = {
     createSky : 3,
     plantsMin : 4,
     plantsMax : 20,
-    prepareRoads : 18, //18
+    prepareRoads : 15, //15
     initRoads : 20, //20
-    carsMin : 21,   //21
+    carsMin : 25,   //21
     carsMax : 50,   //50
+    animalsMin : 15, // 15
+    animalsMax : 25, // 25
     musicSphere : 30
 }
 
@@ -158,7 +161,7 @@ function initControls() {
 
     let isTouch = ('ontouchstart' in window);
 
-    instructions.addEventListener( 'touch', function () {
+    instructions.addEventListener( 'touchstart', function () {
 
         controls.lock();  
 
@@ -925,7 +928,7 @@ function updateProgressBar( fraction ) {
 
 function onWindowResize() {    
 
-    let res = {x: resolutions[gfxSettings.resolution].x, y: resolutions[gfxSettings.resolution].y};
+    let res = { x: resolutions[gfxSettings.resolution].x, y: resolutions[gfxSettings.resolution].y };
 
     if (res.x == 0) {
         res.x = window.innerWidth;
@@ -1113,6 +1116,7 @@ function performChrystalAction() {
     if (chrystalCount == chrActions.prepareRoads) {
         WORLD.prepareRoads();
     }
+
     if (chrystalCount == chrActions.initRoads) {
         showProgressBar();
         WORLD.initRoads(function (newModel) {
@@ -1122,12 +1126,96 @@ function performChrystalAction() {
                 newItemSound.play();                
         }, onProgress, onError);
     }
+
     if (chrystalCount >= chrActions.carsMin && chrystalCount <= chrActions.carsMax) {
         addCar();
     }
 
+    if (chrystalCount >= chrActions.animalsMin && chrystalCount <= chrActions.animalsMax) {
+        addAnimal();
+    }
+
     if (chrystalCount == chrActions.musicSphere) {
         addMusicSphere();
+    }
+}
+
+function addAnimal() {
+
+    let parcels = [];
+    let counter = 0;
+    do {
+        parcels = [];
+        // find empty parcel
+        let parcelIdx = Math.floor(Math.random() * (WORLD.freeParcels.length));
+        let freeParcel = WORLD.freeParcels[parcelIdx];
+
+        parcels.push(freeParcel);
+        
+        let parcel = WORLD.parcels[WORLD.getParcelIndex(freeParcel.x, freeParcel.z + WORLD.parcelSize)];
+        if (!parcel.occupied) {
+            parcels.push(parcel);
+
+            parcel = WORLD.parcels[WORLD.getParcelIndex(freeParcel.x + WORLD.parcelSize, freeParcel.z)];
+            if (!parcel.occupied) {
+                parcels.push(parcel);
+
+                parcel = WORLD.parcels[WORLD.getParcelIndex(freeParcel.x + WORLD.parcelSize, freeParcel.z + WORLD.parcelSize)];
+                if (!parcel.occupied) {
+                    parcels.push(parcel);
+                }
+            }
+        }
+    } while (parcels.length < 4 && counter++ < 25); // max tries
+
+    if (parcels.length == 4) {
+
+        let x = 0;
+        let z = 0;
+
+        for (let parcel of parcels) {
+            WORLD.freeParcels.splice(WORLD.freeParcels.indexOf(parcel), 1);
+            parcel.occupied = true;
+            parcel.mapObjId = WORLD.MapObjectId.animal;
+            x += parcel.x;
+            z += parcel.z;
+        }
+
+        x = x/4;
+        z = z/4;
+
+        if (Math.random() < 0.6) {
+            initCow(function (cow) {
+
+                WORLD.model.add(cow);
+
+                cow.position.x = x;
+                cow.position.z = z;
+
+                cow.rotateY(Math.floor(Math.random() * 4) * Math.PI / 2);
+
+                var action = mixer.clipAction(ANIM.createHeadAnimation( 1, Math.PI/4, 'x'), cow.head);
+                action.setLoop(THREE.LoopRepeat).setDuration(5).play();
+
+            }, onProgress, onError);
+        } else {
+            initHorse(function (horse) {
+
+                WORLD.model.add(horse);
+    
+                horse.position.x = x;
+                horse.position.z = z;
+    
+                horse.rotateY(Math.floor(Math.random() * 4) * Math.PI / 2);
+    
+                var action = mixer.clipAction(ANIM.createHeadAnimation( 1, Math.PI/2, 'x'), horse.head);
+                action.setLoop(THREE.LoopRepeat).setDuration(5).play();
+    
+                action = mixer.clipAction(ANIM.createHeadAnimation( 1, -Math.PI * 0.4, 'x'), horse.body);
+                action.setLoop(THREE.LoopOnce).setDuration(8).play();
+    
+            }, onProgress, onError);
+        }
     }
 }
 
