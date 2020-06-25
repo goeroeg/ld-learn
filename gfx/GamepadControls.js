@@ -1,5 +1,6 @@
 // import * as THREE from '../node_modules/three/build/three.module.js';
 
+
 /**
  * @author spite / https://github.com/spite - modified
  */
@@ -7,15 +8,11 @@
 
 class GamepadControls extends THREE.EventDispatcher {
 
-  	constructor(object) {
+  	constructor( controls ) {
 		super();
-		this.rotMatrix = new THREE.Matrix4();
-		this.dir = new THREE.Vector3( 0, 0, 1 );
-		this.tmpVector = new THREE.Vector3();
-		this.object = object;
-		this.lon = -90;
-		this.lat = 0;
-		this.target = new THREE.Vector3();
+
+		this.controls = controls;
+		
 		this.threshold = .15; // .05
 	
 		this.init();
@@ -86,37 +83,19 @@ class GamepadControls extends THREE.EventDispatcher {
 
 			var g = rawGamepads[ 0 ];
 			
-			let ax2 = this.filter( g.axes[ 2 ] );
-			let ax3 = this.filter( g.axes[ 3 ] );
+			let ax0 = this.filter( g.axes[ 0 ] ) * 4;  
+			let ax1 = this.filter( g.axes[ 1 ] ) * -4;
 
-			// todo - update current lon and lat from camera for supporting multiple controls
 
-			this.lon += ax2;
-			this.lat -= ax3;
-			this.lat = Math.max( - 85, Math.min( 85, this.lat ) );
-			var phi = ( 90 - this.lat ) * Math.PI / 180;
-			var theta = this.lon * Math.PI / 180;
+			
+			let ax2 = this.filter( g.axes[ 2 ] ) * 0.025;
+			let ax3 = this.filter( g.axes[ 3 ] ) * 0.025;
+			
+			// this.filter( g.buttons[ 6 ].value ) - this.filter( g.buttons[ 7 ].value ), 			
 
-			this.target.x = 10 * Math.sin( phi ) * Math.cos( theta );
-			this.target.y = 10 * Math.cos( phi );
-			this.target.z = 10 * Math.sin( phi ) * Math.sin( theta );
-
-			this.target.add( this.object.position );
-
-			// only if changed, so control with mouse still possible
-			if (ax2 != 0 || ax3 != 0) {
-				this.object.lookAt( this.target );
-			} 
-
-			this.rotMatrix.extractRotation( this.object.matrix );
-			this.dir.set( 
-				this.filter( g.axes[ 0 ] ), 
-				this.filter( g.buttons[ 6 ].value ) - this.filter( g.buttons[ 7 ].value ), 
-				this.filter( g.axes[ 1 ] ) 
-			);
-			this.dir.multiplyScalar( 5 ); //.1
-			this.dir.applyMatrix4( this.rotMatrix );
-			this.object.position.add( this.dir );
+			this.controls.rotateCamera(ax2, ax3);
+			this.controls.moveForward(ax1);
+			this.controls.moveRight(ax0);
 		}
 	}
 }

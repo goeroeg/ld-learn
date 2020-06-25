@@ -39,6 +39,7 @@ var clock = new THREE.Clock();
 
 var playerGuy;
 const guyOffset = 20;
+var lastGuyPos = new THREE.Vector3();
 
 var mixer;
 var players = [];
@@ -72,7 +73,7 @@ var miniMap;
 
 var resolutions = [{ x: 0, y: 0 }, {x: 640, y: 480 }, { x: 1024, y: 768 },{ x: 1920, y: 1080 }]
 var resolutionNames  = { Auto: 0, Low: 1, Medium: 2, HD: 3 };
-
+var audioSettings = { enabled : true, volume: 100 }
 var gfxSettings = { resolution: resolutionNames.Auto, fullScreen: false, shadows: 3 , antiAlias: true }
 var gameSettings = { 
     itemAmount:100 , 
@@ -87,11 +88,13 @@ const defaultLegsColor = [30, 90, 168];
 
 var playerSettings = {name:'Player' }
 
-var gui, playersFolder, gfxFolder, gameFolder;
+var gui, playersFolder, gfxFolder, audioFolder, gameFolder;
 
 var playerInfo = document.getElementById('playerInfo');
 var blocker = document.getElementById( 'blocker' );
 var instructions = document.getElementById( 'instructions' );
+
+var gameActive = false;
 
 const okColor = 0x00ff00, wrongColor = 0xff0000, selectedEmissive = 0x0000ff;
 
@@ -121,8 +124,6 @@ function init() {
     initGUI();
 
     createExercise();
-
-    //render(); // remove when using next line for animation loop (requestAnimationFrame)
 }
 
 function initControls() {
@@ -155,58 +156,34 @@ function initControls() {
     // raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, -1, 0 ), 0 , 1000);
 
     controls = new PointerLockControls( camera, document.body );
-    gpControls = new GamepadControls( controls.getObject() );
+    gpControls = new GamepadControls( controls );
 
     scene.add( controls.getObject() );
 
     let isTouch = ('ontouchstart' in window);
 
-    instructions.addEventListener( 'touchstart', function () {
+    if (isTouch) {
+        instructions.addEventListener( 'touchstart', function () {
+            // init touch controls
+            controls.lock();  
 
-        controls.lock();  
+        }, false );
+    } else {
+        instructions.addEventListener( 'click', function () {
 
-    }, false );
+            controls.lock();  
 
-    instructions.addEventListener( 'click', function () {
+        }, false );
 
-        controls.lock();  
+        controls.addEventListener( 'lock', function () {
+            startGame();
 
-    }, false );
+        } );
 
-    controls.addEventListener( 'lock', function () {
-
-        updateBlocker(true);
-
-        if (ambientSound && chrystalCount >= chrActions.plantsMin && !ambientSound.isPlaying) ambientSound.play();
-        if (sphereSound && chrystalCount >= chrActions.musicSphere && !sphereSound.isPlaying) sphereSound.play();
-
-        for (let ms of motorSounds) {
-            if (!ms.isPlaying) ms.play();
-        }
-
-        document.addEventListener( 'click', onDocumentClick, false );
-
-        clock.start();
-
-        requestAnimationFrame( animate );
-
-    } );
-
-    controls.addEventListener( 'unlock', function () {
-
-        updateBlocker(false);
-
-        if (ambientSound && ambientSound.isPlaying) ambientSound.pause();
-        if (sphereSound && sphereSound.isPlaying) sphereSound.pause();
-
-        for (let ms of motorSounds) {
-            if (ms.isPlaying) ms.pause();
-        }
-
-        clock.stop();
-
-        document.removeEventListener('click', onDocumentClick);
-    } );
+        controls.addEventListener( 'unlock', function () {
+            pauseGame();
+        } );
+    }
 
     var onKeyDown = function ( event ) {
 
@@ -240,8 +217,8 @@ function initControls() {
                 break;
 
 
-            case 8: // back
-                if (clock.running) {
+            case 8: // backspace
+                if ( clock.running ) {
                     clock.stop();
                 } else {
                     clock.start();
@@ -304,11 +281,41 @@ function initControls() {
     // document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 
     miniMap = document.getElementById('miniMap');
-
     miniMap.width = 160;
     miniMap.height = 160;
 
     // console.log(miniMap);
+}
+
+function pauseGame() {
+    gameActive = false;
+    updateBlocker(false);
+    if (ambientSound && ambientSound.isPlaying)
+        ambientSound.pause();
+    if (sphereSound && sphereSound.isPlaying)
+        sphereSound.pause();
+    for (let ms of motorSounds) {
+        if (ms.isPlaying)
+            ms.pause();
+    }
+    clock.stop();
+    document.removeEventListener('click', onDocumentClick);
+}
+
+function startGame() {
+    updateBlocker(true);
+    if (ambientSound && chrystalCount >= chrActions.plantsMin && !ambientSound.isPlaying)
+        ambientSound.play();
+    if (sphereSound && chrystalCount >= chrActions.musicSphere && !sphereSound.isPlaying)
+        sphereSound.play();
+    for (let ms of motorSounds) {
+        if (!ms.isPlaying)
+            ms.play();
+    }
+    document.addEventListener('click', onDocumentClick, false);
+    clock.start();
+    gameActive = true;
+    requestAnimationFrame(animate);
 }
 
 function updateBlocker(hide) {
@@ -325,8 +332,6 @@ function initAudio() {
     // create an AudioListener and add it to the camera
     listener = new THREE.AudioListener();
     camera.add( listener );
-
-    listener.setVolume = 0;
 
     // load a sound and set it as the Audio object's buffer
     var audioLoader = new THREE.AudioLoader();
@@ -408,6 +413,7 @@ function initGUI() {
     gui.useLocalStorage = true;
 
     gui.remember(gfxSettings);
+    gui.remember(audioSettings);
     gui.remember(gameSettings);
     gui.remember(playerSettings);
 
@@ -457,8 +463,17 @@ function initGUI() {
     });
     */
 
-    gameFolder = gui.addFolder("Game settings");
+    audioFolder = gui.addFolder("Audio settings");
+    audioFolder.add(audioSettings, "enabled").name("Enabled").onChange(function (value) {
+        setMasterVolume();
+    });
+    audioFolder.add(audioSettings, "volume", 0, 100).name("Volume").step(1).onChange(function (value) {
+        setMasterVolume();
+    });
 
+    setMasterVolume();
+
+    gameFolder = gui.addFolder("Game settings");
     gameFolder.add(gameSettings, "itemAmount", 10, 200).step(10).name("Obj density %");
 
     playersFolder = gui.addFolder("Player settings");
@@ -534,6 +549,12 @@ function initGUI() {
     guiContainer.appendChild(gui.domElement);
 
     updatePlayerInfo();
+}
+
+function setMasterVolume() {
+    if (listener) {
+        listener.setMasterVolume(audioSettings.enabled ? audioSettings.volume / 100 : 0);
+    }
 }
 
 function updateGuyLegsColor(value) {
@@ -667,7 +688,7 @@ function initPlayerGuyAnim() {
     };
     playerGuy.stop = function () {
         for (let anim of playerGuy.anims) {
-            anim.fadeOut(0.3);
+            anim.fadeOut(0.2);
             // anim.stop();
         }
         playerGuy.isWalking = false;
@@ -1002,7 +1023,7 @@ function evaluateAnswer(obj) {
 function animate() {
 
     
-    if ( controls.isLocked ) {
+    if ( gameActive ) {
 
         requestAnimationFrame( animate );
 
@@ -1337,6 +1358,13 @@ function updateControls(delta) {
     if (playerGuy) {
         var euler = controls.getObject().rotation.clone();
 
+        if (lastGuyPos.distanceTo(pos) > 0.1) {            
+            if (!playerGuy.isWalking && playerGuy.walk) playerGuy.walk();
+            if (walkSound && !walkSound.isPlaying) walkSound.play();
+        } else {
+            if (playerGuy.isWalking) playerGuy.stop();                
+        }
+
         playerGuy.position.x = pos.x;
         playerGuy.position.z = pos.z;
         playerGuy.position.y = pos.y - playerCamHeight;
@@ -1349,14 +1377,9 @@ function updateControls(delta) {
 
         playerGuy.translateZ(guyOffset); 
 
-        playerGuy.oriY = euler.y - Math.PI/2;        
+        playerGuy.oriY = euler.y - Math.PI/2;
 
-        if (moveForward || moveBackward || moveLeft || moveRight) {
-                if (!playerGuy.isWalking) playerGuy.walk();
-                if (walkSound && !walkSound.isPlaying) walkSound.play();
-            } else {
-                if (playerGuy.isWalking) playerGuy.stop();                
-            }
+        lastGuyPos.copy(pos);
     }
 }
 

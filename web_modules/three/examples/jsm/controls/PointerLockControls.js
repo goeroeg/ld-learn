@@ -26,10 +26,6 @@ var PointerLockControls = function ( camera, domElement ) {
 	var lockEvent = { type: 'lock' };
 	var unlockEvent = { type: 'unlock' };
 
-	var euler = new THREE.Euler( 0, 0, 0, 'YXZ' );
-
-	var PI_2 = Math.PI / 2;
-
 	var vec = new THREE.Vector3();
 
 	function onMouseMove( event ) {
@@ -39,14 +35,10 @@ var PointerLockControls = function ( camera, domElement ) {
 		var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
 		var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
-		euler.setFromQuaternion( camera.quaternion );
+		movementX *= 0.002;
+		movementY *= 0.002;
 
-		euler.y -= movementX * 0.002;
-		euler.x -= movementY * 0.002;
-
-		euler.x = Math.max( - PI_2, Math.min( PI_2, euler.x ) );
-
-		camera.quaternion.setFromEuler( euler );
+		scope.rotateCamera( movementX, movementY);
 
 		scope.dispatchEvent( changeEvent );
 
@@ -149,6 +141,17 @@ var PointerLockControls = function ( camera, domElement ) {
 
 	};
 
+	this.rotateCamera = function( movementX, movementY ) {
+		let euler = new THREE.Euler( 0, 0, 0, 'YXZ' );
+		let PI_2 = Math.PI / 2;
+
+		euler.setFromQuaternion(camera.quaternion);
+		euler.y -= movementX;
+		euler.x -= movementY;
+		euler.x = Math.max(-PI_2, Math.min(PI_2, euler.x));
+		camera.quaternion.setFromEuler(euler);
+	}
+
 	this.connect();
 
 };
@@ -157,3 +160,4 @@ PointerLockControls.prototype = Object.create( THREE.EventDispatcher.prototype )
 PointerLockControls.prototype.constructor = PointerLockControls;
 
 export { PointerLockControls };
+
