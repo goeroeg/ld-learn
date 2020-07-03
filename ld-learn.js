@@ -17,6 +17,8 @@ import { initCow, initHorse } from './gfx/Animals.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
+var fps = [];
+
 var dirLight;
 
 var mouse = new THREE.Vector2();
@@ -69,12 +71,13 @@ var currentHighlight;
 var absMaxDistance = 0.5 * WORLD.plateSize - guyOffset;
 
 var progressBarDiv;
-var miniMap;
 
-var resolutions = [{ x: 0, y: 0 }, {x: 640, y: 480 }, { x: 1024, y: 768 },{ x: 1920, y: 1080 }]
-var resolutionNames  = { Auto: 0, Low: 1, Medium: 2, HD: 3 };
+
+var resolutions = [{ x: 0, y: 0 }, { x: 320, y: 240 }, {x: 640, y: 480 }, { x: 1024, y: 768 }, { x: 1280, y: 800 } ,{ x: 1920, y: 1080 }]
+var resolutionNames  = { 'Auto': 0, '320x240': 1, '640x480': 2, '1024x768': 3, "1280x800": 4, HD: 5 };
+var qualityNames = { High: 1, Low : 2};
 var audioSettings = { enabled : true, volume: 100 }
-var gfxSettings = { resolution: resolutionNames.Auto, fullScreen: false, shadows: 3 , antiAlias: true }
+var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: 3 , antiAlias: true , showFPS: false}
 var gameSettings = { 
     itemAmount:100 , 
     add : true, addMax : 100, addResMax : 100, addSym: '+',
@@ -90,9 +93,21 @@ var playerSettings = {name:'Player' }
 
 var gui, playersFolder, gfxFolder, audioFolder, gameFolder;
 
+var isTouch = false;
+
 var playerInfo = document.getElementById('playerInfo');
 var blocker = document.getElementById( 'blocker' );
 var instructions = document.getElementById( 'instructions' );
+
+var touchMoveForward = document.getElementById('touchForward');
+var touchMoveBack = document.getElementById('touchBack');
+var touchMoveLeft = document.getElementById('touchLeft');
+var touchMoveRight = document.getElementById('touchRight');
+var touchCameraControls = document.getElementById('cameraControls');
+var miniMap = document.getElementById('miniMap');
+var miniMapDiv = document.getElementById('miniMapDiv');
+
+var touchCamPos = new THREE.Vector2();
 
 var gameActive = false;
 
@@ -160,24 +175,28 @@ function initControls() {
 
     scene.add( controls.getObject() );
 
-    let isTouch = ('ontouchstart' in window);
+    isTouch = ('ontouchstart' in window);
+    
+    initTouchControls(!isTouch);
 
     if (isTouch) {
-        instructions.addEventListener( 'touchstart', function () {
-            // init touch controls
-            controls.lock();  
-
+        instructions.addEventListener( 'touchstart', function (e) {
+            openFullscreen();
+            window.history.pushState({}, '');
+            startGame();         
         }, false );
+          
+        window.addEventListener('popstate', function() {
+            pauseGame();
+        });
+
     } else {
         instructions.addEventListener( 'click', function () {
-
-            controls.lock();  
-
+            controls.lock();
         }, false );
 
         controls.addEventListener( 'lock', function () {
             startGame();
-
         } );
 
         controls.addEventListener( 'unlock', function () {
@@ -279,13 +298,111 @@ function initControls() {
     //
     window.addEventListener( 'resize', onWindowResize, false );
     // document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-
-    miniMap = document.getElementById('miniMap');
-    miniMap.width = 160;
-    miniMap.height = 160;
-
-    // console.log(miniMap);
 }
+
+function initTouchControls(hide) {
+    if (hide) {
+        document.getElementById('touchControls').style.display = 'none';
+    } else {
+        document.getElementById('touchControls').style.display = '-webkit-box';
+        document.getElementById('touchControls').style.display = '-moz-box';
+        document.getElementById('touchControls').style.display = 'box';
+
+        touchCameraControls.addEventListener("touchstart", onCamControlsTouch, false);
+        touchCameraControls.addEventListener("touchmove", onCamControlsTouchMove, false);
+        touchCameraControls.addEventListener("touchend", onCamControlsRelease, false);
+
+        touchMoveForward.addEventListener("touchstart", onMoveForwardTouch, false);
+        touchMoveForward.addEventListener("touchend", onMoveForwardRelease, false);
+
+        touchMoveBack.addEventListener("touchstart", onMoveBackTouch, false);
+        touchMoveBack.addEventListener("touchend", onMoveBackRelease, false);
+
+        touchMoveLeft.addEventListener("touchstart", onMoveLeftTouch, false);
+        touchMoveLeft.addEventListener("touchend", onMoveLeftRelease, false);
+
+        touchMoveRight.addEventListener("touchstart", onMoveRightTouch, false);
+        touchMoveRight.addEventListener("touchend", onMoveRightRelease, false);
+    }
+}
+
+function onCamControlsTouchMove(e) {
+    e.preventDefault();
+    let touch = e.changedTouches[0];
+    let factor = 0.0075;
+    controls.rotateCamera((touch.pageX-touchCamPos.x) * factor, (touch.pageY - touchCamPos.y ) * factor);
+    touchCamPos.x = touch.pageX;
+    touchCamPos.y = touch.pageY;
+}
+
+function onCamControlsTouch(e) {
+    e.preventDefault();
+    highlightTouchControl(touchCameraControls);
+    let touch = e.changedTouches[0];
+    touchCamPos.x = touch.pageX;
+    touchCamPos.y = touch.pageY;
+}
+
+function onCamControlsRelease(e) {
+    e.preventDefault();
+    resetTouchControl(touchCameraControls);
+}
+
+function onMoveForwardTouch(e) {
+    e.preventDefault();
+    highlightTouchControl(touchMoveForward);
+    moveForward = true;
+}
+
+function onMoveForwardRelease(e) {
+    e.preventDefault();
+    resetTouchControl(touchMoveForward);
+    moveForward = false;
+}
+
+function onMoveBackTouch(e) {
+    e.preventDefault();
+    highlightTouchControl(touchMoveBack);
+    moveBackward = true;
+}
+
+function onMoveBackRelease(e) {
+    e.preventDefault();
+    resetTouchControl(touchMoveBack);
+    moveBackward = false;
+}
+
+function onMoveLeftTouch(e) {
+    e.preventDefault();
+    highlightTouchControl(touchMoveLeft);
+    moveLeft = true;
+}
+
+function onMoveLeftRelease(e) {
+    e.preventDefault();
+    resetTouchControl(touchMoveLeft);
+    moveLeft = false;
+}
+
+function onMoveRightTouch() {
+    highlightTouchControl(touchMoveRight);
+    moveRight = true;
+}
+
+function onMoveRightRelease(e) {
+    e.preventDefault();
+    resetTouchControl(touchMoveRight);
+    moveRight = false;
+}
+
+function highlightTouchControl(control) {
+    control.style.background = 'rgba(128,128,128,0.6)';
+}
+
+function resetTouchControl(control) {
+    control.style.background = '';
+}
+
 
 function pauseGame() {
     gameActive = false;
@@ -300,6 +417,7 @@ function pauseGame() {
     }
     clock.stop();
     document.removeEventListener('click', onDocumentClick);
+    touchCameraControls.removeEventListener('click', onDocumentClick);
 }
 
 function startGame() {
@@ -313,6 +431,7 @@ function startGame() {
             ms.play();
     }
     document.addEventListener('click', onDocumentClick, false);
+    touchCameraControls.addEventListener('click', onDocumentClick, false);
     clock.start();
     gameActive = true;
     requestAnimationFrame(animate);
@@ -423,7 +542,16 @@ function initGUI() {
         // update resolution 
         onWindowResize();
     });
+
+    gfxFolder.add(gfxSettings, "quality", qualityNames).name("Render quality").onChange(function(value) {
+        // update resolution 
+        onWindowResize();
+    });
         
+    gfxFolder.add(gfxSettings, "showFPS").name("Show FPS").onChange(function(value){
+        if (!value) updatePlayerInfo();
+    });
+
     /*
     gfxFolder.add(gfxSettings, "fullScreen").name("Full screen").onChange(function(value) {
         if (value) {
@@ -462,6 +590,8 @@ function initGUI() {
         // reset context - so it's a bit complex
     });
     */
+
+    onWindowResize(false);
 
     audioFolder = gui.addFolder("Audio settings");
     audioFolder.add(audioSettings, "enabled").name("Enabled").onChange(function (value) {
@@ -947,12 +1077,12 @@ function updateProgressBar( fraction ) {
 
 }
 
-function onWindowResize() {    
+function onWindowResize(update = true) {    
 
     let res = { x: resolutions[gfxSettings.resolution].x, y: resolutions[gfxSettings.resolution].y };
 
     if (res.x == 0) {
-        res.x = window.innerWidth;
+        res.x = window.innerWidth ;
     } 
     if (res.y == 0) {
         res.y = window.innerHeight;
@@ -964,19 +1094,35 @@ function onWindowResize() {
     camera.aspect = res.x / res.y;
     camera.updateProjectionMatrix();
 
-    renderer.setSize( res.x, res.y, false );    
+    // renderer.setPixelRatio(window.devicePixelRatio * scale);
+    let scale = gfxSettings.quality;
+
+    renderer.setSize( res.x / scale, res.y / scale, false );
+    renderer.domElement.style.width = renderer.domElement.width * scale + 'px';
+    renderer.domElement.style.height = renderer.domElement.height * scale + 'px';
 
     var style = window.getComputedStyle(renderer.domElement);
     playerInfo.style.marginLeft = style.marginLeft;
     playerInfo.style.marginTop = style.marginTop;
     
-    let miniMapDiv = document.getElementById('miniMapDiv');
+    playerInfo.style.fontSize = res.y / (40 - (30 * (1 - res.y / 1200))) + "px"; // non-linear scale for lower res.
+    playerInfo.style.lineHeight = playerInfo.style.fontSize;
+
+    miniMap.width = (res.y * 2 + res.x) / (18 - (6 * (1 - res.y / 1200))); // non-linear scale for lower res.
+    miniMap.height = miniMap.width;
+
+    miniMapDiv.style.top = res.y / (20 - (15 * (1 - res.y / 1200))) + "px"; // non-linear scale for lower res.
     miniMapDiv.style.marginLeft = style.marginLeft;
     miniMapDiv.style.marginTop = style.marginTop;
 
     gfxSettings.fullScreen = (window.screen.width == window.innerWidth); // API not working when triggered with F11
 
-    render();
+    if (update) {
+        updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);  
+        render();
+    }
+
+    // playerInfo.innerHTML =  window.innerWidth + " x " + window.innerHeight + " (" + window.screen.width + " x " + window.screen.height + ")";
 }
 
 function onDocumentMouseMove( event ) {
@@ -1037,6 +1183,17 @@ function animate() {
         //var delta = 0.75 * clock.getDelta();
 
         let delta = clock.getDelta();
+
+        if (gfxSettings.showFPS) {
+            if (fps.length > 25) fps.splice(0, 1);
+                fps.push(1/delta);
+                let currFps = 0;
+                for (let idx = 0; idx < fps.length; idx++) {
+                    currFps += fps[idx];
+            }
+            currFps = Math.round(currFps / fps.length);
+            playerInfo.innerHTML = currFps + " FPS";
+        }
 
         mixer.update( delta );
 
@@ -1358,11 +1515,11 @@ function updateControls(delta) {
     if (playerGuy) {
         var euler = controls.getObject().rotation.clone();
 
-        if (lastGuyPos.distanceTo(pos) > 0.1) {            
-            if (!playerGuy.isWalking && playerGuy.walk) playerGuy.walk();
-            if (walkSound && !walkSound.isPlaying) walkSound.play();
+        if ( lastGuyPos.distanceTo(pos) > 0.1 && playerGuy.walk ) {            
+            if ( !playerGuy.isWalking ) playerGuy.walk();
+            if ( walkSound && !walkSound.isPlaying ) walkSound.play();
         } else {
-            if (playerGuy.isWalking) playerGuy.stop();                
+            if ( playerGuy.isWalking ) playerGuy.stop();                
         }
 
         playerGuy.position.x = pos.x;
@@ -1435,7 +1592,7 @@ function updatePlayerInfo() {
 
 /* View in fullscreen */
 function openFullscreen() {
-    console.log("Opening FS");
+
     if (document.body.requestFullscreen) {
         document.body.requestFullscreen();
     } else if (document.body.mozRequestFullScreen) { /* Firefox */
@@ -1445,8 +1602,8 @@ function openFullscreen() {
     } else if (document.body.msRequestFullscreen) { /* IE/Edge */
         document.body.msRequestFullscreen();
     }
-  }
-  
+}
+
 /* Close fullscreen */
 function closeFullscreen() {
     console.log("Closing FS");
@@ -1460,3 +1617,19 @@ function closeFullscreen() {
       document.msExitFullscreen();
     }
   }
+
+  function toggleFullScreen() {
+    var doc = window.document;
+    var docEl = doc.body;
+  
+    var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+    var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+  
+    if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+      requestFullScreen.call(docEl);
+    }
+    else {
+      cancelFullScreen.call(doc);
+    }
+  }
+  

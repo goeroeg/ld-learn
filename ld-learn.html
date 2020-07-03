@@ -3,13 +3,16 @@
 	<head>
 		<title>LD-Learn</title>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<meta name="viewport" content="width=device-width, height=device-height, user-scalable=0, minimum-scale=1, maximum-scale=1, target-densitydpi=device-dpi">
 		<style>
 			body {
 				background-color: rgb(0, 0, 0);
 				color: #000;
 				margin: 0px;
   				overflow: hidden;
+				
+				width: 100vw;
+				height: 100vh;
 			    }
 
 			a:link, a:visited {
@@ -43,8 +46,7 @@
 				display:block;
 				text-align: left;
 				font-family: Arial, Helvetica, sans-serif;
-				font-size: x-large;
-				z-index: 100;
+				font-size: 24px;
 			}
 
 			#miniMapDiv {
@@ -104,6 +106,146 @@
 				cursor: pointer;
 			}
 
+			#touchControls {
+				position: absolute;
+
+				width: 100%;
+				height: 25vw;
+
+				bottom: 1%;
+
+				display: none;
+
+
+				text-shadow: 0 0 1px cyan, 0 0 5px darkcyan;
+
+				-webkit-box-align: center;
+				-moz-box-align: center;
+				box-align: center;
+
+				color: #ffffff;
+				text-align: center;
+				font-family: sans-serif;
+			}
+
+			#movementControls {
+				position: absolute;
+				left: 1%;
+				bottom: 2%;
+
+				display: -webkit-box;
+				display: -moz-box;
+				display: box;
+
+				-webkit-box-orient: vertical;
+				-moz-box-orient: vertical;
+				box-orient: vertical;
+
+				-webkit-box-pack: center;
+				-moz-box-pack: center;
+				box-pack: center;
+
+				font-size: 5vw;
+				line-height: 5vw;
+			}
+
+			#movementControls kbd {
+				height: 5vw;
+				width: 5vw;
+
+				margin: 0.3vw;
+				padding: 1vw;
+
+				text-align: center;
+
+				box-shadow: -0.5px 0.5px 4px rgba(0,0,0,0.75);
+				border: 2px solid rgba(128,128,128,0.8);
+				border-radius: 10%;
+
+				background-image: radial-gradient(circle,  rgba(0,0,0,0) 20%, rgba(0,0,0,0.25), rgba(85,85,85,0.8));
+
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				-khtml-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+
+				cursor: pointer;
+			}
+
+			#movementControls span {
+				display: -webkit-box;
+				display: -moz-box;
+				display: box;
+
+				-webkit-box-orient: horizontal;
+				-moz-box-orient: horizontal;
+				box-orient: horizontal;
+
+				-webkit-box-pack:center;
+				-moz-box-pack: center;
+				box-pack: center;
+			}
+
+			#cameraControls {
+				position: absolute;
+				right: 1%;
+				bottom: 2%;
+
+				display: -webkit-box;
+				display: -moz-box;
+				display: box;
+
+				width: 20vw;
+				height: 20vw;
+				
+				-moz-border-radius: 50%;
+				-webkit-border-radius: 50%;
+				border-radius: 50%;
+
+				-webkit-box-orient: vertical;
+				-moz-box-orient: vertical;
+				box-orient: vertical;
+
+				-webkit-box-pack:justify;
+				-moz-box-pack: justify;
+				box-pack: justify;
+
+				box-shadow: 0.5px 0.5px 4px rgba(0,0,0,0.75);
+				border: 2px solid rgba(128,128,128,0.8);
+
+				background-image: radial-gradient(circle,  rgba(0,0,0,0) 20%, rgba(0,0,0,0.25), rgba(85,85,85,0.8));
+
+				font-size: 3vw;
+				line-height: 3vw;
+
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				-khtml-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+
+				cursor: pointer;
+			}			
+
+			#cameraControls span {
+				padding: 2%;
+
+				display: -webkit-box;
+				display: -moz-box;
+				display: box;
+
+				-webkit-box-orient: horizontal;
+				-moz-box-orient: horizontal;
+				box-orient: horizontal;
+
+				-webkit-box-pack:justify;
+				-moz-box-pack: justify;
+				box-pack: justify;
+			}
+
 			#guiContainer {
 				position: absolute;
 				top: 0px;
@@ -119,7 +261,7 @@
 			<div id="instructions">
 				<span style="font-size:28px; color: lime">LD-Learn - a fun learning adventure</span>
 				<br/>
-				<span style="color: lime; font-family:monospace">v. 0.1.7</span>
+				<span style="color: lime; font-family:monospace">v. 0.2.0</span>
 				<br/><br/>
 				<span style="font-size:32px">&#9658; Click to play</span>
 				<br/><br/>
@@ -139,6 +281,14 @@
 				<a href="https://goeroeg.github.io/ld-learn/" target="_blank">&#9432; <i>More info and licenses</i></a>
 			</div>
 			<div id="guiContainer"></div>
+		</div>
+		<div id="touchControls">
+			<div id="movementControls">
+				<kbd id="touchForward">&#9651;</kbd></br><span><kbd id="touchLeft">&#9665;</kbd>&nbsp;<kbd id="touchBack">&#9661;</kbd>&nbsp;<kbd id="touchRight">&#9655;</kbd></span>
+			</div>
+			<div id="cameraControls">
+				<div >&#9652;</div><span><div>&#9666;</div><div>&#9656;</div></span><div>&#9662;</div>
+			</div>
 		</div>
 		<script type="module" src="https://threejs.org/build/three.min.js"></script>
 		<!-- <script type="module" src="./node_modules/three/build/three.min.js"></script> -->  <!--use this for local/electron-->
