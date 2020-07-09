@@ -13,6 +13,13 @@
 				
 				width: 100vw;
 				height: 100vh;
+
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				-khtml-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
 			    }
 
 			a:link, a:visited {
@@ -133,9 +140,7 @@
 				left: 1%;
 				bottom: 2%;
 
-				display: -webkit-box;
-				display: -moz-box;
-				display: box;
+				display: inherit;
 
 				-webkit-box-orient: vertical;
 				-moz-box-orient: vertical;
@@ -164,20 +169,11 @@
 
 				background-image: radial-gradient(circle,  rgba(0,0,0,0) 20%, rgba(0,0,0,0.25), rgba(85,85,85,0.8));
 
-				-webkit-touch-callout: none;
-				-webkit-user-select: none;
-				-khtml-user-select: none;
-				-moz-user-select: none;
-				-ms-user-select: none;
-				user-select: none;
-
 				cursor: pointer;
 			}
 
 			#movementControls span {
-				display: -webkit-box;
-				display: -moz-box;
-				display: box;
+				display: inherit;
 
 				-webkit-box-orient: horizontal;
 				-moz-box-orient: horizontal;
@@ -193,10 +189,7 @@
 				right: 1%;
 				bottom: 2%;
 
-				display: -webkit-box;
-				display: -moz-box;
-				display: box;
-
+				display: inherit;
 				width: 20vw;
 				height: 20vw;
 				
@@ -220,22 +213,13 @@
 				font-size: 3vw;
 				line-height: 3vw;
 
-				-webkit-touch-callout: none;
-				-webkit-user-select: none;
-				-khtml-user-select: none;
-				-moz-user-select: none;
-				-ms-user-select: none;
-				user-select: none;
-
 				cursor: pointer;
 			}			
 
 			#cameraControls span {
 				padding: 2%;
 
-				display: -webkit-box;
-				display: -moz-box;
-				display: box;
+				display: inherit;
 
 				-webkit-box-orient: horizontal;
 				-moz-box-orient: horizontal;
@@ -263,7 +247,7 @@
 				<br/>
 				<span style="color: lime; font-family:monospace">v. 0.2.0</span>
 				<br/><br/>
-				<span style="font-size:32px">&#9658; Click to play</span>
+				<span id="clickSpan" style="font-size:32px">&#9658; Click to play</span>
 				<br/><br/>
 				Move:&nbsp;<span><kbd>W</kbd><br/><kbd>A</kbd>&nbsp;<kbd>S</kbd>&nbsp;<kbd>D</kbd></span>
 				&nbsp;or&nbsp;

@@ -43,26 +43,22 @@ var playerGuy;
 const guyOffset = 20;
 var lastGuyPos = new THREE.Vector3();
 
+const jumpInitialVel = 350;
+
 var mixer;
-var players = [];
-var currentPlayer;
-var playerIdx;
 
 var skyMesh;
 
 var chrystalCount = 0;
 var chrystals = new Set();
 
-var moveForward = false;
-var moveBackward = false;
-var moveLeft = false;
-var moveRight = false;
+const moveDir = { forward:0, backward:1, left:2, right:3 }
+var moveActive = [ false, false, false, false ];
+
 var canJump = false;
 
 var velocity = new THREE.Vector3();
 var direction = new THREE.Vector3();
-var vertex = new THREE.Vector3();
-var color = new THREE.Color();
 
 var exerciseGroup;
 var exerciseMeshes;
@@ -103,6 +99,10 @@ var touchMoveForward = document.getElementById('touchForward');
 var touchMoveBack = document.getElementById('touchBack');
 var touchMoveLeft = document.getElementById('touchLeft');
 var touchMoveRight = document.getElementById('touchRight');
+
+const touchControlDirs = new Map();
+var touchMoveTime;
+
 var touchCameraControls = document.getElementById('cameraControls');
 var miniMap = document.getElementById('miniMap');
 var miniMapDiv = document.getElementById('miniMapDiv');
@@ -185,7 +185,13 @@ function initControls() {
             window.history.pushState({}, '');
             startGame();         
         }, false );
-          
+         
+        /*
+        document.getElementById('clickSpan').addEventListener( 'click', function () {
+            startGame();
+        }, false );
+        */
+
         window.addEventListener('popstate', function() {
             pauseGame();
         });
@@ -212,29 +218,28 @@ function initControls() {
 
             case 38: // up
             case 87: // w
-                moveForward = true;
+                toggleMove(true, moveDir.forward, touchMoveForward);
                 break;
 
             case 37: // left
             case 65: // a
-                moveLeft = true;
+            toggleMove(true, moveDir.left, touchMoveLeft);
                 break;
 
             case 40: // down
             case 83: // s
-                moveBackward = true;
+            toggleMove(true, moveDir.backward, touchMoveBack);
                 break;
 
             case 39: // right
             case 68: // d
-                moveRight = true;
+            toggleMove(true, moveDir.right, touchMoveRight);
                 break;
 
             case 32: // space
-                if ( canJump === true ) velocity.y += 350;
+                if ( canJump === true ) velocity.y += jumpInitialVel;
                 canJump = false;
                 break;
-
 
             case 8: // backspace
                 if ( clock.running ) {
@@ -254,30 +259,33 @@ function initControls() {
         switch ( event.keyCode ) {
 
             case 27: //ESC
-                controls.unlock();
+                if (controls.isLocked) {
+                    controls.unlock();
+                } else if (gameActive){
+                    pauseGame();
+                }
                 break;
+
             case 38: // up
             case 87: // w
-                moveForward = false;
+                toggleMove(false, moveDir.forward, touchMoveForward);
                 break;
 
             case 37: // left
             case 65: // a
-                moveLeft = false;
+                toggleMove(false, moveDir.left, touchMoveLeft);
                 break;
 
             case 40: // down
             case 83: // s
-                moveBackward = false;
+                toggleMove(false, moveDir.backward, touchMoveBack);
                 break;
 
             case 39: // right
             case 68: // d
-                moveRight = false;
+                toggleMove(false, moveDir.right, touchMoveRight);
                 break;
-
         }
-
     };
 
     document.addEventListener( 'keydown', onKeyDown, false );
@@ -312,17 +320,36 @@ function initTouchControls(hide) {
         touchCameraControls.addEventListener("touchmove", onCamControlsTouchMove, false);
         touchCameraControls.addEventListener("touchend", onCamControlsRelease, false);
 
-        touchMoveForward.addEventListener("touchstart", onMoveForwardTouch, false);
-        touchMoveForward.addEventListener("touchend", onMoveForwardRelease, false);
+        touchControlDirs.set(touchMoveForward, moveDir.forward);
+        touchControlDirs.set(touchMoveBack, moveDir.backward);
+        touchControlDirs.set(touchMoveLeft, moveDir.left);
+        touchControlDirs.set(touchMoveRight, moveDir.right);
 
-        touchMoveBack.addEventListener("touchstart", onMoveBackTouch, false);
-        touchMoveBack.addEventListener("touchend", onMoveBackRelease, false);
+        touchMoveForward.addEventListener("touchstart", onMoveControlTouch, false);
+        touchMoveForward.addEventListener("touchend", onMoveControlRelease, false);
 
-        touchMoveLeft.addEventListener("touchstart", onMoveLeftTouch, false);
-        touchMoveLeft.addEventListener("touchend", onMoveLeftRelease, false);
+        touchMoveBack.addEventListener("touchstart", onMoveControlTouch, false);
+        touchMoveBack.addEventListener("touchend", onMoveControlRelease, false);
 
-        touchMoveRight.addEventListener("touchstart", onMoveRightTouch, false);
-        touchMoveRight.addEventListener("touchend", onMoveRightRelease, false);
+        touchMoveLeft.addEventListener("touchstart", onMoveControlTouch, false);
+        touchMoveLeft.addEventListener("touchend", onMoveControlRelease, false);
+
+        touchMoveRight.addEventListener("touchstart", onMoveControlTouch, false);
+        touchMoveRight.addEventListener("touchend", onMoveControlRelease, false);
+
+        /*
+        touchMoveForward.addEventListener("mousedown", onMoveControlTouch, false);
+        touchMoveForward.addEventListener("mouseup", onMoveControlRelease, false);
+
+        touchMoveBack.addEventListener("mousedown", onMoveControlTouch, false);
+        touchMoveBack.addEventListener("mouseup", onMoveControlRelease, false);
+
+        touchMoveLeft.addEventListener("mousedown", onMoveControlTouch, false);
+        touchMoveLeft.addEventListener("mouseup", onMoveControlRelease, false);
+
+        touchMoveRight.addEventListener("mousedown", onMoveControlTouch, false);
+        touchMoveRight.addEventListener("mouseup", onMoveControlRelease, false);
+        */
     }
 }
 
@@ -346,53 +373,29 @@ function onCamControlsTouch(e) {
 function onCamControlsRelease(e) {
     e.preventDefault();
     resetTouchControl(touchCameraControls);
+
+    let touch = e.changedTouches[0];
+    if (currentHighlight && ((touchCamPos.x - touch.pageX) * (touchCamPos.y - touch.pageY)) < 10) {
+        evaluateAnswer(currentHighlight);
+    }  
 }
 
-function onMoveForwardTouch(e) {
+function onMoveControlTouch(e) {
     e.preventDefault();
-    highlightTouchControl(touchMoveForward);
-    moveForward = true;
+    let target = e.target || e.source;
+
+    if (e.timeStamp - touchMoveTime < 250) {
+        if ( canJump === true ) velocity.y += jumpInitialVel;
+        canJump = false;
+    }
+    toggleMove(true, touchControlDirs.get(target), target);
 }
 
-function onMoveForwardRelease(e) {
+function onMoveControlRelease(e) {
     e.preventDefault();
-    resetTouchControl(touchMoveForward);
-    moveForward = false;
-}
-
-function onMoveBackTouch(e) {
-    e.preventDefault();
-    highlightTouchControl(touchMoveBack);
-    moveBackward = true;
-}
-
-function onMoveBackRelease(e) {
-    e.preventDefault();
-    resetTouchControl(touchMoveBack);
-    moveBackward = false;
-}
-
-function onMoveLeftTouch(e) {
-    e.preventDefault();
-    highlightTouchControl(touchMoveLeft);
-    moveLeft = true;
-}
-
-function onMoveLeftRelease(e) {
-    e.preventDefault();
-    resetTouchControl(touchMoveLeft);
-    moveLeft = false;
-}
-
-function onMoveRightTouch() {
-    highlightTouchControl(touchMoveRight);
-    moveRight = true;
-}
-
-function onMoveRightRelease(e) {
-    e.preventDefault();
-    resetTouchControl(touchMoveRight);
-    moveRight = false;
+    let target = e.target || e.source;
+    toggleMove(false, touchControlDirs.get(target), target);
+    touchMoveTime = e.timeStamp;
 }
 
 function highlightTouchControl(control) {
@@ -403,6 +406,16 @@ function resetTouchControl(control) {
     control.style.background = '';
 }
 
+function toggleMove(activate, moveDirIndex, control) {
+    if (control) {
+        if (activate) {
+            highlightTouchControl(control);
+        } else {
+            resetTouchControl(control);
+        }
+    }
+    moveActive[moveDirIndex] = activate;
+}
 
 function pauseGame() {
     gameActive = false;
@@ -1469,13 +1482,13 @@ function updateControls(delta) {
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
     velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
-    direction.z = Number(moveForward) - Number(moveBackward);
-    direction.x = Number(moveRight) - Number(moveLeft);
+    direction.z = Number(moveActive[moveDir.forward]) - Number(moveActive[moveDir.backward]);
+    direction.x = Number(moveActive[moveDir.right]) - Number(moveActive[moveDir.left]);
     direction.normalize(); // this ensures consistent movements in all directions
-    if (moveForward || moveBackward) {
+    if (moveActive[moveDir.forward] || moveActive[moveDir.backward]) {
         velocity.z -= direction.z * 4000.0 * delta;
     }
-    if (moveLeft || moveRight)
+    if (moveActive[moveDir.left] || moveActive[moveDir.right])
         velocity.x -= direction.x * 4000.0 * delta;
     /*
     if ( onObject === true ) {
