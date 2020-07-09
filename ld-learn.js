@@ -560,10 +560,8 @@ function initGUI() {
         // update resolution 
         onWindowResize();
     });
-        
-    gfxFolder.add(gfxSettings, "showFPS").name("Show FPS").onChange(function(value){
-        if (!value) updatePlayerInfo();
-    });
+
+    onWindowResize(false);
 
     /*
     gfxFolder.add(gfxSettings, "fullScreen").name("Full screen").onChange(function(value) {
@@ -574,37 +572,24 @@ function initGUI() {
         }
     }).listen()
     */
-    
-    /* removed as it doesn't really impact performance and also the vosible results are very similar
-    gfxFolder.add(gfxSettings, "shadows", 1, 4, 1).name("Shadows").onChange(function(value) {
-        // update shadows
-        console.log('shadows: ' + value);
-        switch(value) {    
-            case 1 :
-                renderer.shadowMap.type = THREE.BasicShadowMap;
-                break;       
-            case 2 :            
-                renderer.shadowMap.type = THREE.PCFShadowMap;
-                break;
-            case 3 :
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-                break;
-            case 3 :
-                renderer.shadowMap.type = THREE.VSMShadowMap;
-                break;
-        }
-        renderer.shadowMap.needsUpdate = true;
+
+    gfxFolder.add(gfxSettings, "shadows", 0, 3, 1).name("Shadows").onChange(function(value) {
+        // update shadows        
+        updateShadows(value);
         render();
     });
-    */
+
+    updateShadows(gfxSettings.shadows);
+
+    gfxFolder.add(gfxSettings, "showFPS").name("Show FPS").onChange(function(value){
+        if (!value) updatePlayerInfo();
+    });
 
     /*
     gfxFolder.add(gfxSettings, "antiAlias").name("Antialias").onChange(function(value) {
-        // reset context - so it's a bit complex
+        // would need to reset context - so it's a bit complex
     });
     */
-
-    onWindowResize(false);
 
     audioFolder = gui.addFolder("Audio settings");
     audioFolder.add(audioSettings, "enabled").name("Enabled").onChange(function (value) {
@@ -692,6 +677,37 @@ function initGUI() {
     guiContainer.appendChild(gui.domElement);
 
     updatePlayerInfo();
+}
+
+function updateShadows(value) {
+    renderer.shadowMap.enabled = (value > 0);
+    scene.traverse(c => {
+        if (c.receiveShadow && c.material) {
+            if (c.material.length > 0) {
+                for (let mat of c.material) {
+                    mat.needsUpdate = true;
+                }
+            }
+            else {
+                c.material.needsUpdate = true;
+            }
+        }
+    });
+    switch (value) {
+        case 1:
+            renderer.shadowMap.type = THREE.BasicShadowMap;
+            break;
+        case 2:
+            renderer.shadowMap.type = THREE.PCFShadowMap;
+            break;
+        case 3:
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            break;
+        //case 4 :
+        //    renderer.shadowMap.type = THREE.VSMShadowMap;
+        //    break;
+    }
+    renderer.shadowMap.needsUpdate = true;
 }
 
 function setMasterVolume() {
