@@ -14,6 +14,7 @@ import { initCar } from './gfx/Cars.js';
 import { initGuy, BodyParts } from './gfx/Guy.js';
 import { updateMapData } from './gfx/MiniMap.js';
 import { initCow, initHorse } from './gfx/Animals.js';
+import { initTracks } from './gfx/Train.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
@@ -1306,6 +1307,7 @@ function performChrystalAction() {
 
     if (chrystalCount == chrActions.createPlates) {
         WORLD.createPlates();
+        //initTracks(WORLD.worldPlates * 4 - 3);        
         absMaxDistance = WORLD.worldPlates * WORLD.plateSize - guyOffset;
     }
     if (chrystalCount == chrActions.createFences) {
