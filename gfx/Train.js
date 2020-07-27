@@ -6,7 +6,20 @@ const stepTrackSleeper = 0;
 const stepTrackCurved = 1;
 const stepTrackStraight = 2;
 
-const halfLength = WORLD.plateSize / 4;
+const stepBody = 0;
+const stepRightWheels = 1;
+const stepLeftWheels = 2;
+const stepWindows = 3;
+const stepFrontLights = 4;
+const stepRearLights = 5;
+
+export const vehicleLength =  500;
+const wheelDistance = 300;
+
+export const trackHalfLength = WORLD.plateSize / 4;
+export const trackCurveRadius = trackHalfLength * 5;
+
+var loco, waggon;
 
 export function initTracks(numStraights, onLoad, onProgress, onError) {
     var lDrawLoader = new LDrawLoader();
@@ -52,15 +65,15 @@ export function initTracks(numStraights, onLoad, onProgress, onError) {
 
             // add a sleeper to the straight track
             let tempSleeper = sleeper;
-            tempSleeper.translateZ(halfLength);
+            tempSleeper.translateZ(trackHalfLength);
             straightTrack.attach(tempSleeper);
 
             // create straights
-            let offset = (WORLD.plateSize / 2) + (numStraights + 3) * halfLength;
-            let start = (numStraights - 1)  * halfLength;
+            let offset = (WORLD.plateSize / 2) + (numStraights + 3) * trackHalfLength;
+            let start = (numStraights - 1)  * trackHalfLength;
                             
             for (let idx = 1; idx <= numStraights; idx++) {                
-                let pos = -start + ((idx - 1) * halfLength * 2);
+                let pos = -start + ((idx - 1) * trackHalfLength * 2);
 
                 for (let angle = 0; angle <= 4; angle++) {
                     let newTrack = straightTrack.clone();
@@ -71,7 +84,6 @@ export function initTracks(numStraights, onLoad, onProgress, onError) {
                 }               
             }            
 
-            let curveRadius = (WORLD.plateSize / 2) + halfLength * 3;
             let curveStepAngle = Math.PI / 8;
 
             // create curves
@@ -79,10 +91,10 @@ export function initTracks(numStraights, onLoad, onProgress, onError) {
             let segment = new THREE.Group();
 
             segment.add(curvedTrack);                                   
-            curvedTrack.translateZ(curveRadius);                                    
+            curvedTrack.translateZ(trackCurveRadius);                                    
             segment.rotateY(curveStepAngle / 2 );
-            sleeper.translateX(curveRadius);
-            sleeper.translateZ(-halfLength);
+            sleeper.translateX(trackCurveRadius);
+            sleeper.translateZ(-trackHalfLength);
             segment.attach(sleeper);            
             curve.attach(segment.clone());
 
@@ -95,7 +107,7 @@ export function initTracks(numStraights, onLoad, onProgress, onError) {
             segment.rotateY(curveStepAngle);            
             curve.attach(segment);
 
-            let curveOffset = numStraights * halfLength;
+            let curveOffset = numStraights * trackHalfLength;
 
             let tempCurve = curve.clone();
             tempCurve.translateX(curveOffset);
@@ -122,9 +134,131 @@ export function initTracks(numStraights, onLoad, onProgress, onError) {
 
             WORLD.model.add(track);
 
-            console.log("Tracks loaded.");
-
             if (onLoad) onLoad();
                         
         }, onProgress, onError);
+}
+
+export function initLoco(onLoad, onProgress, onError) {
+    var lDrawLoader = new LDrawLoader();
+    lDrawLoader.smoothNormals = WORLD.smoothNormals; 
+
+    lDrawLoader.separateObjects = true;
+
+    lDrawLoader
+        .setPath( "ldraw/" )        
+        .load( "models/train.ldr_Packed.mpd", function ( model ) {
+
+            //console.log(model);
+
+            // Convert from LDraw coordinates: rotate 180 degrees around OX
+            //model.rotateX(-Math.PI);                                           
+
+            loco = new THREE.Group();
+            loco.add(model);
+
+            loco.body = [];
+            loco.rWheels = [];
+            loco.lWheels = [];
+            loco.windows = [];
+            loco.frontLights = [];
+            loco.rearLights = [];
+
+            // Adjust materials
+
+            model.traverse( c => { 
+                c.visible = !c.isLineSegments;                 
+
+                if (c.isMesh)
+                {
+                    switch (c.parent.userData.constructionStep) {
+                        case stepBody:
+                            loco.body.push(c);
+                            break;
+                        case stepRightWheels:
+                            loco.rWheels.push(c);
+                            break;
+                        case stepLeftWheels:
+                            loco.lWheels.push(c);
+                            break;
+                        case stepWindows:
+                            loco.windows.push(c);
+                            break;
+                        case stepFrontLights:
+                            loco.frontLights.push(c);
+                            break;
+                        case stepRearLights:
+                            loco.rearLights.push(c);
+                            break;
+                    }
+                }
+
+                c.castShadow = true; 
+                c.receiveShadow = true; 
+            } );            
+
+            if (onLoad) onLoad(loco);
+        });
+}
+
+export function initWaggon(onLoad, onProgress, onError, lastCall) {
+    if (waggon) {
+        // already loaded
+        if (onLoad) onLoad(lastCall ? waggon : waggon.clone());
+    } else {
+
+        var lDrawLoader = new LDrawLoader();
+        lDrawLoader.smoothNormals = WORLD.smoothNormals; 
+
+        lDrawLoader.separateObjects = true;
+
+        lDrawLoader
+            .setPath( "ldraw/" )        
+            .load( "models/waggon.ldr_Packed.mpd", function ( model ) {
+
+                //console.log(model);
+
+                // Convert from LDraw coordinates: rotate 180 degrees around OX
+                //model.rotateX(-Math.PI);                                           
+
+                waggon = new THREE.Group();
+                waggon.add(model);
+
+                waggon.body = [];
+                waggon.rWheels = [];
+                waggon.lWheels = [];
+                waggon.windows = [];
+                waggon.frontLights = [];
+                waggon.rearLights = [];
+
+                // Adjust materials
+
+                model.traverse( c => { 
+                    c.visible = !c.isLineSegments;                 
+
+                    if (c.isMesh)
+                    {
+                        switch (c.parent.userData.constructionStep) {
+                            case stepBody:
+                                waggon.body.push(c);
+                                break;
+                            case stepRightWheels:
+                                waggon.rWheels.push(c);
+                                break;
+                            case stepLeftWheels:
+                                waggon.lWheels.push(c);
+                                break;
+                            case stepWindows:
+                                waggon.windows.push(c);
+                                break;
+                        }
+                    }
+
+                    c.castShadow = true; 
+                    c.receiveShadow = true; 
+                } );            
+
+                if (onLoad) onLoad(lastCall ? waggon : waggon.clone());
+            });
+    }
 }

@@ -37,7 +37,9 @@ export const MapObjectId = {
     chrystal: 5,
     car: 6,
     animal: 7,
-    msphere: 8
+    msphere: 8,
+    track : 9,
+    train : 10
 };
 
 export const smoothNormals = false; // test this later, but takes longer for testing

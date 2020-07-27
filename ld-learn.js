@@ -14,7 +14,7 @@ import { initCar } from './gfx/Cars.js';
 import { initGuy, BodyParts } from './gfx/Guy.js';
 import { updateMapData } from './gfx/MiniMap.js';
 import { initCow, initHorse } from './gfx/Animals.js';
-import { initTracks } from './gfx/Train.js';
+import { initTracks, initLoco, initWaggon, vehicleLength, trackCurveRadius, trackHalfLength } from './gfx/Train.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
@@ -37,6 +37,7 @@ var wrongSounds = [];
 
 var motorSounds = [];
 var cars = [];
+var train = [];
 
 var clock = new THREE.Clock();
 
@@ -70,7 +71,7 @@ var absMaxDistance = 0.5 * WORLD.plateSize - guyOffset;
 var progressBarDiv;
 
 
-var resolutions = [{ x: 0, y: 0 }, { x: 320, y: 240 }, {x: 640, y: 480 }, { x: 1024, y: 768 }, { x: 1280, y: 800 } ,{ x: 1920, y: 1080 }]
+var resolutions = [{ x: 0, y: 0 }, { x: 320, y: 240 }, {x: 640, y: 480 }, { x: 1024, y: 768 }, { x: 1280, y: 800 }, { x: 1920, y: 1080 }]
 var resolutionNames  = { 'Auto': 0, '320x240': 1, '640x480': 2, '1024x768': 3, "1280x800": 4, HD: 5 };
 var qualityNames = { High: 1, Low : 2};
 var audioSettings = { enabled : true, volume: 100 }
@@ -124,11 +125,15 @@ const chrActions = {
     plantsMax : 20,
     prepareRoads : 15, //15
     initRoads : 20, //20
-    carsMin : 25,   //21
+    carsMin : 25,   //25
     carsMax : 50,   //50
-    animalsMin : 15, // 15
+    animalsMin : 13, // 13
     animalsMax : 25, // 25
-    musicSphere : 30
+    musicSphere : 30, // 30
+    prepareTracks : 35, // 35
+    initTracks : 45, // 45
+    trainMin : 55, // 55
+    trainMax : 60  // 60
 }
 
 init();
@@ -1307,7 +1312,6 @@ function performChrystalAction() {
 
     if (chrystalCount == chrActions.createPlates) {
         WORLD.createPlates();
-        //initTracks(WORLD.worldPlates * 4 - 3);        
         absMaxDistance = WORLD.worldPlates * WORLD.plateSize - guyOffset;
     }
     if (chrystalCount == chrActions.createFences) {
@@ -1347,6 +1351,23 @@ function performChrystalAction() {
     if (chrystalCount == chrActions.musicSphere) {
         addMusicSphere();
     }
+
+    if (chrystalCount == chrActions.prepareTracks) {
+        
+    }
+
+    if (chrystalCount == chrActions.initTracks) {
+        initTracks(linTrackNumber);
+    }
+
+    if (chrystalCount == chrActions.trainMin) {
+        initTrain();
+    }
+
+    if (chrystalCount > chrActions.trainMin && chrystalCount <= chrActions.trainMax) {
+        addWaggon(chrystalCount == chrActions.trainMax);
+    }
+
 }
 
 function addAnimal() {
@@ -1428,6 +1449,38 @@ function addAnimal() {
     }
 }
 
+const linTrackNumber = WORLD.worldPlates * 4 - 3;
+
+function initTrain() {
+    initLoco(function (loco) {
+        WORLD.model.add(loco);
+
+        let clip = ANIM.createTrackAnimation(linTrackNumber, trackHalfLength * 2, trackCurveRadius, 0);
+        var action = mixer.clipAction(clip, loco);                
+        let duration =  0.005 * clip.path.getLength();
+
+        action.setLoop(THREE.LoopRepeat).setDuration(duration).play();
+
+        loco.anim = action;
+        train.push(loco);
+    }, onProgress, onError);
+}
+
+function addWaggon(isLast) {
+    initWaggon(function (waggon) {
+        // waggon.translateX(vehicleLength * (chrystalCount - chrActions.trainMin));
+        WORLD.model.add(waggon);
+
+        let clip = ANIM.createTrackAnimation(linTrackNumber, trackHalfLength * 2, trackCurveRadius, vehicleLength * train.length);
+        var action = mixer.clipAction(clip, waggon);                
+        let duration =  0.005 * clip.path.getLength();
+
+        action.setLoop(THREE.LoopRepeat).setDuration(duration).syncWith(train[0].anim).play();
+
+        train.push(waggon);
+    }, onProgress, onError, isLast);
+}
+
 function addCar() {
 
     let carIdx = (Math.floor(chrystalCount / 2)) % 2;
@@ -1437,10 +1490,10 @@ function addCar() {
         WORLD.model.add(car);
 
         let ccw = (chrystalCount % 2 == 0); // every second counter-clockwise
-        let clip = ANIM.createRoadAnimation((WORLD.roadPlates * 2) + (0.28 * (ccw ? 1 : -1)), WORLD.plateSize, ccw);
-        var action = mixer.clipAction(clip, car);        
-        console.log (clip.path.getLength());
+        let clip = ANIM.createRoadAnimation((WORLD.roadPlates * 2) + (0.28 * (ccw ? 1 : -1)), WORLD.plateSize, WORLD.plateSize / 2 * (1 + 0.28 * (ccw ? 1 : -1)) , ccw);
+        var action = mixer.clipAction(clip, car);                
         let duration =  0.0025 * clip.path.getLength();
+
         action.setLoop(THREE.LoopRepeat).setDuration(duration).play();
 
         for (let wheel of car.rWheels) {
