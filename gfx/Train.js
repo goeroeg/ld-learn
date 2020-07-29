@@ -19,9 +19,25 @@ const wheelDistance = 300;
 export const trackHalfLength = WORLD.plateSize / 4;
 export const trackCurveRadius = trackHalfLength * 5;
 
+export const linTrackNumber = WORLD.worldPlates * 4 - 3; // * 4
+
 var loco, waggon;
 
-export function initTracks(numStraights, onLoad, onProgress, onError) {
+export function prepareTracks(mixer) {
+    let len = linTrackNumber * 2 * trackHalfLength + 2 * trackCurveRadius;
+    let offset = 1;
+    for (let side = -offset; side <= offset; side += offset) {        
+        let path = ANIM.createRoundedRectPath(len + trackHalfLength * side, len + trackHalfLength * side, trackCurveRadius + (trackHalfLength / 2) * side);    
+        let step = WORLD.parcelSize / path.getLength() / 2;
+
+        for (let u = 0; u <= 1; u += step) {
+            let point = path.getPointAt(u);
+            WORLD.reserveParcelAt(point.x, point.y, mixer, (side != 0 ? WORLD.trackPlaceholder : WORLD.trackDummyPlaceholder));
+        }
+    }    
+}
+
+export function initTracks(onLoad, onProgress, onError) {
     var lDrawLoader = new LDrawLoader();
     lDrawLoader.smoothNormals = WORLD.smoothNormals; 
 
@@ -69,10 +85,10 @@ export function initTracks(numStraights, onLoad, onProgress, onError) {
             straightTrack.attach(tempSleeper);
 
             // create straights
-            let offset = (WORLD.plateSize / 2) + (numStraights + 3) * trackHalfLength;
-            let start = (numStraights - 1)  * trackHalfLength;
+            let offset = (WORLD.plateSize / 2) + (linTrackNumber + 3) * trackHalfLength;
+            let start = (linTrackNumber - 1)  * trackHalfLength;
                             
-            for (let idx = 1; idx <= numStraights; idx++) {                
+            for (let idx = 1; idx <= linTrackNumber; idx++) {                
                 let pos = -start + ((idx - 1) * trackHalfLength * 2);
 
                 for (let angle = 0; angle <= 4; angle++) {
@@ -107,7 +123,7 @@ export function initTracks(numStraights, onLoad, onProgress, onError) {
             segment.rotateY(curveStepAngle);            
             curve.attach(segment);
 
-            let curveOffset = numStraights * trackHalfLength;
+            let curveOffset = linTrackNumber * trackHalfLength;
 
             let tempCurve = curve.clone();
             tempCurve.translateX(curveOffset);
@@ -133,6 +149,12 @@ export function initTracks(numStraights, onLoad, onProgress, onError) {
             track.attach(tempCurve);
 
             WORLD.model.add(track);
+
+            for (let parcel of WORLD.parcels) {
+                if (parcel.occupied == WORLD.trackPlaceholder) {
+                    parcel.mapObjId = WORLD.MapObjectId.track;
+                }
+            }
 
             if (onLoad) onLoad();
                         

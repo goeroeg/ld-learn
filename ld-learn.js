@@ -14,7 +14,7 @@ import { initCar } from './gfx/Cars.js';
 import { initGuy, BodyParts } from './gfx/Guy.js';
 import { updateMapData } from './gfx/MiniMap.js';
 import { initCow, initHorse } from './gfx/Animals.js';
-import { initTracks, initLoco, initWaggon, vehicleLength, trackCurveRadius, trackHalfLength } from './gfx/Train.js';
+import * as TRAIN from './gfx/Train.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
@@ -28,6 +28,11 @@ var listener;
 var ambientSound;
 var sphereSound;
 var motorSoundBuffer;
+var trainEngineSoundBuffer;
+var trainSoundBuffer;
+var trainHornSoundBuffer;
+var horseSoundBuffer;
+var cowSoundBuffer;
 var walkSound;
 var tickSound;
 var collectSound;
@@ -35,7 +40,7 @@ var newItemSound;
 var okSounds = [];
 var wrongSounds = [];
 
-var motorSounds = [];
+var itemSounds = [];
 var cars = [];
 var train = [];
 
@@ -125,15 +130,15 @@ const chrActions = {
     plantsMax : 20,
     prepareRoads : 15, //15
     initRoads : 20, //20
-    carsMin : 25,   //25
-    carsMax : 50,   //50
-    animalsMin : 13, // 13
+    carsMin : 21,   //21
+    carsMax : 41,   //41
+    animalsMin : 12, // 12
     animalsMax : 25, // 25
     musicSphere : 30, // 30
-    prepareTracks : 35, // 35
-    initTracks : 45, // 45
-    trainMin : 55, // 55
-    trainMax : 60  // 60
+    prepareTracks : 40, // 40
+    initTracks : 42, // 42
+    trainMin : 45, // 45
+    trainMax : 50  // 50
 }
 
 init();
@@ -430,7 +435,7 @@ function pauseGame() {
         ambientSound.pause();
     if (sphereSound && sphereSound.isPlaying)
         sphereSound.pause();
-    for (let ms of motorSounds) {
+    for (let ms of itemSounds) {
         if (ms.isPlaying)
             ms.pause();
     }
@@ -445,7 +450,7 @@ function startGame() {
         ambientSound.play();
     if (sphereSound && chrystalCount >= chrActions.musicSphere && !sphereSound.isPlaying)
         sphereSound.play();
-    for (let ms of motorSounds) {
+    for (let ms of itemSounds) {
         if (!ms.isPlaying)
             ms.play();
     }
@@ -478,18 +483,38 @@ function initAudio() {
         ambientSound = new THREE.Audio( listener );
         ambientSound.setBuffer( buffer );
         ambientSound.setLoop( true );
-        ambientSound.setVolume( 0.3 );
+        ambientSound.setVolume( 0.2 );
     });
 
     audioLoader.load( 'sounds/walk.ogg', function( buffer ) {        
         walkSound = new THREE.Audio( listener );
         walkSound.setBuffer( buffer );
         walkSound.setLoop( false );
-        walkSound.setVolume( 0.5 );        
+        walkSound.setVolume( 0.2 );        
     });
 
     audioLoader.load( 'sounds/motor.ogg', function( buffer ) {     
        motorSoundBuffer = buffer;
+    });
+
+    audioLoader.load( 'sounds/train_engine.ogg', function( buffer ) {     
+        trainEngineSoundBuffer = buffer;
+     });
+
+    audioLoader.load( 'sounds/train_move.ogg', function( buffer ) {     
+        trainSoundBuffer = buffer;
+    });
+
+    audioLoader.load( 'sounds/train_horn.ogg', function( buffer ) {     
+        trainHornSoundBuffer = buffer;
+    });
+
+    audioLoader.load( 'sounds/horse.ogg', function( buffer ) {     
+        horseSoundBuffer = buffer;
+    });
+
+    audioLoader.load( 'sounds/cow.ogg', function( buffer ) {     
+        cowSoundBuffer = buffer;
     });
 
     audioLoader.load( 'sounds/collect.ogg', function( buffer ) {        
@@ -503,7 +528,7 @@ function initAudio() {
         newItemSound = new THREE.Audio( listener );
         newItemSound.setBuffer( buffer );
         newItemSound.setLoop( false );
-        newItemSound.setVolume( 0.5 );        
+        newItemSound.setVolume( 0.3 );        
     });
 
     audioLoader.load( 'sounds/tick.ogg', function( buffer ) {        
@@ -1238,24 +1263,34 @@ function animate() {
 
         render();
 
-        updateCarPositions();
+        updateVehiclePositions();
         updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);
 
     }
 }
 
-function updateCarPositions() {
+function updateVehiclePositions() {
     if (cars.length > 0)
     {
         for (let car of cars) {
-            let parcel = WORLD.parcels[WORLD.getParcelIndex(car.position.x, car.position.z)];
-            if (parcel !== car.parcel) {
-                if (car.parcel) {
-                    car.parcel.mapObjId = WORLD.MapObjectId.road;                    
-                }
-                car.parcel = parcel;
-                parcel.mapObjId = WORLD.MapObjectId.car;
+            updateVehiclePos(car, WORLD.MapObjectId.car, WORLD.MapObjectId.road);
+        }
+    }
+
+    if (train.length > 0) {
+        for (let waggon of train) {
+            updateVehiclePos(waggon, WORLD.MapObjectId.train, WORLD.MapObjectId.none);
+        }
+    }
+
+    function updateVehiclePos(vehicle, mapId, altMapId) {
+        let parcel = WORLD.parcels[WORLD.getParcelIndex(vehicle.position.x, vehicle.position.z)];
+        if (parcel !== vehicle.parcel) {
+            if (vehicle.parcel) {
+                vehicle.parcel.mapObjId = altMapId;
             }
+            vehicle.parcel = parcel;
+            parcel.mapObjId = mapId;
         }
     }
 }
@@ -1353,11 +1388,11 @@ function performChrystalAction() {
     }
 
     if (chrystalCount == chrActions.prepareTracks) {
-        
+        TRAIN.prepareTracks(mixer);
     }
 
     if (chrystalCount == chrActions.initTracks) {
-        initTracks(linTrackNumber);
+        TRAIN.initTracks();
     }
 
     if (chrystalCount == chrActions.trainMin) {
@@ -1427,6 +1462,8 @@ function addAnimal() {
                 var action = mixer.clipAction(ANIM.createHeadAnimation( 1, Math.PI/4, 'x'), cow.head);
                 action.setLoop(THREE.LoopRepeat).setDuration(5).play();
 
+                addItemSound(cow, cowSoundBuffer, true);
+
             }, onProgress, onError);
         } else {
             initHorse(function (horse) {
@@ -1444,38 +1481,78 @@ function addAnimal() {
                 action = mixer.clipAction(ANIM.createHeadAnimation( 1, -Math.PI * 0.4, 'x'), horse.body);
                 action.setLoop(THREE.LoopOnce).setDuration(8).play();
     
+                addItemSound(horse, horseSoundBuffer, true);
+
             }, onProgress, onError);
         }
     }
 }
 
-const linTrackNumber = WORLD.worldPlates * 4 - 3;
+function addItemSound(item, buffer, loop) {
+    let sound = new THREE.PositionalAudio(listener);
+    
+    item.add(sound);    
+    sound.setBuffer(buffer);
+    sound.setRefDistance(50);
+    sound.setLoop(loop);
+    sound.setVolume(0.7);
+    sound.play();
+    
+    if (loop) {
+        itemSounds.push(sound); 
+    } else {         
+        item.sound = sound; 
+    }
+
+    return sound;
+}
 
 function initTrain() {
-    initLoco(function (loco) {
+    TRAIN.initLoco(function (loco) {
         WORLD.model.add(loco);
 
-        let clip = ANIM.createTrackAnimation(linTrackNumber, trackHalfLength * 2, trackCurveRadius, 0);
+        let clip = ANIM.createTrackAnimation(TRAIN.linTrackNumber, TRAIN.trackHalfLength * 2, TRAIN.trackCurveRadius, TRAIN.vehicleLength * train.length);
         var action = mixer.clipAction(clip, loco);                
         let duration =  0.005 * clip.path.getLength();
 
-        action.setLoop(THREE.LoopRepeat).setDuration(duration).play();
+        action.setLoop(THREE.LoopRepeat).setDuration(duration);
+
+        if (train.length > 0) {
+            action.syncWith(train[0].anim);
+        }
+
+        action.play();
 
         loco.anim = action;
+
+        addItemSound(loco, trainEngineSoundBuffer, true);
+        addItemSound(loco, trainSoundBuffer, true);
+        addItemSound(loco, trainHornSoundBuffer, true).setVolume( 10 );
+
         train.push(loco);
+        
     }, onProgress, onError);
 }
 
 function addWaggon(isLast) {
-    initWaggon(function (waggon) {
+    TRAIN.initWaggon(function (waggon) {
         // waggon.translateX(vehicleLength * (chrystalCount - chrActions.trainMin));
         WORLD.model.add(waggon);
 
-        let clip = ANIM.createTrackAnimation(linTrackNumber, trackHalfLength * 2, trackCurveRadius, vehicleLength * train.length);
+        let clip = ANIM.createTrackAnimation(TRAIN.linTrackNumber, TRAIN.trackHalfLength * 2, TRAIN.trackCurveRadius, TRAIN.vehicleLength * train.length);
         var action = mixer.clipAction(clip, waggon);                
         let duration =  0.005 * clip.path.getLength();
 
-        action.setLoop(THREE.LoopRepeat).setDuration(duration).syncWith(train[0].anim).play();
+        action.setLoop(THREE.LoopRepeat).setDuration(duration);
+
+        if (train.length > 0) {
+            action.syncWith(train[0].anim);
+        }
+        action.play();
+
+        waggon.anim = action;
+
+        addItemSound(waggon, trainSoundBuffer, true);
 
         train.push(waggon);
     }, onProgress, onError, isLast);
@@ -1505,14 +1582,7 @@ function addCar() {
             action.setLoop(THREE.LoopRepeat).setDuration(1).play();
         }
 
-        let motorSound = new THREE.PositionalAudio( listener );
-        car.add(motorSound);
-        motorSound.setBuffer( motorSoundBuffer );
-        motorSound.setRefDistance( 50 );
-        motorSound.setLoop( true );
-        motorSound.setVolume( 0.7 );
-        motorSound.play();
-        motorSounds.push(motorSound);
+        addItemSound(car, motorSoundBuffer, true);
 
         cars.push(car);
 

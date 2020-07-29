@@ -9,22 +9,26 @@ const fenceColor = [84, 51, 36, transparency];       //#543324
 const exerciseColor = [200, 180, 0, transparency];
 const plantColor = [0, 69, 26, transparency];         //#00451A
 const roadColor = [180, 180, 180, transparency];
+const trackColor = [210, 210, 210, transparency];
 const chrystalColor = [250, 250, 250, transparency];
 const playerColor = [250, 200, 10, transparency];        //#FAC80A
 const carColor = [60, 60, 60, transparency];
 const animalsColor = [140, 90, 60, transparency];
 const msphereColor = [255, 158, 43, transparency]; //#FF800D
+const trainColor = [40, 10, 10, transparency];
 
 const mapObjColors = [ 
     defaultColor, 
     exerciseColor, 
     fenceColor, 
-    roadColor, 
+    roadColor,
     plantColor, 
     chrystalColor, 
     carColor, 
     animalsColor,
-    msphereColor 
+    msphereColor,
+    trackColor,
+    trainColor
 ];
 
 var imgWidth = (WORLD.plateCounter * 2 + 1) * WORLD.plateSize / WORLD.parcelSize + 1;

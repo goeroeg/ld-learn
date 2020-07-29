@@ -44,8 +44,10 @@ export const MapObjectId = {
 
 export const smoothNormals = false; // test this later, but takes longer for testing
 
-const fencePlaceholder = 1;
-const roadPlaceholder = 2;
+export const fencePlaceholder = 1;
+export const roadPlaceholder = 2;
+export const trackPlaceholder = 3;
+export const trackDummyPlaceholder = 4;
 
 export function initScene(onLoad, onProgress, onError) {
     var lDrawLoader = new LDrawLoader();
@@ -262,7 +264,7 @@ export function prepareRoads(mixer) {
     for (let x = -roadPlates * plateSize; x <= roadPlates * plateSize; x +=parcelSize) {
         for (let z = -roadPlates * plateSize; z <= roadPlates * plateSize; z+= 2 * roadPlates * plateSize ) {
             for (let idx = -2; idx <= 2; idx++) {
-                reserveForRoad(x, z + idx * parcelSize, mixer);
+                reserveParcelAt(x, z + idx * parcelSize, mixer, roadPlaceholder);
             }
         }
     }
@@ -270,23 +272,23 @@ export function prepareRoads(mixer) {
     for (let x = -roadPlates * plateSize; x <= roadPlates * plateSize; x+= 2 * roadPlates * plateSize) {
         for (let z = -roadPlates * plateSize; z <= roadPlates * plateSize; z+= parcelSize ) {
             for (let idx = -2; idx <= 2; idx++) {
-                reserveForRoad(x + idx * parcelSize, z, mixer);
+                reserveParcelAt(x + idx * parcelSize, z, mixer, roadPlaceholder);
             }
         }
     }
+}
 
-    function reserveForRoad(x, z, mixer) {
-        let parcel = parcels[getParcelIndex(x, z)];
-        //debugParcel(parcel.x, parcel.z);
-        if (parcel.occupied && parcel.occupied != roadPlaceholder) {
-            model.remove(parcel.occupied);
-            if (mixer) {
-                mixer.uncacheRoot(parcel.occupied);                
-            }
+export function reserveParcelAt(x, z, mixer, placeHolder) {
+    let parcel = parcels[getParcelIndex(x, z)];
+    // debugParcel(parcel.x, parcel.z);
+    if (parcel.occupied && parcel.occupied != placeHolder) {
+        model.remove(parcel.occupied);
+        if (mixer) {
+            mixer.uncacheRoot(parcel.occupied);                
         }
-        parcel.occupied = roadPlaceholder;
-        parcel.mapObjId = MapObjectId.none;
     }
+    parcel.occupied = placeHolder;
+    parcel.mapObjId = MapObjectId.none;
 }
 
 export function initRoads(onLoad, onProgress, onError) {

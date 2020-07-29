@@ -189,11 +189,13 @@ export function createTrackAnimation (numLinTracks, linTrackLength, radius, offs
         rot.push(angle);
     }
 
+    /*
     console.log(times);
     console.log(rot);
     console.log(xvalues);
     console.log(zvalues);
-
+    */
+   
     let xtrack = new THREE.NumberKeyframeTrack('.position[x]', times, xvalues);
     let ztrack = new THREE.NumberKeyframeTrack('.position[z]', times, zvalues);
     let rottrack = new THREE.NumberKeyframeTrack('.rotation[y]', times, rot);
