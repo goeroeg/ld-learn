@@ -5,9 +5,21 @@ function createWindow () {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
+    frame: true,
+    icon: 'favicon.png',
+//    fullscreen: true,
     webPreferences: {
       nodeIntegration: false
     }
+  })
+
+  // remove menu bar
+  // win.removeMenu();
+  win.setMenuBarVisibility(false) // with this the shortcuts still work
+
+  win.on('leave-full-screen', function() {
+    // disable menu after being fullscreen
+    win.setMenuBarVisibility(false)
   })
 
   // and load the index.html of the app.

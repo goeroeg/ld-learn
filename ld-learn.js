@@ -18,6 +18,8 @@ import * as TRAIN from './gfx/Train.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
+var isElectronApp = (navigator.userAgent.toLowerCase().indexOf(' electron/') > -1); // detect whether run as electron app
+
 var fps = [];
 
 var dirLight;
@@ -594,14 +596,19 @@ function initGUI() {
 
     onWindowResize(false);
 
+    
+    // does not work when starting fullscreen with F11 :(
     /*
     gfxFolder.add(gfxSettings, "fullScreen").name("Full screen").onChange(function(value) {
+        
         if (value) {
             openFullscreen();
         } else {
             closeFullscreen();
         }
-    }).listen()
+        
+        //toggleFullScreen();
+    }).listen();
     */
 
     gfxFolder.add(gfxSettings, "shadows", 0, 3, 1).name("Shadows").onChange(function(value) {
@@ -702,6 +709,10 @@ function initGUI() {
     divisionFolder.open();
 
     // exFolder.add(gameSettings, "numChoices", 2, 5).step(1).name("Choices");
+
+    if (isElectronApp) {
+        gui.add(window, "close").name("Exit game");
+    }
 
     // exFolder.open();
     let guiContainer = document.getElementById('guiContainer');
