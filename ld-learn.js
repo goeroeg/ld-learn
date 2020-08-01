@@ -10,7 +10,7 @@ import { createText } from './gfx/Text.js';
 import { addCrossHair } from './gfx/CrossHair.js';
 import * as WORLD from './gfx/World.js';
 import * as ANIM from './gfx/Animations.js';
-import { initCar } from './gfx/Cars.js';
+import { initCar, availableCarModels } from './gfx/Cars.js';
 import { initGuy, BodyParts } from './gfx/Guy.js';
 import { updateMapData } from './gfx/MiniMap.js';
 import { initCow, initHorse } from './gfx/Animals.js';
@@ -131,12 +131,12 @@ const chrActions = {
     prepareRoads : 15, //15
     initRoads : 20, //20
     carsMin : 21,   //21
-    carsMax : 41,   //41
+    carsMax : 42,   //42
     animalsMin : 12, // 12
     animalsMax : 25, // 25
     musicSphere : 30, // 30
     prepareTracks : 40, // 40
-    initTracks : 42, // 42
+    initTracks : 43, // 44
     trainMin : 45, // 45
     trainMax : 50  // 50
 }
@@ -1560,7 +1560,7 @@ function addWaggon(isLast) {
 
 function addCar() {
 
-    let carIdx = (Math.floor(chrystalCount / 2)) % 2;
+    let carIdx = (Math.floor(chrystalCount / 2)) % (availableCarModels);
 
     // showProgressBar();
     initCar(carIdx, function (car) {
@@ -1575,11 +1575,11 @@ function addCar() {
 
         for (let wheel of car.rWheels) {
             var action = mixer.clipAction(ANIM.createRotationAnimation(1, 'z'), wheel);
-            action.setLoop(THREE.LoopRepeat).setDuration(1).play();
+            action.setLoop(THREE.LoopRepeat).setDuration(0.75).play();
         }
         for (let wheel of car.lWheels) {
             var action = mixer.clipAction(ANIM.createRotationCcwAnimation(1, 'z'), wheel);
-            action.setLoop(THREE.LoopRepeat).setDuration(1).play();
+            action.setLoop(THREE.LoopRepeat).setDuration(0.75).play();
         }
 
         addItemSound(car, motorSoundBuffer, true);
