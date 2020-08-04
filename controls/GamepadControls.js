@@ -88,11 +88,11 @@ class GamepadControls extends THREE.EventDispatcher {
 
 			var g = rawGamepads[ 0 ];
 			
-			let ax0 = this.filter( g.axes[ 0 ] ) * 4;  
-			let ax1 = this.filter( g.axes[ 1 ] ) * -4;
+			let ax0 = this.filter( g.axes[ 0 ] ) * 10;  
+			let ax1 = this.filter( g.axes[ 1 ] ) * -10;
 
-			let ax2 = this.filter( g.axes[ 2 ] ) * 0.025;
-			let ax3 = this.filter( g.axes[ 3 ] ) * 0.025;
+			let ax2 = this.filter( g.axes[ 2 ] ) * 0.05;
+			let ax3 = this.filter( g.axes[ 3 ] ) * 0.05;
 			
 			for (let idx=0; idx < g.buttons.length; idx++) {				
 				let buttonValue = g.buttons[idx].value > 0 ? 1 : 0;
