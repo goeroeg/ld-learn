@@ -1230,30 +1230,32 @@ function onDocumentClick( event ) {
 }
 
 function evaluateAnswer(obj) {
-    obj.parent.children[0].material.color.setHex(obj.parent.isResult ? okColor : wrongColor);
-    if (obj.parent.sound) {
-        if (obj.parent.sound.isPlaying) obj.parent.sound.stop();
-        obj.parent.sound.play();
-    }
-    highlightMesh(obj, textEmissive); // obj.parent.isResult ? okColor : wrongColor);
-    if (obj.parent.isResult) {
-        addChrystal();
-    }
-    else {
-        
-        // show solution
-        for (let mesh of exerciseMeshes) {
-            if (mesh.parent.isResult) {
-                // window.setTimeout( mesh => {
-                    mesh.parent.children[0].material.color.setHex(okColor);
-                // }, 500);
-                break;
+    if (obj) {
+        obj.parent.children[0].material.color.setHex(obj.parent.isResult ? okColor : wrongColor);
+        if (obj.parent.sound) {
+            if (obj.parent.sound.isPlaying) obj.parent.sound.stop();
+            obj.parent.sound.play();
+        }
+        highlightMesh(obj, textEmissive); // obj.parent.isResult ? okColor : wrongColor);
+        if (obj.parent.isResult) {
+            addChrystal();
+        }
+        else {
+            
+            // show solution
+            for (let mesh of exerciseMeshes) {
+                if (mesh.parent.isResult) {
+                    // window.setTimeout( mesh => {
+                        mesh.parent.children[0].material.color.setHex(okColor);
+                    // }, 500);
+                    break;
+                }
             }
         }
+        exerciseMeshes = [];
+        currentHighlight = null;
+        window.setTimeout(createExercise, 1500);
     }
-    exerciseMeshes = [];
-    currentHighlight = null;
-    window.setTimeout(createExercise, 1500);
 }
 
 function animate() {
