@@ -82,8 +82,9 @@ var progressBarDiv;
 var resolutions = [{ x: 0, y: 0 }, { x: 320, y: 240 }, {x: 640, y: 480 }, { x: 1024, y: 768 }, { x: 1280, y: 800 }, { x: 1920, y: 1080 }]
 var resolutionNames  = { 'Auto': 0, '320x240': 1, '640x480': 2, '1024x768': 3, "1280x800": 4, HD: 5 };
 var qualityNames = { High: 1, Low : 2};
-var audioSettings = { enabled : true, volume: 100 }
-var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: 3 , antiAlias: true , showFPS: false}
+var audioSettings = { enabled : true, volume: 100 };
+var controlSettings = { moveSensitivity: 1, lookSensitivity: 1 };
+var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: 3 , antiAlias: true , showFPS: false};
 var gameSettings = { 
     itemAmount:100 , 
     add : true, addMax : 100, addResMax : 100, addSym: '+',
@@ -97,7 +98,7 @@ const defaultLegsColor = [30, 90, 168];
 
 var playerSettings = {name:'Player' }
 
-var gui, playersFolder, gfxFolder, audioFolder, gameFolder;
+var gui, playersFolder, gfxFolder, controlsFolder, audioFolder, gameFolder;
 
 var isTouch = false;
 
@@ -191,7 +192,10 @@ function initControls() {
     gamePadButtonActions[7] = function() { evaluateAnswer(currentHighlight); };
     gamePadButtonActions[9] = function() { if (gameActive) pauseGame(); else startGame(); };
     gamePadButtonActions[16] = gamePadButtonActions[9];
-    gpControls = new GamepadControls( controls,  gamePadButtonActions, checkChrystals);
+    gpControls = new GamepadControls( controls);
+
+    gpControls.buttonActions = gamePadButtonActions;
+    gpControls.moveAction = checkChrystals;
 
     scene.add( controls.getObject() );
 
@@ -593,6 +597,7 @@ function initGUI() {
 
     gui.remember(gfxSettings);
     gui.remember(audioSettings);
+    gui.remember(controlSettings);
     gui.remember(gameSettings);
     gui.remember(playerSettings);
 
@@ -652,6 +657,17 @@ function initGUI() {
     });
 
     setMasterVolume();
+
+    controlsFolder = gui.addFolder("Gamepad settings");
+    controlsFolder.add(controlSettings, "moveSensitivity", 0.1, 2).step(0.1).name("Move sensitivity").onChange(function (value) {
+        gpControls.moveSensitivity = value;
+    });
+    controlsFolder.add(controlSettings, "lookSensitivity", 0.1, 2).step(0.1).name("Look sensitivity").onChange(function (value) {
+        gpControls.lookSensitivity = value;
+    });
+
+    gpControls.moveSensitivity = controlSettings.moveSensitivity;
+    gpControls.lookSensitivity = controlSettings.lookSensitivity;
 
     gameFolder = gui.addFolder("Game settings");
     gameFolder.add(gameSettings, "itemAmount", 10, 200).step(10).name("Obj density %");
