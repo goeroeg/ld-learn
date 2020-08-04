@@ -46,7 +46,8 @@ var itemSounds = [];
 var cars = [];
 var train = [];
 
-var clock = new THREE.Clock();
+var animClock = new THREE.Clock();
+var walkClock = new THREE.Clock();
 
 var playerGuy;
 const guyOffset = 20;
@@ -255,10 +256,10 @@ function initControls() {
                 break;
 
             case 8: // backspace
-                if ( clock.running ) {
-                    clock.stop();
+                if ( animClock.running ) {
+                    animClock.stop();
                 } else {
-                    clock.start();
+                    animClock.start();
                 }
                 break;
         }
@@ -441,7 +442,8 @@ function pauseGame() {
         if (ms.isPlaying)
             ms.pause();
     }
-    clock.stop();
+    animClock.stop();
+    walkClock.stop();
     document.removeEventListener('click', onDocumentClick);
     touchCameraControls.removeEventListener('click', onDocumentClick);
 }
@@ -458,7 +460,8 @@ function startGame() {
     }
     document.addEventListener('click', onDocumentClick, false);
     touchCameraControls.addEventListener('click', onDocumentClick, false);
-    clock.start();
+    animClock.start();
+    walkClock.start();
     gameActive = true;
     requestAnimationFrame(animate);
 }
@@ -1134,11 +1137,16 @@ function showProgressBar() {
 
     document.body.appendChild( progressBarDiv );
 
+    animClock.stop();
+    walkClock.stop();
+
 }
 
 function hideProgressBar() {
 
     document.body.removeChild( progressBarDiv );
+    animClock.start();
+    walkClock.start();
 
 }
 
@@ -1253,11 +1261,11 @@ function animate() {
 
         //var delta = 0.75 * clock.getDelta();
 
-        let delta = clock.getDelta();
+        let animDelta = animClock.getDelta();
 
         if (gfxSettings.showFPS) {
             if (fps.length > 25) fps.splice(0, 1);
-                fps.push(1/delta);
+                fps.push(1/animDelta);
                 let currFps = 0;
                 for (let idx = 0; idx < fps.length; idx++) {
                     currFps += fps[idx];
@@ -1266,9 +1274,9 @@ function animate() {
             playerInfo.innerHTML = currFps + " FPS";
         }
 
-        mixer.update( delta );
+        mixer.update( animDelta );
 
-        updateControls(delta);
+        updateControls(walkClock.getDelta());
 
         checkExerciseIntersections();
 
@@ -1403,7 +1411,10 @@ function performChrystalAction() {
     }
 
     if (chrystalCount == chrActions.initTracks) {
-        TRAIN.initTracks();
+        showProgressBar();
+        TRAIN.initTracks(function (track) {
+            hideProgressBar();
+        } , onProgress, onError);
     }
 
     if (chrystalCount == chrActions.trainMin) {
@@ -1413,7 +1424,6 @@ function performChrystalAction() {
     if (chrystalCount > chrActions.trainMin && chrystalCount <= chrActions.trainMax) {
         addWaggon(chrystalCount == chrActions.trainMax);
     }
-
 }
 
 function addAnimal() {
