@@ -8,13 +8,18 @@
 
 class GamepadControls extends THREE.EventDispatcher {
 
-  	constructor( controls ) {
+  	constructor( controls, buttonActions, moveAction ) {
 		super();
 
 		this.controls = controls;
+		this.buttonActions = buttonActions;
+		this.moveAction = moveAction;
+		if (!this.buttonActions) this.buttonActions = [];
 		
 		this.threshold = .15; // .05
 	
+		this.buttonStates = [];
+
 		this.init();
 	}
 
@@ -25,7 +30,7 @@ class GamepadControls extends THREE.EventDispatcher {
 		!!navigator.webkitGamepads;
 
 		if (!gamepadSupportAvailable) {
-			console.log( 'NOT SUPPORTED' );
+			console.log( 'Gamepads NOT SUPPORTED' );
 		} else {
 			if ('ongamepadconnected' in window) {
 				window.addEventListener('gamepadconnected', onGamepadConnect.bind( this ), false);
@@ -86,16 +91,22 @@ class GamepadControls extends THREE.EventDispatcher {
 			let ax0 = this.filter( g.axes[ 0 ] ) * 4;  
 			let ax1 = this.filter( g.axes[ 1 ] ) * -4;
 
-
-			
 			let ax2 = this.filter( g.axes[ 2 ] ) * 0.025;
 			let ax3 = this.filter( g.axes[ 3 ] ) * 0.025;
 			
-			// this.filter( g.buttons[ 6 ].value ) - this.filter( g.buttons[ 7 ].value ), 			
+			for (let idx=0; idx < g.buttons.length; idx++) {				
+				let buttonValue = g.buttons[idx].value > 0 ? 1 : 0;
+				if (buttonValue !== this.buttonStates[idx] ) {
+					this.buttonStates[idx] = buttonValue;
+					if (buttonValue && this.buttonActions[idx]) this.buttonActions[idx]();
+				}
+			}
 
 			this.controls.rotateCamera(ax2, ax3);
 			this.controls.moveForward(ax1);
 			this.controls.moveRight(ax0);
+
+			if (this.moveAction && (ax0 !=0 || ax1 !=0 )) this.moveAction();
 		}
 	}
 }

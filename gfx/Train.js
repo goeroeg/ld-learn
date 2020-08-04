@@ -156,7 +156,7 @@ export function initTracks(onLoad, onProgress, onError) {
                 }
             }
 
-            if (onLoad) onLoad();
+            if (onLoad) onLoad(track);
                         
         }, onProgress, onError);
 }

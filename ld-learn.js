@@ -5,9 +5,9 @@ import { GUI } from './web_modules/three/examples/jsm/libs/dat.gui.module.js';
 import { PointerLockControls } from './web_modules/three/examples/jsm/controls/PointerLockControls.js';
 import { MathExercise } from './exercises/Maths.js';
 import { OperatorType } from './exercises/Maths.js';
-import { GamepadControls } from './gfx/GamepadControls.js';
+import { GamepadControls } from './controls/GamepadControls.js';
 import { createText } from './gfx/Text.js';
-import { addCrossHair } from './gfx/CrossHair.js';
+import { addCrossHair } from './controls/CrossHair.js';
 import * as WORLD from './gfx/World.js';
 import * as ANIM from './gfx/Animations.js';
 import { initCar, availableCarModels } from './gfx/Cars.js';
@@ -185,7 +185,13 @@ function initControls() {
     // raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, -1, 0 ), 0 , 1000);
 
     controls = new PointerLockControls( camera, document.body );
-    gpControls = new GamepadControls( controls );
+
+    let gamePadButtonActions = [];
+    gamePadButtonActions[6] = jump;
+    gamePadButtonActions[7] = function() { evaluateAnswer(currentHighlight); };
+    gamePadButtonActions[9] = function() { if (gameActive) pauseGame(); else startGame(); };
+    gamePadButtonActions[16] = gamePadButtonActions[9];
+    gpControls = new GamepadControls( controls,  gamePadButtonActions, checkChrystals);
 
     scene.add( controls.getObject() );
 
@@ -251,8 +257,7 @@ function initControls() {
                 break;
 
             case 32: // space
-                if ( canJump === true ) velocity.y += jumpInitialVel;
-                canJump = false;
+                jump();
                 break;
 
             case 8: // backspace
@@ -320,6 +325,12 @@ function initControls() {
     //
     window.addEventListener( 'resize', onWindowResize, false );
     // document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+}
+
+function jump() {
+    if (canJump === true)
+        velocity.y += jumpInitialVel;
+    canJump = false;
 }
 
 function initTouchControls(hide) {
