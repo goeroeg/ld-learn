@@ -217,7 +217,19 @@ export function initLoco(onLoad, onProgress, onError) {
 
                 c.castShadow = true; 
                 c.receiveShadow = true; 
-            } );            
+            } ); 
+
+            let flmat;
+            for (let mesh of loco.frontLights) {
+                if (!flmat) flmat = mesh.material[0].clone();
+                mesh.material[0] = flmat;
+            }
+
+            let wmat;
+            for (let mesh of loco.windows) {
+                if (!wmat) wmat = mesh.material[0].clone();
+                mesh.material[0] = wmat;
+            }
 
             if (onLoad) onLoad(loco);
         });
@@ -226,7 +238,15 @@ export function initLoco(onLoad, onProgress, onError) {
 export function initWaggon(onLoad, onProgress, onError, lastCall) {
     if (waggon) {
         // already loaded
-        if (onLoad) onLoad(lastCall ? waggon : waggon.clone());
+        if (onLoad) {
+            if (!lastCall) {
+                let clone = waggon.clone();
+                sortWaggonParts(clone);
+                onLoad(clone); 
+            } else {
+                if (onLoad) onLoad(waggon); 
+            }
+        }
     } else {
 
         var lDrawLoader = new LDrawLoader();
@@ -243,44 +263,55 @@ export function initWaggon(onLoad, onProgress, onError, lastCall) {
                 // Convert from LDraw coordinates: rotate 180 degrees around OX
                 //model.rotateX(-Math.PI);                                           
 
-                waggon = new THREE.Group();
-                waggon.add(model);
-
-                waggon.body = [];
-                waggon.rWheels = [];
-                waggon.lWheels = [];
-                waggon.windows = [];
-                waggon.frontLights = [];
-                waggon.rearLights = [];
-
-                // Adjust materials
-
                 model.traverse( c => { 
-                    c.visible = !c.isLineSegments;                 
-
-                    if (c.isMesh)
-                    {
-                        switch (c.parent.userData.constructionStep) {
-                            case stepBody:
-                                waggon.body.push(c);
-                                break;
-                            case stepRightWheels:
-                                waggon.rWheels.push(c);
-                                break;
-                            case stepLeftWheels:
-                                waggon.lWheels.push(c);
-                                break;
-                            case stepWindows:
-                                waggon.windows.push(c);
-                                break;
-                        }
-                    }
-
+                    c.visible = !c.isLineSegments;
                     c.castShadow = true; 
                     c.receiveShadow = true; 
                 } );            
 
-                if (onLoad) onLoad(lastCall ? waggon : waggon.clone());
+                waggon = new THREE.Group();
+                waggon.add(model);
+
+                sortWaggonParts(waggon);            
+
+                if (onLoad) {
+                    if (!lastCall) {
+                        let clone = waggon.clone();
+                        sortWaggonParts(clone);
+                        onLoad(clone); 
+                    } else {
+                        if (onLoad) onLoad(waggon); 
+                    }
+                }
             });
+    }
+
+    function sortWaggonParts(group) {
+        group.body = [];
+        group.rWheels = [];
+        group.lWheels = [];
+        group.windows = [];
+        group.frontLights = [];
+        group.rearLights = [];
+
+        // Adjust materials
+        group.traverse(c => {
+            if (c.isMesh) {
+                switch (c.parent.userData.constructionStep) {
+                    case stepBody:
+                        group.body.push(c);
+                        break;
+                    case stepRightWheels:
+                        group.rWheels.push(c);
+                        break;
+                    case stepLeftWheels:
+                        group.lWheels.push(c);
+                        break;
+                    case stepWindows:
+                        group.windows.push(c);
+                        break;
+                }
+            }
+        });
     }
 }

@@ -6,7 +6,7 @@ import { PointerLockControls } from './web_modules/three/examples/jsm/controls/P
 import { MathExercise } from './exercises/Maths.js';
 import { OperatorType } from './exercises/Maths.js';
 import { GamepadControls } from './controls/GamepadControls.js';
-import { createText } from './gfx/Text.js';
+import { createText, defaultTextMaterial } from './gfx/Text.js';
 import { addCrossHair } from './controls/CrossHair.js';
 import * as WORLD from './gfx/World.js';
 import * as ANIM from './gfx/Animations.js';
@@ -22,12 +22,12 @@ var isElectronApp = (navigator.userAgent.toLowerCase().indexOf(' electron/') > -
 
 var fps = [];
 
-var dirLight;
-
 var mouse = new THREE.Vector2();
 
 var listener;
 var ambientSound;
+var ambientDaySoundBuffer;
+var ambientNightSoundBuffer;
 var sphereSound;
 var motorSoundBuffer;
 var trainEngineSoundBuffer;
@@ -46,6 +46,8 @@ var itemSounds = [];
 var cars = [];
 var train = [];
 
+var nightLights = [];
+
 var animClock = new THREE.Clock();
 var walkClock = new THREE.Clock();
 
@@ -58,6 +60,10 @@ const jumpInitialVel = 350;
 var mixer;
 
 var skyMesh;
+var hemiLight;
+var dirLight;
+
+var isNight = false;
 
 var chrystalCount = 0;
 var chrystals = new Set();
@@ -78,7 +84,6 @@ var absMaxDistance = 0.5 * WORLD.plateSize - guyOffset;
 
 var progressBarDiv;
 
-
 var resolutions = [{ x: 0, y: 0 }, { x: 320, y: 240 }, {x: 640, y: 480 }, { x: 1024, y: 768 }, { x: 1280, y: 800 }, { x: 1920, y: 1080 }]
 var resolutionNames  = { 'Auto': 0, '320x240': 1, '640x480': 2, '1024x768': 3, "1280x800": 4, HD: 5 };
 var qualityNames = { High: 1, Low : 2};
@@ -86,7 +91,7 @@ var audioSettings = { enabled : true, volume: 100 };
 var controlSettings = { moveSensitivity: 1, lookSensitivity: 1 };
 var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: 3 , antiAlias: true , showFPS: false};
 var gameSettings = { 
-    itemAmount:100 , 
+    itemAmount: 100 , nightEnabled: true,
     add : true, addMax : 100, addResMax : 100, addSym: '+',
     sub : true, subMax : 100, subResMax : 100, subSym: '-',
     multi : true, multiMax : 10, multiResMax : 100, multiSym: '·',
@@ -123,6 +128,7 @@ var touchCamPos = new THREE.Vector2();
 var gameActive = false;
 
 const okColor = 0x00ff00, wrongColor = 0xff0000, selectedEmissive = 0x0000ff;
+const fLightsColor = 0xffffff, rLightsColor = 0xff0000, windowColor = 0xffffbb;
 
 var textEmissive = 0x000000;
 
@@ -140,9 +146,10 @@ const chrActions = {
     animalsMax : 25, // 25
     musicSphere : 30, // 30
     prepareTracks : 40, // 40
-    initTracks : 43, // 44
-    trainMin : 45, // 45
-    trainMax : 50  // 50
+    initTracks : 43, // 43
+    trainMin : 44, // 44
+    trainMax : 49,  // 49
+    nightMod : 10 // 10
 }
 
 init();
@@ -187,12 +194,23 @@ function initControls() {
 
     controls = new PointerLockControls( camera, document.body );
 
+    gpControls = new GamepadControls( controls );
+
     let gamePadButtonActions = [];
     gamePadButtonActions[6] = jump;
-    gamePadButtonActions[7] = function() { evaluateAnswer(currentHighlight); };
-    gamePadButtonActions[9] = function() { if (gameActive) pauseGame(); else startGame(); };
+    gamePadButtonActions[7] = function() { 
+                                            evaluateAnswer(currentHighlight); 
+                                         };
+    gamePadButtonActions[9] = function() { 
+                                            if ( controls.isLocked ) {
+                                                controls.unlock();
+                                            } else if (gameActive) {
+                                                pauseGame();
+                                            } else {
+                                                controls.lock(); 
+                                            }
+                                         };
     gamePadButtonActions[16] = gamePadButtonActions[9];
-    gpControls = new GamepadControls( controls);
 
     gpControls.buttonActions = gamePadButtonActions;
     gpControls.moveAction = checkChrystals;
@@ -498,12 +516,18 @@ function initAudio() {
 
     // load a sound and set it as the Audio object's buffer
     var audioLoader = new THREE.AudioLoader();
-    audioLoader.load( 'sounds/ambient.ogg', function( buffer ) {
+    audioLoader.load( 'sounds/ambient_day.ogg', function( buffer ) {
         // create a global audio source
+        ambientDaySoundBuffer = buffer;
         ambientSound = new THREE.Audio( listener );
         ambientSound.setBuffer( buffer );
         ambientSound.setLoop( true );
         ambientSound.setVolume( 0.2 );
+    });
+
+    audioLoader.load( 'sounds/ambient_night.ogg', function( buffer ) {
+        // create a global audio source
+        ambientNightSoundBuffer = buffer;
     });
 
     audioLoader.load( 'sounds/walk.ogg', function( buffer ) {        
@@ -671,6 +695,12 @@ function initGUI() {
 
     gameFolder = gui.addFolder("Game settings");
     gameFolder.add(gameSettings, "itemAmount", 10, 200).step(10).name("Obj density %");
+    gameFolder.add(gameSettings, "nightEnabled").name("Day/Night cycle").onChange(function (value) {
+        let shouldBeNight = value && (Math.floor(chrystalCount / chrActions.nightMod) % 2 != 0);
+        if (isNight != shouldBeNight) {
+            toggleNight();
+        }
+    });
 
     playersFolder = gui.addFolder("Player settings");
     playersFolder.add(playerSettings, "name").name("Name").onChange(function(value) {
@@ -824,8 +854,8 @@ function initScene() {
     const skyColor = 0xB1E1FF;  // light blue
     const groundColor = 0xB97A20;  // brownish orange
     const intensity = 0.8; // 0.8;
-    var light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
-    scene.add(light);
+    hemiLight = new THREE.HemisphereLight(skyColor, groundColor, intensity);
+    scene.add(hemiLight);
 
     var loader = new THREE.TextureLoader();
     loader.load('./gfx/textures/sky_day.jpg',
@@ -851,9 +881,6 @@ function initScene() {
 
     //var light = new THREE.AmbientLight(0x222222);
     //scene.add(light);
-
-
-    
 
     showProgressBar();
 
@@ -887,8 +914,8 @@ function initScene() {
         scene.add(playerGuy);
 
         updateControls(0);
-        initPlayerGuyAnim();
-        
+        initPlayerGuyAnim();            
+
     }, onProgress, onError);
 }
 
@@ -946,12 +973,14 @@ function addSun() {
     dirLight.shadow.mapSize.height = SHADOW_MAP_HEIGHT;
     scene.add(dirLight);
 
-    let action = mixer.clipAction(ANIM.createHighlightAnimation(1, 1), dirLight);
+    //let action = mixer.clipAction(ANIM.createHighlightAnimation(1, 1), dirLight);
+    let action = mixer.clipAction(ANIM.createHighlightAnimation(1, 0.2), dirLight);
     action.clampWhenFinished = true;
     action.setLoop(THREE.LoopOnce).setDuration(5).play();
 }
 
 function createSky() {
+    walkClock.stop();
     scene.add(skyMesh);
 
     let action = mixer.clipAction(ANIM.createHighlightAnimation(1, 1, true), skyMesh.material);
@@ -963,12 +992,17 @@ function createSky() {
 
     if (newItemSound && !newItemSound.isPlaying)
         newItemSound.play();
+
+    walkClock.start();
         
 }
 
 function addMusicSphere() {
+    
     let sphere = WORLD.sphere; // .clone();
     if (WORLD.freeParcels.length > 0) {
+
+        showProgressBar();
 
         let parcelIdx = Math.floor(Math.random() * (WORLD.freeParcels.length));
 
@@ -983,7 +1017,9 @@ function addMusicSphere() {
 
         // WORLD.model.add(sphere);
 
-        let light = new THREE.PointLight(0xffa500,  1, 500,  2);
+        let light = new THREE.PointLight(0xffa500,  2, 500,  1.6);
+
+        light.visible = isNight;
 
         light.position.x = parcel.x;
         light.position.z = parcel.z;
@@ -991,11 +1027,16 @@ function addMusicSphere() {
         // cLight.target = sphere;
         light.castShadow = true;
 
-        light.attach(sphere);
-        WORLD.model.add(light);
+        //light.attach(sphere);
+        sphere.attach(light);
+        WORLD.model.add(sphere);
+
+        nightLights.push(light);
 
         sphere.add(sphereSound);
         if (!sphereSound.isPlaying) sphereSound.play();
+
+        hideProgressBar();
     }
 }
 
@@ -1061,6 +1102,8 @@ function createExercise() {
 
     if (exerciseGroup) {
         scene.remove(exerciseGroup);
+
+        // todo: dispose geometries
     }
 
     let ops = [];
@@ -1084,9 +1127,10 @@ function createExercise() {
 
     exerciseGroup = new THREE.Group();
     let xtext = createText(x.description, function(mesh){
-        if (tickSound)  mesh.add(tickSound);
+        if (tickSound)  mesh.add(tickSound);        
     });
-    xtext.position.y = 120;
+    xtext.position.y = 120; 
+
     exerciseGroup.add(xtext);
     let resultsGroup = new THREE.Group();
     let idx = 0;
@@ -1248,11 +1292,12 @@ function onDocumentClick( event ) {
 function evaluateAnswer(obj) {
     if (obj) {
         obj.parent.children[0].material.color.setHex(obj.parent.isResult ? okColor : wrongColor);
+        highlightMesh(obj,  (isNight ? (obj.parent.isResult ? okColor : wrongColor) : textEmissive));
         if (obj.parent.sound) {
             if (obj.parent.sound.isPlaying) obj.parent.sound.stop();
             obj.parent.sound.play();
         }
-        highlightMesh(obj, textEmissive); // obj.parent.isResult ? okColor : wrongColor);
+        
         if (obj.parent.isResult) {
             addChrystal();
         }
@@ -1263,6 +1308,7 @@ function evaluateAnswer(obj) {
                 if (mesh.parent.isResult) {
                     // window.setTimeout( mesh => {
                         mesh.parent.children[0].material.color.setHex(okColor);
+                        highlightMesh(mesh,  isNight ? okColor : textEmissive);
                     // }, 500);
                     break;
                 }
@@ -1291,10 +1337,11 @@ function animate() {
         //var delta = 0.75 * clock.getDelta();
 
         let animDelta = animClock.getDelta();
+        let walkDelta = walkClock.getDelta();
 
         if (gfxSettings.showFPS) {
             if (fps.length > 25) fps.splice(0, 1);
-                fps.push(1/animDelta);
+                fps.push(1/ Math.max(animDelta, walkDelta));
                 let currFps = 0;
                 for (let idx = 0; idx < fps.length; idx++) {
                     currFps += fps[idx];
@@ -1305,11 +1352,13 @@ function animate() {
 
         mixer.update( animDelta );
 
-        updateControls(walkClock.getDelta());
+        updateControls( walkDelta );
 
         checkExerciseIntersections();
 
+        walkClock.stop();
         render();
+        walkClock.start();
 
         updateVehiclePositions();
         updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);
@@ -1453,6 +1502,11 @@ function performChrystalAction() {
     if (chrystalCount > chrActions.trainMin && chrystalCount <= chrActions.trainMax) {
         addWaggon(chrystalCount == chrActions.trainMax);
     }
+
+    if ((chrystalCount % chrActions.nightMod) == 0) {
+        toggleNight();
+    }
+    walkClock.start();
 }
 
 function addAnimal() {
@@ -1561,6 +1615,21 @@ function initTrain() {
     TRAIN.initLoco(function (loco) {
         WORLD.model.add(loco);
 
+        for (let mesh of loco.rearLights) {                        
+            addRearLight(mesh);
+        }
+
+        for (let mesh of loco.frontLights) {                        
+            addFrontLight(mesh);
+        }
+
+        for (let mesh of loco.windows) {
+            if (isNight) {
+                mesh.material[0].emissive.setHex(windowColor);
+            }
+            mesh.material[0].emissiveIntensity = 0.6;
+        }
+
         let clip = ANIM.createTrackAnimation(TRAIN.linTrackNumber, TRAIN.trackHalfLength * 2, TRAIN.trackCurveRadius, TRAIN.vehicleLength * train.length);
         var action = mixer.clipAction(clip, loco);                
         let duration =  0.005 * clip.path.getLength();
@@ -1584,10 +1653,58 @@ function initTrain() {
     }, onProgress, onError);
 }
 
+function addFrontLight(mesh) {
+    let light = new THREE.SpotLight(fLightsColor, 1, 800, 30 * Math.PI / 180, 0.4, 1.2);
+    // light.add(new THREE.AxesHelper(50));
+    mesh.parent.add(light);
+    mesh.parent.add(light.target);
+
+    light.translateY(-8);
+    light.target.translateY(-100);
+    light.target.translateZ(-20);
+
+    // light.castShadow = true;
+    light.visible = isNight;
+    nightLights.push(light);
+
+    if (isNight) {
+        mesh.material[0].emissive.setHex(fLightsColor);
+    }
+    mesh.material[0].emissiveIntensity = 3;
+}
+
+function addRearLight(mesh) {
+    let light = new THREE.SpotLight(rLightsColor, 1, 300, 75 * Math.PI / 180, 0.8, 1.4);
+    // light.add(new THREE.AxesHelper(50));
+    mesh.parent.add(light);
+    mesh.parent.add(light.target);
+
+    light.translateY(-8);
+    light.target.translateY(-100);
+
+    // light.castShadow = true;
+    light.visible = isNight;
+    nightLights.push(light);
+
+    if (isNight) {
+        mesh.material[0].emissive.setHex(rLightsColor);
+    }
+}
+
 function addWaggon(isLast) {
     TRAIN.initWaggon(function (waggon) {
         // waggon.translateX(vehicleLength * (chrystalCount - chrActions.trainMin));
+
+        console.log(waggon);
+
         WORLD.model.add(waggon);
+
+        for (let mesh of waggon.windows) {
+            if (isNight) {
+                mesh.material[0].emissive.setHex(windowColor);
+            }
+            mesh.material[0].emissiveIntensity = 0.6;
+        }
 
         let clip = ANIM.createTrackAnimation(TRAIN.linTrackNumber, TRAIN.trackHalfLength * 2, TRAIN.trackCurveRadius, TRAIN.vehicleLength * train.length);
         var action = mixer.clipAction(clip, waggon);                
@@ -1612,9 +1729,17 @@ function addCar() {
 
     let carIdx = (Math.floor(chrystalCount / 2)) % (availableCarModels);
 
-    // showProgressBar();
+    showProgressBar();
     initCar(carIdx, function (car) {
         WORLD.model.add(car);
+
+        for (let mesh of car.rLights) {                        
+            addRearLight(mesh);
+        }
+
+        for (let mesh of car.fLights) {                        
+            addFrontLight(mesh);
+        }
 
         let ccw = (chrystalCount % 2 == 0); // every second counter-clockwise
         let clip = ANIM.createRoadAnimation((WORLD.roadPlates * 2) + (0.28 * (ccw ? 1 : -1)), WORLD.plateSize, WORLD.plateSize / 2 * (1 + 0.28 * (ccw ? 1 : -1)) , ccw);
@@ -1633,10 +1758,10 @@ function addCar() {
         }
 
         addItemSound(car, motorSoundBuffer, true);
-
+                
         cars.push(car);
 
-        // hideProgressBar();
+        hideProgressBar();
     } , onProgress, onError);
 }
 
@@ -1741,6 +1866,75 @@ function updateControls(delta) {
         playerGuy.oriY = euler.y - Math.PI/2;
 
         lastGuyPos.copy(pos);
+    }
+}
+
+function toggleNight() {
+    if (gameSettings.nightEnabled || isNight) {
+        isNight = !isNight;
+
+        scene.fog.color.setHex(isNight ? 0x101015 : 0xcccccc);
+
+        if (dirLight) {
+            dirLight.color.setHex(isNight ? 0x222244 : 0xffffff)
+        }
+
+        if (hemiLight) {
+            hemiLight.intensity = (isNight ? 0.15 : 0.8);
+        }
+
+        if (skyMesh) {
+            skyMesh.material.emissiveIntensity = (isNight ? 0.1 : 1);
+        }
+
+        for (let light of nightLights) {
+            light.visible = isNight;
+        }
+
+        for (let car of cars) {
+            for (let light of car.fLights) {
+                light.material[0].emissive.setHex(isNight ? fLightsColor : 0x000000);
+            }
+            for (let light of car.rLights) {
+                light.material[0].emissive.setHex(isNight ? rLightsColor : 0x000000);
+            }
+        }
+
+        for (let vehicle of train) {
+            if (vehicle.frontLights) {
+                for (let light of vehicle.frontLights) {
+                    light.material[0].emissive.setHex(isNight ? fLightsColor : 0x000000);
+                }
+            }
+            if (vehicle.rearLights) {
+                for (let light of vehicle.rearLights) {
+                    light.material[0].emissive.setHex(isNight ? rLightsColor : 0x000000);
+                }
+            }
+
+            for (let mesh of vehicle.windows) {
+                mesh.material[0].emissive.setHex(isNight ? windowColor : 0x000000);
+            }
+        }
+
+        playerInfo.style.color = (isNight ? "gold" : "black");
+
+        textEmissive = isNight ? 0x888866 : 0x000000;
+        defaultTextMaterial.emissive.setHex(textEmissive);
+
+        exerciseGroup.traverse(function (obj) {
+            if (obj.isMesh) {
+                highlightMesh(obj, textEmissive);
+            }
+        });
+
+        if (ambientSound) {
+            ambientSound.setBuffer(isNight ? ambientNightSoundBuffer : ambientDaySoundBuffer);
+            if (ambientSound.isPlaying) {
+                ambientSound.pause();
+                ambientSound.play();
+            }
+        }
     }
 }
 

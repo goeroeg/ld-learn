@@ -21,6 +21,8 @@ var textsToUpdate = new Map();
 var textEmissive = 0x000000;
 var defaultTextColor = 0xffffff;
 
+export var defaultTextMaterial = new THREE.MeshLambertMaterial( { color: defaultTextColor, emissive: textEmissive, emissiveIntensity : 0.5 } );
+
 function loadFont() {
 
     var loader = new THREE.FontLoader();
@@ -53,7 +55,7 @@ export function createText(text, callback) {
 function updateText(group, updateInfo)
 {
 
-    var material = new THREE.MeshLambertMaterial( { color: defaultTextColor, emissive: textEmissive, emissiveIntensity : 0.5 } );
+    var material = defaultTextMaterial.clone();
     /*
     var materials = [
         new THREE.MeshPhongMaterial( { color: 0xffffff, flatShading: true } ), // front

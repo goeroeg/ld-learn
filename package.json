@@ -1,7 +1,7 @@
 {
   "name": "ld-learn",
   "description": "An Edu-shooter using LDRAW objects.",
-  "version": "0.1.0",
+  "version": "0.2.7",
   "main": "main.js",
   "scripts": {
     "serve": "http-server .",
@@ -29,5 +29,5 @@
   "bugs": {
     "url": "https://github.com/goeroeg/ld-learn/issues"
   },
-  "homepage": "https://github.com/goeroeg/ld-learn"
+  "homepage": "https://goeroeg.github.io/ld-learn"
 }

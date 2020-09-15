@@ -29,10 +29,12 @@ export function initCar(index, onLoad, onProgress, onError) {
             // Convert from LDraw coordinates: rotate 180 degrees around OX
             // model.rotateX(Math.PI);
              
-            let car = new THREE.Group();
+            let car = model; //new THREE.Group();
             car.body = [];
             car.rWheels = [];
             car.lWheels = [];
+            car.fLights = [];
+            car.rLights = [];
 
             car.add(model);
 
@@ -59,6 +61,13 @@ export function initCar(index, onLoad, onProgress, onError) {
                     if (c.parent.userData.constructionStep == stepLeftWheels) {                       
                         car.lWheels.push(c);                    
                     }
+                    if (c.parent.userData.constructionStep == stepFrontLights) {                       
+                        car.fLights.push(c);                    
+                    }
+                    if (c.parent.userData.constructionStep == stepRearLights) {                       
+                        car.rLights.push(c);                    
+                    }
+
                 }
 
                 c.castShadow = true; 
