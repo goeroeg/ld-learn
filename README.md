@@ -10,17 +10,40 @@ An Edu-shooter using three.js and the LDraw™-Library to exercise some maths.
 
 [You can try the game online here.](https://goeroeg.github.io/ld-learn/ld-learn.html)
 
+## How to play
+
+Solve the exercise and collect the chrystals. After each collected chrystal a new object is added to the world or something else changes - find out what.
+
+A short guide to the controls is displayed on the start screen.
+
+You can change the difficulty level by disabling or enabling certain types of maths operations and selecting the min/max values of the operands and results.
+
+You can also save and load profiles for different players.
+
 ---
 
 ## System requirements
 
 The game should run on all modern PCs or laptops, however a dedicated graphics card is recommended.
 
-Mobile devices are not supported yet.
+Mobile devices are not fully supported yet, Android devices (with Chrome and Firefox tested) work with very low graphics settings (see below).
 
-Online version tested with Chromium and Firefox, but you can try others with WebGL support too.
+Online version tested with Chromium, Firefox and Edge, but you can try others with WebGL support too.
 
-Gamepad support tested with Chrome(-ium).
+Gamepad support tested with Chrome(-ium), the current versions of Firefox seem a bit buggy there.
+
+## Performance tuning
+
+If you experience low framerates and/or lags you can try the following:
+
+- Graphics settings:
+  - select a lower resolution in the graphics settings (however only max. window size is rendered)
+  - try the lower quality render mode (renders 1/2 resolution and scales up, ~15% perf.)
+  - disable shadows
+
+- Game settings
+  - select a lower object density (reduces the number of polygons)
+  - disable day/night cycle (at night the lights need more rendering power)
 
 ---
 

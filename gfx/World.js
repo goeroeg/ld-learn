@@ -42,7 +42,7 @@ export const MapObjectId = {
     train : 10
 };
 
-export const smoothNormals = false; // test this later, but takes longer for testing
+export const smoothNormals = true; // test this later, but takes longer for testing
 
 export const fencePlaceholder = 1;
 export const roadPlaceholder = 2;

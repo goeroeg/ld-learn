@@ -84,14 +84,16 @@ var absMaxDistance = 0.5 * WORLD.plateSize - guyOffset;
 
 var progressBarDiv;
 
+var isTouch = ('ontouchstart' in window);
+
 var resolutions = [{ x: 0, y: 0 }, { x: 320, y: 240 }, {x: 640, y: 480 }, { x: 1024, y: 768 }, { x: 1280, y: 800 }, { x: 1920, y: 1080 }]
 var resolutionNames  = { 'Auto': 0, '320x240': 1, '640x480': 2, '1024x768': 3, "1280x800": 4, HD: 5 };
 var qualityNames = { High: 1, Low : 2};
 var audioSettings = { enabled : true, volume: 100 };
 var controlSettings = { moveSensitivity: 1, lookSensitivity: 1 };
-var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: 3 , antiAlias: true , showFPS: false};
+var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: isTouch ? 0 : 3 , antiAlias: true , showFPS: false};
 var gameSettings = { 
-    itemAmount: 100 , nightEnabled: true,
+    itemAmount: isTouch ? 20 : 50 , nightEnabled: !isTouch,
     add : true, addMax : 100, addResMax : 100, addSym: '+',
     sub : true, subMax : 100, subResMax : 100, subSym: '-',
     multi : true, multiMax : 10, multiResMax : 100, multiSym: '·',
@@ -101,11 +103,9 @@ var gameSettings = {
 const defaultBodyColor = [180, 0, 0];
 const defaultLegsColor = [30, 90, 168];
 
-var playerSettings = {name:'Player' }
+var playerSettings = { name:'Player' }
 
 var gui, playersFolder, gfxFolder, controlsFolder, audioFolder, gameFolder;
-
-var isTouch = false;
 
 var playerInfo = document.getElementById('playerInfo');
 var blocker = document.getElementById( 'blocker' );
@@ -165,14 +165,12 @@ function init() {
 
 function initControls() {
 
-    renderer = new THREE.WebGLRenderer( { antialias: true } );
-    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer = new THREE.WebGLRenderer( { antialias: gfxSettings.antiAlias } );
+    // renderer.setPixelRatio( window.devicePixelRatio );
 
     renderer.setSize( window.innerWidth, window.innerHeight );
 
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.shadowMap.autoUpdate = true;
+    updateShadows(gameSettings.shadow);
     // renderer.physicallyCorrectLights = true;
         
     renderer.domElement.setAttribute('style', "position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; margin: auto");
@@ -217,8 +215,6 @@ function initControls() {
 
     scene.add( controls.getObject() );
 
-    isTouch = ('ontouchstart' in window);
-    
     initTouchControls(!isTouch);
 
     if (isTouch) {
@@ -992,9 +988,6 @@ function createSky() {
 
     if (newItemSound && !newItemSound.isPlaying)
         newItemSound.play();
-
-    walkClock.start();
-        
 }
 
 function addMusicSphere() {
@@ -1215,10 +1208,12 @@ function showProgressBar() {
 
 function hideProgressBar() {
 
-    document.body.removeChild( progressBarDiv );
-    animClock.start();
-    walkClock.start();
+    if (document.body.contains(progressBarDiv)) {
+        document.body.removeChild( progressBarDiv );
+    }
 
+    animClock.start();
+    //walkClock.start();
 }
 
 function updateProgressBar( fraction ) {
@@ -1356,13 +1351,14 @@ function animate() {
 
         checkExerciseIntersections();
 
-        walkClock.stop();
         render();
-        walkClock.start();
 
         updateVehiclePositions();
         updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);
 
+        if (!walkClock.running && !document.body.contains(progressBarDiv)) {
+            walkClock.start();
+        }
     }
 }
 
@@ -1505,8 +1501,7 @@ function performChrystalAction() {
 
     if ((chrystalCount % chrActions.nightMod) == 0) {
         toggleNight();
-    }
-    walkClock.start();
+    }    
 }
 
 function addAnimal() {
@@ -1544,7 +1539,7 @@ function addAnimal() {
 
         for (let parcel of parcels) {
             WORLD.freeParcels.splice(WORLD.freeParcels.indexOf(parcel), 1);
-            parcel.occupied = true;
+            // parcel.occupied = true;
             parcel.mapObjId = WORLD.MapObjectId.animal;
             x += parcel.x;
             z += parcel.z;
@@ -1557,6 +1552,10 @@ function addAnimal() {
             initCow(function (cow) {
 
                 WORLD.model.add(cow);
+
+                for (let parcel of parcels) {
+                    parcel.occupied = cow;
+                }
 
                 cow.position.x = x;
                 cow.position.z = z;
@@ -1574,6 +1573,10 @@ function addAnimal() {
 
                 WORLD.model.add(horse);
     
+                for (let parcel of parcels) {
+                    parcel.occupied = horse;
+                }
+
                 horse.position.x = x;
                 horse.position.z = z;
     
@@ -1612,6 +1615,7 @@ function addItemSound(item, buffer, loop) {
 }
 
 function initTrain() {
+    showProgressBar();
     TRAIN.initLoco(function (loco) {
         WORLD.model.add(loco);
 
@@ -1650,6 +1654,8 @@ function initTrain() {
 
         train.push(loco);
         
+        hideProgressBar();
+
     }, onProgress, onError);
 }
 
@@ -1692,6 +1698,7 @@ function addRearLight(mesh) {
 }
 
 function addWaggon(isLast) {
+    showProgressBar();
     TRAIN.initWaggon(function (waggon) {
         // waggon.translateX(vehicleLength * (chrystalCount - chrActions.trainMin));
 
@@ -1722,6 +1729,7 @@ function addWaggon(isLast) {
         addItemSound(waggon, trainSoundBuffer, true);
 
         train.push(waggon);
+        hideProgressBar();
     }, onProgress, onError, isLast);
 }
 

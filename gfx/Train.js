@@ -244,6 +244,7 @@ export function initWaggon(onLoad, onProgress, onError, lastCall) {
                 sortWaggonParts(clone);
                 onLoad(clone); 
             } else {
+                sortWaggonParts(waggon);
                 if (onLoad) onLoad(waggon); 
             }
         }
@@ -269,10 +270,7 @@ export function initWaggon(onLoad, onProgress, onError, lastCall) {
                     c.receiveShadow = true; 
                 } );            
 
-                waggon = new THREE.Group();
-                waggon.add(model);
-
-                sortWaggonParts(waggon);            
+                waggon = model;
 
                 if (onLoad) {
                     if (!lastCall) {
@@ -280,7 +278,8 @@ export function initWaggon(onLoad, onProgress, onError, lastCall) {
                         sortWaggonParts(clone);
                         onLoad(clone); 
                     } else {
-                        if (onLoad) onLoad(waggon); 
+                        sortWaggonParts(waggon);
+                        onLoad(waggon); 
                     }
                 }
             });
