@@ -18,7 +18,7 @@ import * as TRAIN from './gfx/Train.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
-// var testMode = true;
+var testMode = false;
 
 var isElectronApp = (navigator.userAgent.toLowerCase().indexOf(' electron/') > -1); // detect whether run as electron app
 
