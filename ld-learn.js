@@ -18,7 +18,7 @@ import * as TRAIN from './gfx/Train.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 
-var testMode = false;
+// var testMode = true;
 
 var isElectronApp = (navigator.userAgent.toLowerCase().indexOf(' electron/') > -1); // detect whether run as electron app
 
@@ -95,7 +95,7 @@ var audioSettings = { enabled : true, volume: 100 };
 var controlSettings = { moveSensitivity: 1, lookSensitivity: 1 };
 var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: isTouch ? 0 : 3 , antiAlias: true , showFPS: false};
 var gameSettings = { 
-    itemAmount: isTouch ? 20 : 50 , nightEnabled: !isTouch, season : WORLD.seasons.summer,
+    itemAmount: isTouch ? 20 : 50 , nightEnabled: !isTouch, season : WORLD.seasons.auto,
     add : true, addMax : 100, addResMax : 100, addSym: '+',
     sub : true, subMax : 100, subResMax : 100, subSym: '-',
     multi : true, multiMax : 10, multiResMax : 100, multiSym: '·',
@@ -809,7 +809,7 @@ function setSeason(season) {
         scene.fog.density = 0.00012;        
     }
 
-    updateMiniMapColors(WORLD.seasonColor[season], WORLD.seasonSecondaryColor[season]);
+    updateMiniMapColors(WORLD.seasonPlateColor[season], WORLD.seasonPlantColor[season]);
     
 }
 

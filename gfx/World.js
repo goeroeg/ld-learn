@@ -53,8 +53,8 @@ export const seasons = {
 
 var currentSeason = seasons.auto;
 
-export const seasonColor = [ 0x58AB41, 0x00852B, 0x91501C, 0xBCB4A5 ];
-export const seasonSecondaryColor = [ 0x00852B, 0x00451A, 0x77774E, 0x708E7C ];
+export const seasonPlateColor = [ 0x58AB41, 0x00852B, 0x91501C, 0xBCB4A5 ];
+export const seasonPlantColor = [ 0x00852B, 0x00451A, 0x77774E, 0x708E7C ];
 
 
 export const smoothNormals = true; // test this later, but takes longer for testing
@@ -150,12 +150,12 @@ export function initScene(onLoad, onProgress, onError) {
 export function setSeasonColor(season) {
     if (season != seasons.auto) {            
         if (plate) {        
-            plate.children[0].material[0].color.setHex(seasonColor[season]);        
-            plants[0].children[0].material[0].color.setHex(seasonSecondaryColor[season])
+            plate.children[0].material[0].color.setHex(seasonPlateColor[season]);        
+            plants[0].children[0].material[0].color.setHex(seasonPlantColor[season])
         }
         if (roadPlate) {
             console.log(roadPlate);
-            roadPlate.children[0].material[2].color.setHex(seasonColor[season]);
+            roadPlate.children[0].material[2].color.setHex(seasonPlateColor[season]);
         }
         currentSeason = season;
     }
