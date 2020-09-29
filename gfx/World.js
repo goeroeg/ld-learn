@@ -23,6 +23,7 @@ export var sunSphere;
 var plate;
 var fence;
 var plants = [];
+var roadPlate;
 
 export var plates = [];
 export var parcels = [];
@@ -41,6 +42,20 @@ export const MapObjectId = {
     track : 9,
     train : 10
 };
+
+export const seasons = {
+    auto: -1,
+    spring: 0,
+    summer: 1,
+    autumn: 2,
+    winter: 3
+}
+
+var currentSeason = seasons.auto;
+
+export const seasonColor = [ 0x58AB41, 0x00852B, 0x91501C, 0xBCB4A5 ];
+export const seasonSecondaryColor = [ 0x00852B, 0x00451A, 0x77774E, 0x708E7C ];
+
 
 export const smoothNormals = true; // test this later, but takes longer for testing
 
@@ -125,9 +140,25 @@ export function initScene(onLoad, onProgress, onError) {
             worldPlates = 0.5;
             freeParcels = parcels.filter(parcelFilter);                            
 
+            setSeasonColor(currentSeason);
+
             onLoad(model);
                         
         }, onProgress, onError);
+}
+
+export function setSeasonColor(season) {
+    if (season != seasons.auto) {            
+        if (plate) {        
+            plate.children[0].material[0].color.setHex(seasonColor[season]);        
+            plants[0].children[0].material[0].color.setHex(seasonSecondaryColor[season])
+        }
+        if (roadPlate) {
+            console.log(roadPlate);
+            roadPlate.children[0].material[2].color.setHex(seasonColor[season]);
+        }
+        currentSeason = season;
+    }
 }
 
 export function createPlates() {
@@ -348,7 +379,10 @@ export function initRoads(onLoad, onProgress, onError) {
 
             }
 
-            if (onLoad) onLoad(model);
+            roadPlate = straight;
+            setSeasonColor(currentSeason);
+
+            if (onLoad) onLoad(roads);
                         
         }, onProgress, onError);
 }

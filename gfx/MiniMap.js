@@ -36,6 +36,18 @@ var imgHeight = (WORLD.plateCounter * 2 + 1) * WORLD.plateSize / WORLD.parcelSiz
 
 const mag = 1.2;
 
+export function updateMiniMapColors(newPlateColor, newPlantColor) {
+    let color = new THREE.Color(newPlateColor);
+    mapObjColors[0][0] = color.r * 255;
+    mapObjColors[0][1] = color.g * 255;
+    mapObjColors[0][2] = color.b * 255;
+    color = new THREE.Color(newPlantColor);
+    mapObjColors[4][0] = color.r * 255;
+    mapObjColors[4][1] = color.g * 255;
+    mapObjColors[4][2] = color.b * 255;
+    console.log(mapObjColors);
+}
+
 export function updateMapData(canvas, ori, x, y) {
 
     let tempc = document.createElement('canvas');

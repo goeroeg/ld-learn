@@ -12,11 +12,13 @@ import * as WORLD from './gfx/World.js';
 import * as ANIM from './gfx/Animations.js';
 import { initCar, availableCarModels } from './gfx/Cars.js';
 import { initGuy, BodyParts } from './gfx/Guy.js';
-import { updateMapData } from './gfx/MiniMap.js';
+import { updateMapData, updateMiniMapColors } from './gfx/MiniMap.js';
 import { initCow, initHorse } from './gfx/Animals.js';
 import * as TRAIN from './gfx/Train.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
+
+var testMode = false;
 
 var isElectronApp = (navigator.userAgent.toLowerCase().indexOf(' electron/') > -1); // detect whether run as electron app
 
@@ -93,7 +95,7 @@ var audioSettings = { enabled : true, volume: 100 };
 var controlSettings = { moveSensitivity: 1, lookSensitivity: 1 };
 var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: isTouch ? 0 : 3 , antiAlias: true , showFPS: false};
 var gameSettings = { 
-    itemAmount: isTouch ? 20 : 50 , nightEnabled: !isTouch,
+    itemAmount: isTouch ? 20 : 50 , nightEnabled: !isTouch, season : WORLD.seasons.summer,
     add : true, addMax : 100, addResMax : 100, addSym: '+',
     sub : true, subMax : 100, subResMax : 100, subSym: '-',
     multi : true, multiMax : 10, multiResMax : 100, multiSym: '·',
@@ -698,6 +700,16 @@ function initGUI() {
         }
     });
 
+    gameFolder.add(gameSettings, "season", WORLD.seasons).name("Season").onChange(function (value) {
+        setSeason(value);
+        render();
+        if (playerGuy) {
+            updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);
+        }
+    });
+
+    setSeason(gameSettings.season);
+
     playersFolder = gui.addFolder("Player settings");
     playersFolder.add(playerSettings, "name").name("Name").onChange(function(value) {
         updatePlayerInfo();
@@ -777,6 +789,30 @@ function initGUI() {
     updatePlayerInfo();
 }
 
+function setSeason(season) {
+    if (season == WORLD.seasons.auto) {
+        // determine by date
+        var month = new Date().getMonth() + 1;
+        if (month <= 2 || month >= 12) season = WORLD.seasons.winter;
+        if (month >= 3 && month <= 5) season = WORLD.seasons.spring;
+        if (month >= 6 && month <= 8 ) season = WORLD.seasons.summer;
+        if (month >= 9 && month <= 11 ) season = WORLD.seasons.autumn;
+    }
+
+    WORLD.setSeasonColor(season);    
+    
+    if (season == WORLD.seasons.winter) {
+        scene.fog.density = 0.0005;
+    } else if (season == WORLD.seasons.autumn) {
+        scene.fog.density =  0.0002;
+    } else {
+        scene.fog.density = 0.00012;        
+    }
+
+    updateMiniMapColors(WORLD.seasonColor[season], WORLD.seasonSecondaryColor[season]);
+    
+}
+
 function updateShadows(value) {
     renderer.shadowMap.enabled = (value > 0);
     scene.traverse(c => {
@@ -841,7 +877,7 @@ function initScene() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0x606060 );
 
-    scene.fog = new THREE.Fog(0xcccccc, 2000, 12000);// .FogExp2( 0xcccccc, 0.0003);
+    scene.fog =  new THREE.FogExp2( 0xcccccc, 0.00025);// new THREE.Fog(0xcccccc, 2000, 12000);// .FogExp2( 0xcccccc, 0.0003);
 
     // world
     //var geometry = new THREE.PlaneGeometry( 200, 200 );
@@ -1278,6 +1314,10 @@ function onDocumentMouseMove( event ) {
 
 function onDocumentClick( event ) {
     event.preventDefault();
+
+    if (testMode) {
+        addChrystal();
+    }
 
     if (currentHighlight) {
         evaluateAnswer(currentHighlight);
