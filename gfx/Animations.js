@@ -15,11 +15,10 @@ export function createRotationCcwAnimation(period, axis) {
     return new THREE.AnimationClip(null, period, [track]);
 }
 
-export function createHighlightAnimation(period, intensity, isMaterial) {
-    var times = [0, period], values = [0, intensity];
-    var trackName = isMaterial ? '.emissiveIntensity' : '.intensity';
+export function createBlendAnimation(startValue, newValue, trackName) {
+    var times = [0, 1], values = [startValue, newValue];
     var track = new THREE.NumberKeyframeTrack(trackName, times, values);
-    return new THREE.AnimationClip(null, period, [track]);
+    return new THREE.AnimationClip(null, 1, [track]);
 }
 
 export function createFallAnimation(period, startY, targetY) {
@@ -205,4 +204,14 @@ export function createTrackAnimation (numLinTracks, linTrackLength, radius, offs
     clip.path = path;
 
     return clip;
+}
+
+export function blendProperty(mixer, obj, propName, targetValue, duration) {
+    let currValue = obj[propName];
+    mixer.uncacheRoot(obj);
+    obj[propName] = currValue;
+
+    let action = mixer.clipAction(createBlendAnimation(currValue, targetValue, '.' + propName), obj);
+    action.clampWhenFinished = true;
+    action.setLoop(THREE.LoopOnce).setDuration(duration).play();
 }

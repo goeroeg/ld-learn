@@ -15,10 +15,12 @@ import { initGuy, BodyParts } from './gfx/Guy.js';
 import { updateMapData, updateMiniMapColors } from './gfx/MiniMap.js';
 import { initCow, initHorse } from './gfx/Animals.js';
 import * as TRAIN from './gfx/Train.js';
+import * as PTFX from './gfx/ParticleEffects.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
+var particleSystems = [];
 
-var testMode = false;
+var testMode = true;
 
 var isElectronApp = (navigator.userAgent.toLowerCase().indexOf(' electron/') > -1); // detect whether run as electron app
 
@@ -49,6 +51,8 @@ var cars = [];
 var train = [];
 
 var nightLights = [];
+
+const particleEffects = { rain: null, snow: null, stars: null, shootingStars: null, fireflies: null };
 
 var animClock = new THREE.Clock();
 var walkClock = new THREE.Clock();
@@ -127,6 +131,8 @@ var miniMapDiv = document.getElementById('miniMapDiv');
 
 var touchCamPos = new THREE.Vector2();
 
+const playerCamHeight = 85;
+
 var gameActive = false;
 
 const okColor = 0x00ff00, wrongColor = 0xff0000, selectedEmissive = 0x0000ff;
@@ -142,7 +148,7 @@ const chrActions = {
     plantsMax : 20,
     prepareRoads : 15, //15
     initRoads : 20, //20
-    carsMin : 21,   //21
+    carsMin : 25,   //21
     carsMax : 42,   //42
     animalsMin : 12, // 12
     animalsMax : 25, // 25
@@ -154,6 +160,7 @@ const chrActions = {
     nightMod : 10 // 10
 }
 
+// main entry point
 init();
 
 function init() {
@@ -697,6 +704,8 @@ function initGUI() {
         let shouldBeNight = value && (Math.floor(chrystalCount / chrActions.nightMod) % 2 != 0);
         if (isNight != shouldBeNight) {
             toggleNight();
+            checkAndEndWeatherEffects();
+            render();
         }
     });
 
@@ -801,16 +810,11 @@ function setSeason(season) {
 
     WORLD.setSeasonColor(season);    
     
-    if (season == WORLD.seasons.winter) {
-        scene.fog.density = 0.0005;
-    } else if (season == WORLD.seasons.autumn) {
-        scene.fog.density =  0.0002;
-    } else {
-        scene.fog.density = 0.00012;        
-    }
+    checkAndEndWeatherEffects();
+
+    updateFog();
 
     updateMiniMapColors(WORLD.seasonPlateColor[season], WORLD.seasonPlantColor[season]);
-    
 }
 
 function updateShadows(value) {
@@ -903,8 +907,6 @@ function initScene() {
             console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
         }, error => { console.log("An error happened" + error); });
 
-    
-
     /*
     var light = new THREE.DirectionalLight(0x002288);
     light.position.set(-1, -1, -1);
@@ -946,9 +948,18 @@ function initScene() {
         scene.add(playerGuy);
 
         updateControls(0);
-        initPlayerGuyAnim();            
+        initPlayerGuyAnim();
 
     }, onProgress, onError);
+
+    //particleSystems.push(PTFX.letItRain(scene, 1));
+    //particleSystems.push(PTFX.letItSnow(scene, 1));
+
+    //particleSystems.push(PTFX.letItRain(scene, Math.random() * 1.5 + 0.5, PTFX.generateWind(500)));
+
+    // particleSystems.push(PTFX.fireflies(scene, 1));
+    // particleSystems.push(PTFX.starsAbove(scene, 1));
+    // particleSystems.push(PTFX.shootingStars(scene, 1));
 }
 
 function initPlayerGuyAnim() {
@@ -1005,19 +1016,16 @@ function addSun() {
     dirLight.shadow.mapSize.height = SHADOW_MAP_HEIGHT;
     scene.add(dirLight);
 
+    ANIM.blendProperty(mixer, dirLight, 'intensity', 0.3, 3);
+
     //let action = mixer.clipAction(ANIM.createHighlightAnimation(1, 1), dirLight);
-    let action = mixer.clipAction(ANIM.createHighlightAnimation(1, 0.2), dirLight);
-    action.clampWhenFinished = true;
-    action.setLoop(THREE.LoopOnce).setDuration(5).play();
 }
 
 function createSky() {
     walkClock.stop();
     scene.add(skyMesh);
 
-    let action = mixer.clipAction(ANIM.createHighlightAnimation(1, 1, true), skyMesh.material);
-    action.clampWhenFinished = true;
-    action.setLoop(THREE.LoopOnce).setDuration(3).play();
+    ANIM.blendProperty(mixer, skyMesh.material, 'emissiveIntensity', 1, 3);
 
     // lights
     addSun();
@@ -1357,7 +1365,6 @@ function evaluateAnswer(obj) {
 
 function animate() {
 
-    
     if ( gameActive ) {
 
         requestAnimationFrame( animate );
@@ -1390,6 +1397,11 @@ function animate() {
         updateControls( walkDelta );
 
         checkExerciseIntersections();
+        
+        particleSystems = particleSystems.filter(function(ps) { 
+            ps.update(animDelta);
+            return !ps.removeAndDisposeIfFinished();
+        });
 
         render();
 
@@ -1541,7 +1553,11 @@ function performChrystalAction() {
 
     if ((chrystalCount % chrActions.nightMod) == 0) {
         toggleNight();
-    }    
+    }
+
+    if (chrystalCount > chrActions.createSky) {
+        toggleWeatherEffects();
+    }
 }
 
 function addAnimal() {
@@ -1657,7 +1673,7 @@ function addItemSound(item, buffer, loop) {
 function initTrain() {
     showProgressBar();
     TRAIN.initLoco(function (loco) {
-        WORLD.model.add(loco);
+        
 
         for (let mesh of loco.rearLights) {                        
             addRearLight(mesh);
@@ -1694,6 +1710,8 @@ function initTrain() {
 
         train.push(loco);
         
+        WORLD.model.add(loco);
+
         hideProgressBar();
 
     }, onProgress, onError);
@@ -1742,9 +1760,7 @@ function addWaggon(isLast) {
     TRAIN.initWaggon(function (waggon) {
         // waggon.translateX(vehicleLength * (chrystalCount - chrActions.trainMin));
 
-        console.log(waggon);
-
-        WORLD.model.add(waggon);
+        // console.log(waggon);
 
         for (let mesh of waggon.windows) {
             if (isNight) {
@@ -1769,6 +1785,8 @@ function addWaggon(isLast) {
         addItemSound(waggon, trainSoundBuffer, true);
 
         train.push(waggon);
+
+        WORLD.model.add(waggon);
         hideProgressBar();
     }, onProgress, onError, isLast);
 }
@@ -1779,8 +1797,7 @@ function addCar() {
 
     showProgressBar();
     initCar(carIdx, function (car) {
-        WORLD.model.add(car);
-
+        
         for (let mesh of car.rLights) {                        
             addRearLight(mesh);
         }
@@ -1808,6 +1825,8 @@ function addCar() {
         addItemSound(car, motorSoundBuffer, true);
                 
         cars.push(car);
+
+        WORLD.model.add(car);
 
         hideProgressBar();
     } , onProgress, onError);
@@ -1840,7 +1859,6 @@ function checkExerciseIntersections() {
     }
 }
 
-const playerCamHeight = 85;
 function updateControls(delta) {
 
     velocity.x -= velocity.x * 10.0 * delta;
@@ -1919,20 +1937,25 @@ function updateControls(delta) {
 
 function toggleNight() {
     if (gameSettings.nightEnabled || isNight) {
+
+        let nightChangeDuration = 1;
+
         isNight = !isNight;
 
-        scene.fog.color.setHex(isNight ? 0x101015 : 0xcccccc);
+        updateFog();
 
         if (dirLight) {
             dirLight.color.setHex(isNight ? 0x222244 : 0xffffff)
         }
 
-        if (hemiLight) {
-            hemiLight.intensity = (isNight ? 0.15 : 0.8);
+        if (hemiLight) {        
+            ANIM.blendProperty(mixer, hemiLight, 'intensity', (isNight ? 0.075 : 0.8), nightChangeDuration);    
+            // hemiLight.intensity = (isNight ? 0.075 : 0.8);// (isNight ? 0.15 : 0.8);
         }
 
         if (skyMesh) {
-            skyMesh.material.emissiveIntensity = (isNight ? 0.1 : 1);
+            ANIM.blendProperty(mixer, skyMesh.material, 'emissiveIntensity', (isNight ? 0.05 : 1), nightChangeDuration);
+            // skyMesh.material.emissiveIntensity = (isNight ? 0.05 : 1);// (isNight ? 0.1 : 1);
         }
 
         for (let light of nightLights) {
@@ -1986,8 +2009,126 @@ function toggleNight() {
     }
 }
 
-function highlightMesh(mesh, colorHex)
-{
+function checkAndEndWeatherEffects(ttl = 0, all = false, removeStars = true) {
+
+    if (!isNight || all) {
+        if (particleEffects.stars) {
+            //console.log("- stars" + removeStars ? " (remove)" : " (leave)")
+            particleEffects.stars.ttl = ttl;
+            particleEffects.stars = null;
+        }
+        if (particleEffects.shootingStars) {
+            //console.log("- sstars")
+            particleEffects.shootingStars.ttl = ttl;
+            particleEffects.shootingStars = null;
+        }
+        if (particleEffects.fireflies) {
+            //console.log("- fireflies")
+            particleEffects.fireflies.ttl = ttl;
+            particleEffects.fireflies = null;
+        }
+    } else {
+        if (!(particleEffects.snow || particleEffects.rain || particleEffects.stars)) {
+            //console.log("Stars " + intensity);
+            particleEffects.stars = PTFX.starsAbove(scene);
+            particleSystems.push(particleEffects.stars);
+        }
+    }
+
+    if (particleEffects.snow && (WORLD.currentSeason != WORLD.seasons.winter || all)) {
+        //console.log("- snow")
+        particleEffects.snow.ttl = ttl;
+        particleEffects.snow = null;
+    }
+
+    if (all && particleEffects.rain) {
+        //console.log("- rain")
+        particleEffects.rain.ttl = ttl;
+        particleEffects.rain = null;
+    }
+
+    if (removeStars) {
+        for (let ps of particleSystems) {
+            if (ps.type == PTFX.ptfxType.stars || ps.type == PTFX.ptfxType.sstars) {
+                if (!isNight) {
+                    ps.removeSelf(); 
+                } else {
+                    ps.update(PTFX.starsTtl);
+                }
+            }
+        }
+    }
+}
+
+function toggleWeatherEffects() {
+
+    let precip = (Math.random() < 0.33);
+    let intensity = Math.round(Math.random() * 18 + 2) / 10;
+
+    checkAndEndWeatherEffects(3, true, precip || (!isNight));
+
+    if (precip) {
+        if (WORLD.currentSeason != WORLD.seasons.winter || Math.random() < 0.33) {
+            // rain
+            //console.log("Rain " + intensity);
+            particleEffects.rain = PTFX.letItRain(scene, intensity, PTFX.generateWind(500));
+            particleSystems.push(particleEffects.rain);
+        } else {
+            //snow
+            //console.log("Snow " + intensity);
+            particleEffects.snow = PTFX.letItSnow(scene, intensity, PTFX.generateWind(150));
+            particleSystems.push(particleEffects.snow);
+        }        
+
+    } else if (isNight) {        
+        // stars
+        //console.log("Stars " + intensity);
+        particleEffects.stars = PTFX.starsAbove(scene, intensity);
+        particleSystems.push(particleEffects.stars);
+
+        if (WORLD.currentSeason != WORLD.seasons.winter && Math.random() < 0.33) {
+            // shooting stars
+            //console.log("SStars " + intensity);
+            particleEffects.shootingStars = PTFX.shootingStars(scene, intensity);
+            particleSystems.push(particleEffects.shootingStars);
+        }
+
+        if ((WORLD.currentSeason == WORLD.seasons.summer || WORLD.currentSeason == WORLD.seasons.spring) && Math.random() < 0.33) {
+            // fireflies
+            //console.log("Fireflies " + intensity);
+            intensity = Math.round(Math.random() * 18 + 2) / 10;
+            particleEffects.fireflies = PTFX.fireflies(scene, intensity);
+            particleSystems.push(particleEffects.fireflies);
+        }
+    } 
+
+    ANIM.blendProperty(mixer, dirLight, 'intensity', precip ? 0.05 : 0.3, 3);
+
+    updateFog();
+}
+
+function updateFog() {
+    if (scene && scene.fog) {
+
+        scene.fog.color.setHex(isNight ? 0x101015 : 0xcccccc);
+
+        let newDensity = scene.fog.density;
+        let precip = (particleEffects.rain || particleEffects.snow);
+
+        let season = WORLD.currentSeason;
+        if (season == WORLD.seasons.winter) {
+            newDensity = precip ? 0.0005 : 0.00018;
+        } else if (season == WORLD.seasons.autumn) {
+            newDensity =  precip ? 0.0003 : 0.00015;
+        } else {
+            newDensity = precip ? 0.00025 : 0.00012;        
+        }
+
+        ANIM.blendProperty(mixer, scene.fog, "density", newDensity, 3);
+    }
+}
+
+function highlightMesh(mesh, colorHex) {
     mesh.parent.children[0].material.emissive.setHex(colorHex);
 }
 
@@ -1995,40 +2136,6 @@ function render() {
     // checkIntersect();
     renderer.render( scene, camera );
 }
-
-/*
-function initPlayers(count)
-{
-    if (players) {
-        while (players.length > count) {
-            let player = players.pop();
-            if (playersFolder && player.controller) {
-                playersFolder.remove(player.controller);
-            }
-        }
-    }
-    else {
-        players = [];
-    }
-
-    let idx = players.length;
-
-    while (players.length < count) {        
-        players.push({index: idx, name: "Player" + (idx + 1), color: new THREE.Color() });
-        let player = players[idx++];
-        player.color.setHSL(idx/count, 1, 0.5);
-    
-        if (playersFolder) {
-            player.controller = playersFolder.add(player, "name").name("Name");
-        }
-    }
-
-    currentPlayer = players[0];    
-    
-    updatePlayerInfo();
-}
-
-*/
 
 function updatePlayerInfo() {
     if (playerInfo) {

@@ -113,3 +113,6 @@ package-lock.json
 ldraw/p/
 ldraw/parts/
 ldraw/*.ldr
+
+# include
+!web_modules/**
