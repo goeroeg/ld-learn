@@ -1,7 +1,7 @@
 {
   "name": "ld-learn",
   "description": "An Edu-shooter using LDRAW objects.",
-  "version": "0.3.0",
+  "version": "0.3.5",
   "main": "main.js",
   "scripts": {
     "serve": "http-server .",
@@ -9,7 +9,8 @@
     "packldr": "node gfx/packLDrawModel.js gfx/models/"
   },
   "dependencies": {
-    "three": "^0.115.0"
+    "three": "^0.115.0",
+    "partykals": "^1.0.2"
   },
   "devDependencies": {
     "http-server": "^0.12.3",

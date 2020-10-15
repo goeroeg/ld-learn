@@ -45,7 +45,7 @@ export function updateMiniMapColors(newPlateColor, newPlantColor) {
     mapObjColors[4][0] = color.r * 255;
     mapObjColors[4][1] = color.g * 255;
     mapObjColors[4][2] = color.b * 255;
-    console.log(mapObjColors);
+    // console.log(mapObjColors);
 }
 
 export function updateMapData(canvas, ori, x, y) {

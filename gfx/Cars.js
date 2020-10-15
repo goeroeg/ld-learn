@@ -3,7 +3,7 @@ import { LDrawLoader } from './LDrawLoader.js'; // use fixed -
 import * as WORLD from './World.js';
 import * as ANIM from './Animations.js';
 
-export const availableCarModels = 3;
+export const availableCarModels = 4;
 
 const stepBody = 0;
 const stepRightWheels = 1;

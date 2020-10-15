@@ -2,6 +2,7 @@
 
 import { LDrawLoader } from './LDrawLoader.js';
 import * as ANIM from './Animations.js';
+import { collRaycaster } from '../ld-learn.js';
 
 export const plateSize = 640;
 export const parcelSize = 80;
@@ -20,9 +21,11 @@ export var sphere;
 export var sky;
 export var sunSphere;
 
+export var collObjs = new Set();
+
 var plate;
 var fence;
-var plants = [];
+var plantProtos = [];
 var roadPlate;
 
 export var plates = [];
@@ -121,7 +124,7 @@ export function initScene(onLoad, onProgress, onError) {
 
             // let plants = [];
             for (let plantIdx = 4; plantIdx < model.children.length; plantIdx++) {
-                plants.push(model.children[plantIdx]);        
+                plantProtos.push(model.children[plantIdx]);        
             }
 
             // clear model, keep only first plate
@@ -150,7 +153,7 @@ export function setSeasonColor(season) {
     if (season != seasons.auto) {            
         if (plate) {        
             plate.children[0].material[0].color.setHex(seasonPlateColor[season]);        
-            plants[0].children[0].material[0].color.setHex(seasonPlantColor[season])
+            plantProtos[0].children[0].material[0].color.setHex(seasonPlantColor[season])
         }
         if (roadPlate) {
             // console.log(roadPlate);
@@ -254,7 +257,7 @@ export function createFences() {
 
 export function populatePlants(min, max, mixer) {
     // populate world
-    for (let plant of plants) {
+    for (let plant of plantProtos) {
         let count = min + Math.random() * (max - min);
         for (let i = 0; i < count; i++) {
             let parcelIdx = Math.round(Math.random() * (parcels.length - 1));
@@ -268,14 +271,16 @@ export function populatePlants(min, max, mixer) {
                 newPlant.translateZ(Math.floor(Math.random() * 3 - 1) * 20);
                 newPlant.rotateY(Math.floor(Math.random() * 4) * Math.PI / 2);
 
+                model.add(newPlant);
+
+                addCollBox(newPlant);
+
                 parcel.occupied = newPlant;
                 parcel.mapObjId = MapObjectId.plant;
 
                 newPlant.scale.x = 0;
                 newPlant.scale.y = 0;
                 newPlant.scale.z = 0;
-
-                model.add(newPlant);
 
                 if (mixer) {
                     // add an animation
@@ -290,11 +295,11 @@ export function populatePlants(min, max, mixer) {
     freeParcels = parcels.filter(parcelFilter);
 }
 
-export function prepareRoads(mixer) {
+export function prepareRoads(mixer, collObjs) {
     for (let x = -roadPlates * plateSize; x <= roadPlates * plateSize; x +=parcelSize) {
         for (let z = -roadPlates * plateSize; z <= roadPlates * plateSize; z+= 2 * roadPlates * plateSize ) {
             for (let idx = -2; idx <= 2; idx++) {
-                reserveParcelAt(x, z + idx * parcelSize, mixer, roadPlaceholder);
+                reserveParcelAt(x, z + idx * parcelSize, mixer, roadPlaceholder, collObjs);
             }
         }
     }
@@ -302,11 +307,20 @@ export function prepareRoads(mixer) {
     for (let x = -roadPlates * plateSize; x <= roadPlates * plateSize; x+= 2 * roadPlates * plateSize) {
         for (let z = -roadPlates * plateSize; z <= roadPlates * plateSize; z+= parcelSize ) {
             for (let idx = -2; idx <= 2; idx++) {
-                reserveParcelAt(x + idx * parcelSize, z, mixer, roadPlaceholder);
+                reserveParcelAt(x + idx * parcelSize, z, mixer, roadPlaceholder, collObjs);
             }
         }
     }
 }
+
+// call after obj is added to model
+export function addCollBox(obj) {
+    let bbox = new THREE.Box3().setFromObject(obj);
+    obj.bbox = bbox;
+    collObjs.add(bbox);
+    // model.parent.add(new THREE.Box3Helper(bbox));
+}
+
 
 export function reserveParcelAt(x, z, mixer, placeHolder) {
     let parcel = parcels[getParcelIndex(x, z)];
@@ -316,6 +330,7 @@ export function reserveParcelAt(x, z, mixer, placeHolder) {
         if (mixer) {
             mixer.uncacheRoot(parcel.occupied);                
         }
+        collObjs.delete(parcel.occupied.bbox);
     }
     parcel.occupied = placeHolder;
     parcel.mapObjId = MapObjectId.none;

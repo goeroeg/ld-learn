@@ -17,8 +17,12 @@ import { initCow, initHorse } from './gfx/Animals.js';
 import * as TRAIN from './gfx/Train.js';
 import * as PTFX from './gfx/ParticleEffects.js';
 
-export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
+export var camera, controls, gpControls, scene, renderer, raycaster, collRaycaster, intersectedObject;
 var particleSystems = [];
+
+var collObjects = [];
+
+var rayHelper = new THREE.ArrowHelper();
 
 var testMode = true;
 
@@ -146,12 +150,12 @@ const chrActions = {
     createSky : 3,
     plantsMin : 4,
     plantsMax : 20,
-    prepareRoads : 15, //15
-    initRoads : 20, //20
-    carsMin : 25,   //21
-    carsMax : 42,   //42
+    prepareRoads : 18, //15
+    initRoads : 23, //20
+    carsMin : 25,   //25
+    carsMax : 41,   //41
     animalsMin : 12, // 12
-    animalsMax : 25, // 25
+    animalsMax : 24, // 24
     musicSphere : 30, // 30
     prepareTracks : 40, // 40
     initTracks : 43, // 43
@@ -196,6 +200,7 @@ function initControls() {
     addCrossHair(camera);
 
     raycaster = new THREE.Raycaster();
+    collRaycaster = new THREE.Raycaster();
 
     // raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, -1, 0 ), 0 , 1000);
 
@@ -952,14 +957,8 @@ function initScene() {
 
     }, onProgress, onError);
 
-    //particleSystems.push(PTFX.letItRain(scene, 1));
-    //particleSystems.push(PTFX.letItSnow(scene, 1));
+    scene.add(rayHelper);
 
-    //particleSystems.push(PTFX.letItRain(scene, Math.random() * 1.5 + 0.5, PTFX.generateWind(500)));
-
-    // particleSystems.push(PTFX.fireflies(scene, 1));
-    // particleSystems.push(PTFX.starsAbove(scene, 1));
-    // particleSystems.push(PTFX.shootingStars(scene, 1));
 }
 
 function initPlayerGuyAnim() {
@@ -1067,6 +1066,8 @@ function addMusicSphere() {
         //light.attach(sphere);
         sphere.attach(light);
         WORLD.model.add(sphere);
+
+        WORLD.addCollBox(sphere);
 
         nightLights.push(light);
 
@@ -1417,8 +1418,48 @@ function animate() {
 function updateVehiclePositions() {
     if (cars.length > 0)
     {
+        let playerBbox = new THREE.Box3().setFromObject(playerGuy);
+
         for (let car of cars) {
             updateVehiclePos(car, WORLD.MapObjectId.car, WORLD.MapObjectId.road);
+
+            let velVec = car.getWorldDirection(new THREE.Vector3());
+            car.frontBbox.copy(car.bbox).translate(velVec.multiplyScalar(-120)).expandByScalar(-30);            
+        }
+        for (let car of cars) {
+            if (car.anims && car.anims.length > 0) {
+                let brake = car.frontBbox.intersectsBox(playerBbox);
+                if (!brake) {
+                    for (let c of cars) {
+                        if (c !== car) {                            
+                            if (car.frontBbox.intersectsBox(c.bbox)) {
+                                if (c.waitFor !== car) { // resolve deadlocks
+                                    car.waitFor = c;
+                                    brake = true;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (brake) {
+                    car.braking = true;
+                    for (let anim of car.anims) {
+                        anim.halt(0.1); 
+                    }                    
+                }
+                else {
+                    if (car.braking) {
+                        car.braking = false;
+                        for (let anim of car.anims) {
+                            anim.setDuration(anim.duration);      
+                            anim.paused = false;              
+                        }
+                    }
+                    car.waitFor = null;
+                }
+            }
         }
     }
 
@@ -1437,6 +1478,9 @@ function updateVehiclePositions() {
             vehicle.parcel = parcel;
             parcel.mapObjId = mapId;
         }
+        if (vehicle.bbox) {
+            vehicle.bbox.setFromObject(vehicle);
+        }        
     }
 }
 
@@ -1608,7 +1652,6 @@ function addAnimal() {
             initCow(function (cow) {
 
                 WORLD.model.add(cow);
-
                 for (let parcel of parcels) {
                     parcel.occupied = cow;
                 }
@@ -1622,6 +1665,8 @@ function addAnimal() {
                 action.setLoop(THREE.LoopRepeat).setDuration(5).play();
 
                 addItemSound(cow, cowSoundBuffer, true);
+
+                WORLD.addCollBox(cow);
 
             }, onProgress, onError);
         } else {
@@ -1646,6 +1691,7 @@ function addAnimal() {
     
                 addItemSound(horse, horseSoundBuffer, true);
 
+                WORLD.addCollBox(horse);
             }, onProgress, onError);
         }
     }
@@ -1808,25 +1854,36 @@ function addCar() {
 
         let ccw = (chrystalCount % 2 == 0); // every second counter-clockwise
         let clip = ANIM.createRoadAnimation((WORLD.roadPlates * 2) + (0.28 * (ccw ? 1 : -1)), WORLD.plateSize, WORLD.plateSize / 2 * (1 + 0.28 * (ccw ? 1 : -1)) , ccw);
-        var action = mixer.clipAction(clip, car);                
-        let duration =  0.0025 * clip.path.getLength();
-
-        action.setLoop(THREE.LoopRepeat).setDuration(duration).play();
+        var action = mixer.clipAction(clip, car);            
+        
+        action.duration =  0.0025 * clip.path.getLength();
+        action.setLoop(THREE.LoopRepeat).setDuration(action.duration).play();
+        
+        car.anims = [];
+        car.anims.push(action);
 
         for (let wheel of car.rWheels) {
-            var action = mixer.clipAction(ANIM.createRotationAnimation(1, 'z'), wheel);
-            action.setLoop(THREE.LoopRepeat).setDuration(0.75).play();
+            action = mixer.clipAction(ANIM.createRotationAnimation(1, 'z'), wheel);
+            action.duration = 0.75;
+            action.setLoop(THREE.LoopRepeat).setDuration(action.duration).play();            
+            car.anims.push(action);
         }
         for (let wheel of car.lWheels) {
-            var action = mixer.clipAction(ANIM.createRotationCcwAnimation(1, 'z'), wheel);
-            action.setLoop(THREE.LoopRepeat).setDuration(0.75).play();
+            action = mixer.clipAction(ANIM.createRotationCcwAnimation(1, 'z'), wheel);
+            action.duration = 0.75;
+            action.setLoop(THREE.LoopRepeat).setDuration(action.duration).play();
+            car.anims.push(action);
         }
 
         addItemSound(car, motorSoundBuffer, true);
-                
+
         cars.push(car);
 
         WORLD.model.add(car);
+        WORLD.addCollBox(car);
+
+        car.frontBbox = new THREE.Box3();
+        //scene.add(new THREE.Box3Helper(car.frontBbox, new THREE.Color("red")));
 
         hideProgressBar();
     } , onProgress, onError);
@@ -1863,10 +1920,12 @@ function updateControls(delta) {
 
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
+    velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass    
+
     direction.z = Number(moveActive[moveDir.forward]) - Number(moveActive[moveDir.backward]);
     direction.x = Number(moveActive[moveDir.right]) - Number(moveActive[moveDir.left]);
     direction.normalize(); // this ensures consistent movements in all directions
+
     if (moveActive[moveDir.forward] || moveActive[moveDir.backward]) {
         velocity.z -= direction.z * 4000.0 * delta;
     }
@@ -1881,6 +1940,9 @@ function updateControls(delta) {
     }
     */
 
+    let oldPos = controls.getObject().position;
+    oldPos = new THREE.Vector3(oldPos.x, oldPos.y, oldPos.z);
+
     controls.moveRight(-velocity.x * delta);
     controls.moveForward(-velocity.z * delta);
     controls.getObject().position.y += (velocity.y * delta); // new behavior
@@ -1890,6 +1952,7 @@ function updateControls(delta) {
         canJump = true;
     }
 
+    
     let pos = controls.getObject().position;
 
     if (pos.x > absMaxDistance) {
@@ -1904,12 +1967,28 @@ function updateControls(delta) {
     }
 
     if (velocity.x != 0 || velocity.z != 0) {
+
+        let testPos = new THREE.Vector3();
+        controls.getObject().getWorldPosition(testPos);
+        testPos.y -= playerCamHeight / 2;
+    
+        let collArr = Array.from(WORLD.collObjs);
+        for (let bbox of WORLD.collObjs) {
+            if (bbox.containsPoint(testPos)) {               
+                testPos = new THREE.Vector3(testPos.x, testPos.y, oldPos.z);
+                if (bbox.containsPoint (testPos)) {
+                    pos.x = oldPos.x;
+                } else {
+                    pos.z = oldPos.z;
+                }
+                break;
+            }
+        }
+
         checkChrystals();
     }
 
     if (playerGuy) {
-        var euler = controls.getObject().rotation.clone();
-
         if ( lastGuyPos.distanceTo(pos) > 0.1 && playerGuy.walk ) {            
             if ( !playerGuy.isWalking ) playerGuy.walk();
             if ( walkSound && !walkSound.isPlaying ) walkSound.play();
@@ -1917,13 +1996,14 @@ function updateControls(delta) {
             if ( playerGuy.isWalking ) playerGuy.stop();                
         }
 
-        playerGuy.position.x = pos.x;
-        playerGuy.position.z = pos.z;
-        playerGuy.position.y = pos.y - playerCamHeight;
-
+        let euler = controls.getObject().rotation.clone();
         euler.reorder("YXZ");
         euler.x = 0;
         euler.z = Math.PI;
+
+        playerGuy.position.x = pos.x;
+        playerGuy.position.z = pos.z;
+        playerGuy.position.y = pos.y - playerCamHeight;
 
         playerGuy.setRotationFromEuler(euler, "YXZ");
 

@@ -447,8 +447,9 @@ var LDrawLoader = ( function () {
 		}
 
 		if ( numGroupVerts > 0 ) {
-
-			bufferGeometry.addGroup( index0, Infinity, materials.length - 1 );
+			// leads to infinite loop when raycasting
+			//bufferGeometry.addGroup( index0, Infinity, materials.length - 1 );
+			bufferGeometry.addGroup( index0, positions.length, materials.length - 1 );
 
 		}
 
