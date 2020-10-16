@@ -20,8 +20,6 @@ import * as PTFX from './gfx/ParticleEffects.js';
 export var camera, controls, gpControls, scene, renderer, raycaster, collRaycaster, intersectedObject;
 var particleSystems = [];
 
-var collObjects = [];
-
 var rayHelper = new THREE.ArrowHelper();
 
 var testMode = true;
@@ -131,6 +129,7 @@ var touchMoveTime;
 
 var touchCameraControls = document.getElementById('cameraControls');
 var miniMap = document.getElementById('miniMap');
+var weatherIcon = document.getElementById('weatherIcon');
 var miniMapDiv = document.getElementById('miniMapDiv');
 
 var touchCamPos = new THREE.Vector2();
@@ -151,11 +150,11 @@ const chrActions = {
     plantsMin : 4,
     plantsMax : 20,
     prepareRoads : 18, //15
-    initRoads : 23, //20
-    carsMin : 25,   //25
-    carsMax : 41,   //41
+    initRoads : 19, //20
+    carsMin : 20,   //25
+    carsMax : 40,   //41
     animalsMin : 12, // 12
-    animalsMax : 24, // 24
+    animalsMax : 20, // 24
     musicSphere : 30, // 30
     prepareTracks : 40, // 40
     initTracks : 43, // 43
@@ -2140,6 +2139,8 @@ function checkAndEndWeatherEffects(ttl = 0, all = false, removeStars = true) {
     }
 }
 
+
+
 function toggleWeatherEffects() {
 
     let precip = (Math.random() < 0.33);
@@ -2147,17 +2148,31 @@ function toggleWeatherEffects() {
 
     checkAndEndWeatherEffects(3, true, precip || (!isNight));
 
+    let wIconPath = './gfx/textures/weather/w_' + (isNight ? 'night' : 'day');
+
     if (precip) {
+
+        if (intensity < 0.8) {
+            wIconPath += '_light';
+        } else if (intensity > 1.2) {
+            wIconPath += '_heavy';
+        }
+    
         if (WORLD.currentSeason != WORLD.seasons.winter || Math.random() < 0.33) {
             // rain
             //console.log("Rain " + intensity);
             particleEffects.rain = PTFX.letItRain(scene, intensity, PTFX.generateWind(500));
             particleSystems.push(particleEffects.rain);
+
+            wIconPath += '_rain';
+
         } else {
             //snow
             //console.log("Snow " + intensity);
             particleEffects.snow = PTFX.letItSnow(scene, intensity, PTFX.generateWind(150));
             particleSystems.push(particleEffects.snow);
+            
+            wIconPath += '_snow';
         }        
 
     } else if (isNight) {        
@@ -2166,21 +2181,26 @@ function toggleWeatherEffects() {
         particleEffects.stars = PTFX.starsAbove(scene, intensity);
         particleSystems.push(particleEffects.stars);
 
-        if (WORLD.currentSeason != WORLD.seasons.winter && Math.random() < 0.33) {
-            // shooting stars
-            //console.log("SStars " + intensity);
-            particleEffects.shootingStars = PTFX.shootingStars(scene, intensity);
-            particleSystems.push(particleEffects.shootingStars);
-        }
-
         if ((WORLD.currentSeason == WORLD.seasons.summer || WORLD.currentSeason == WORLD.seasons.spring) && Math.random() < 0.33) {
             // fireflies
             //console.log("Fireflies " + intensity);
             intensity = Math.round(Math.random() * 18 + 2) / 10;
             particleEffects.fireflies = PTFX.fireflies(scene, intensity);
             particleSystems.push(particleEffects.fireflies);
+
+            wIconPath += '_ff';
         }
-    } 
+
+        if (WORLD.currentSeason != WORLD.seasons.winter && Math.random() < 0.33) {
+            // shooting stars
+            //console.log("SStars " + intensity);
+            particleEffects.shootingStars = PTFX.shootingStars(scene, intensity);
+            particleSystems.push(particleEffects.shootingStars);
+            wIconPath += '_sstar';
+        }
+    }
+
+    weatherIcon.src = wIconPath + '.png';
 
     ANIM.blendProperty(mixer, dirLight, 'intensity', precip ? 0.05 : 0.3, 3);
 
