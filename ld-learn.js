@@ -11,7 +11,7 @@ import { addCrossHair } from './controls/CrossHair.js';
 import * as WORLD from './gfx/World.js';
 import * as ANIM from './gfx/Animations.js';
 import * as OBJS from './gfx/Objects.js'
-import * as SFX from './sounds/SoundFX.js';
+import * as SFX from './audio/SoundFX.js';
 import * as PTFX from './gfx/ParticleEffects.js';
 import { initGuy, BodyParts } from './gfx/Guy.js';
 import { updateMapData, updateMiniMapColors } from './gfx/MiniMap.js';
@@ -459,7 +459,7 @@ function pauseGame() {
     gameActive = false;
     updateBlocker(false);
 
-    SFX.pauseSounds();
+    SFX.pause();
 
     animClock.stop();
     walkClock.stop();
@@ -470,7 +470,7 @@ function pauseGame() {
 function startGame() {
     updateBlocker(true);
 
-    SFX.resumeSounds((chrystalCount >= chrActions.plantsMin), (chrystalCount >= chrActions.musicSphere));
+    SFX.resume((chrystalCount >= chrActions.plantsMin), (chrystalCount >= chrActions.musicSphere));
 
     document.addEventListener('click', onDocumentClick, false);
     touchCameraControls.addEventListener('click', onDocumentClick, false);
@@ -1675,7 +1675,7 @@ function addWaggon(isLast) {
 
         waggon.anim = action;
 
-        SFX.addItemSound(waggon, SFX.soundBuffers.train, true);
+        SFX.addItemSound(waggon, SFX.soundBuffers.train, true, 1.5);
 
         train.push(waggon);
 
@@ -1796,7 +1796,6 @@ function updateControls(delta) {
         canJump = true;
     }
 
-    
     let pos = controls.getObject().position;
 
     if (pos.x > absMaxDistance) {
@@ -1811,16 +1810,15 @@ function updateControls(delta) {
     }
 
     if (velocity.x != 0 || velocity.z != 0) {
-
         let testPos = new THREE.Vector3();
         controls.getObject().getWorldPosition(testPos);
         testPos.y -= playerCamHeight / 2;
     
-        let collArr = Array.from(WORLD.collObjs);
+        // let collArr = Array.from(WORLD.collObjs); fix if problems with set
         for (let bbox of WORLD.collObjs) {
             if (bbox.containsPoint(testPos)) {               
                 testPos = new THREE.Vector3(testPos.x, testPos.y, oldPos.z);
-                if (bbox.containsPoint (testPos)) {
+                if (bbox.containsPoint (testPos)) { // enable sliding to one side
                     pos.x = oldPos.x;
                 } else {
                     pos.z = oldPos.z;
@@ -1980,7 +1978,9 @@ function checkAndEndWeatherEffects(ttl = 0, all = false, removeStars = true) {
 
 function toggleWeatherEffects() {
 
-    let precip = (Math.random() < 0.33);
+    let precipVal = Math.random();
+    let precip = precipVal < 0.33 || (precipVal < 0.66 && (WORLD.currentSeason == WORLD.seasons.spring || WORLD.currentSeason == WORLD.seasons.autumn));
+
     let intensity = Math.round(Math.random() * 18 + 2) / 10;
 
     checkAndEndWeatherEffects(3, true, precip || (!isNight));

@@ -315,7 +315,7 @@ export function prepareRoads(mixer, collObjs) {
 
 // call after obj is added to model
 export function addCollBox(obj) {
-    let bbox = new THREE.Box3().setFromObject(obj);
+    let bbox = new THREE.Box3().setFromObject(obj).expandByScalar(5);
     obj.bbox = bbox;
     collObjs.add(bbox);
     // model.parent.add(new THREE.Box3Helper(bbox));
