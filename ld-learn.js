@@ -23,7 +23,7 @@ var particleSystems = [];
 
 //var rayHelper = new THREE.ArrowHelper();
 
-var testMode = true;
+var testMode = false;
 
 var isElectronApp = (navigator.userAgent.toLowerCase().indexOf(' electron/') > -1); // detect whether run as electron app
 

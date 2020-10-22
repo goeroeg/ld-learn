@@ -58,7 +58,7 @@ export var currentSeason = seasons.auto;
 export const seasonPlateColor = [ 0x58AB41, 0x00852B, 0x91501C, 0xBCB4A5 ]; // old autumn: 0x91501C
 export const seasonPlantColor = [ 0x00852B, 0x00451A, 0x77774E, 0x708E7C ];
 
-export const smoothNormals = false; // test this later, but takes longer for testing
+export const smoothNormals = true; // test this later, but takes longer for testing
 
 export const fencePlaceholder = 1;
 export const roadPlaceholder = 2;

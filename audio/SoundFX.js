@@ -70,9 +70,11 @@ export function init(camera) {
         sphereSound = new THREE.PositionalAudio(listener).setBuffer(buffer).setLoop(true).setRefDistance(150).setVolume(0.8);
     });
 
+    /*
     callbacks.set(soundBuffers.wind, function(buffer) {
         windSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(true).setVolume(0);
     });
+    */
 
     callbacks.set(soundBuffers.rain, function(buffer) {
         rainSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(true).setVolume(0);
