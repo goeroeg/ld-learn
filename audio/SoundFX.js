@@ -182,7 +182,8 @@ export function setVolume(audio, volume, time) {
     if (audio) {
         let ctx = audio.context;
         if (!audio.isPlaying) audio.play();
-        audio.gain.gain.cancelAndHoldAtTime(ctx.currentTime);
-        audio.gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + time);
+        // audio.gain.gain.cancelAndHoldAtTime(ctx.currentTime);  
+        // audio.gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + time);
+        audio.gain.gain.setTargetAtTime(volume, ctx.currentTime, time / 5);
     }
 }
