@@ -1,5 +1,7 @@
 export var listener;
 export var ambientSound;
+export var rainSound;
+export var windSound;
 export var sphereSound;
 export var walkSound;
 export var tickSound;
@@ -15,6 +17,11 @@ const soundsPath = "./audio/sounds/";
 export var soundBuffers = {
     ambientDay: { buffer: null, filename: 'ambient_day.ogg' },
     ambientNight: { buffer: null, filename: 'ambient_night.ogg' }, 
+    crows: { buffer: null, filename: 'crows.ogg' },
+    magpie: { buffer: null, filename: 'magpie.ogg' },
+    silence: { buffer: null, filename: 'silence.ogg' },
+    rain: { buffer: null, filename: 'rain.ogg' },
+    // wind: { buffer: null, filename: 'wind.ogg' },
     walk: { buffer: null, filename: 'walk.ogg' },
     collect: { buffer: null, filename: 'collect.ogg' },
     newItem: { buffer: null, filename: 'dream.ogg' },
@@ -28,9 +35,11 @@ export var soundBuffers = {
     sphere: { buffer: null, filename: 'sphere-music.ogg' }
 }
 
-export function init() {
+export function init(camera) {
     // create an AudioListener and add it to the camera
     listener = new THREE.AudioListener();
+
+    if (camera) camera.add(listener);
 
     // load a sound and set it as the Audio object's buffer
     var audioLoader = new THREE.AudioLoader();
@@ -54,11 +63,19 @@ export function init() {
     });
 
     callbacks.set(soundBuffers.tick, function(buffer) {
-        tickSound = new THREE.Audio(listener).setBuffer(buffer).setRefDistance(100).setVolume(0.8);
+        tickSound = new THREE.PositionalAudio(listener).setBuffer(buffer).setRefDistance(100).setVolume(0.8);
     });
 
     callbacks.set(soundBuffers.sphere, function(buffer) {
-        tickSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(true).setRefDistance(150).setVolume(0.8);
+        sphereSound = new THREE.PositionalAudio(listener).setBuffer(buffer).setLoop(true).setRefDistance(150).setVolume(0.8);
+    });
+
+    callbacks.set(soundBuffers.wind, function(buffer) {
+        windSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(true).setVolume(0);
+    });
+
+    callbacks.set(soundBuffers.rain, function(buffer) {
+        rainSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(true).setVolume(0);
     });
 
     for (let prop in soundBuffers) {
@@ -113,9 +130,9 @@ export function addItemSound(item, soundBuffer, loop, volume = 0.7) {
     return sound;
 }
 
-export function setAmbientSound(isNight) {
+export function setAmbientSound(sb) {
     if (ambientSound) {
-        ambientSound.setBuffer(isNight ? soundBuffers.ambientNight.buffer : soundBuffers.ambientDay.buffer);
+        ambientSound.setBuffer(sb.buffer);
         if (ambientSound.isPlaying) {
             ambientSound.pause();
             ambientSound.play();
@@ -124,10 +141,20 @@ export function setAmbientSound(isNight) {
 }
 
 export function pause() {
-    if (ambientSound && ambientSound.isPlaying)
+    if (ambientSound && ambientSound.isPlaying) {
         ambientSound.pause();
-    if (sphereSound && sphereSound.isPlaying)
+    }
+    if (sphereSound && sphereSound.isPlaying) {
         sphereSound.pause();
+    }
+    if (rainSound && rainSound.isPlaying) {
+        rainSound.pause();
+    }
+    /*
+    if (windSound && windSound.isPlaying) {
+        windSound.pause();
+    }
+    */
     for (let ms of itemSounds) {
         if (ms.isPlaying)
             ms.pause();
@@ -137,12 +164,23 @@ export function pause() {
 export function resume(ambient, sphere) {
     if (ambient) {
         play(ambientSound);
+        play(rainSound);
+        // play(windSound);    
     }
     if (sphere) {
         play(sphereSound);
-    }
+    }    
 
     for (let ms of itemSounds) {
         play(ms);
+    }
+}
+
+export function setVolume(audio, volume, time) {
+    if (audio) {
+        let ctx = audio.context;
+        if (!audio.isPlaying) audio.play();
+        audio.gain.gain.cancelAndHoldAtTime(ctx.currentTime);
+        audio.gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + time);
     }
 }

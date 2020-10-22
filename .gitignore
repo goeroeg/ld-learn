@@ -114,5 +114,8 @@ ldraw/p/
 ldraw/parts/
 ldraw/*.ldr
 
+# some audio files
+audio/temp/
+
 # include
 !web_modules/**

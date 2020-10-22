@@ -104,7 +104,7 @@ export function fireflies(scene, intensity = 1.0) {
             blending: 'blend',         
             ttl: 1, 
             ttlExtra : 4,
-            velocity: new Partykals.Randomizers.SphereRandomizer(50, 30, new THREE.Vector3(1, 1, 1), new THREE.Vector3(-1, -0.4, -1), new THREE.Vector3(1, 0.4, 1)),
+            velocity: new Partykals.Randomizers.SphereRandomizer(30, 10, new THREE.Vector3(1, 1, 1), new THREE.Vector3(-1, -0.4, -1), new THREE.Vector3(1, 0.4, 1)),
             // velocityBonus: new THREE.Vector3(0, -750, 0),
             gravity: -3,
             offset: new Partykals.Randomizers.BoxRandomizer(new THREE.Vector3(-size, 20, -size), new THREE.Vector3(size, 100, size)),            

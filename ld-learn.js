@@ -18,10 +18,10 @@ import { updateMapData, updateMiniMapColors } from './gfx/MiniMap.js';
 import * as TRAIN from './gfx/Train.js';
 
 
-export var camera, controls, gpControls, scene, renderer, raycaster, collRaycaster, intersectedObject;
+export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
 var particleSystems = [];
 
-var rayHelper = new THREE.ArrowHelper();
+//var rayHelper = new THREE.ArrowHelper();
 
 var testMode = true;
 
@@ -52,6 +52,8 @@ var mixer;
 var skyMesh;
 var hemiLight;
 var dirLight;
+
+const dirLightIntensity = 0.4;
 
 var isNight = false;
 
@@ -151,7 +153,7 @@ init();
 function init() {
     initScene();
     initControls();
-    initAudio();
+    SFX.init(camera);
     initGUI();
 
     createExercise();
@@ -181,7 +183,6 @@ function initControls() {
     addCrossHair(camera);
 
     raycaster = new THREE.Raycaster();
-    collRaycaster = new THREE.Raycaster();
 
     // raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, -1, 0 ), 0 , 1000);
 
@@ -490,12 +491,6 @@ function updateBlocker(hide) {
     }
 }
 
-function initAudio() {
-    SFX.init();
-    camera.add(SFX.listener);
-}
-
-
 function initGUI() {
 
     gui = new GUI( { autoPlace: false } );
@@ -693,6 +688,8 @@ function setSeason(season) {
     updateFog();
 
     updateMiniMapColors(WORLD.seasonPlateColor[season], WORLD.seasonPlantColor[season]);
+
+    updateAmbientSound();
 }
 
 function updateShadows(value) {
@@ -829,9 +826,6 @@ function initScene() {
         initPlayerGuyAnim();
 
     }, onProgress, onError);
-
-    scene.add(rayHelper);
-
 }
 
 function initPlayerGuyAnim() {
@@ -888,7 +882,7 @@ function addSun() {
     dirLight.shadow.mapSize.height = SHADOW_MAP_HEIGHT;
     scene.add(dirLight);
 
-    ANIM.blendProperty(mixer, dirLight, 'intensity', 0.3, 3);
+    ANIM.blendProperty(mixer, dirLight, 'intensity', dirLightIntensity, 3);
 
     //let action = mixer.clipAction(ANIM.createHighlightAnimation(1, 1), dirLight);
 }
@@ -1409,7 +1403,8 @@ function performChrystalAction() {
     }
 
     if (chrystalCount >= chrActions.plantsMin) {
-       SFX.play(SFX.ambientSound);
+        updateAmbientSound();
+        SFX.play(SFX.ambientSound);
     
         if ( chrystalCount <= chrActions.plantsMax) {
             WORLD.populatePlants(Math.round(5 * (gameSettings.itemAmount/100)), Math.round(10 * (gameSettings.itemAmount/100)), mixer);
@@ -1867,6 +1862,8 @@ function toggleNight() {
         updateFog();
 
         if (dirLight) {
+
+            // ANIM.blendColor(mixer, dirLight, isNight ? 0x222244 : 0xffffff, nightChangeDuration);
             dirLight.color.setHex(isNight ? 0x222244 : 0xffffff)
         }
 
@@ -1921,9 +1918,24 @@ function toggleNight() {
             }
         });
 
-        SFX.setAmbientSound(isNight);
+        updateAmbientSound();
     }
 }
+
+function updateAmbientSound() {
+    let sb;
+
+    if (WORLD.currentSeason == WORLD.seasons.winter) {
+        sb = isNight ? SFX.soundBuffers.silence : SFX.soundBuffers.crows;
+    } else if (WORLD.currentSeason == WORLD.seasons.autumn) {
+        sb = isNight ? SFX.soundBuffers.ambientNight : SFX.soundBuffers.magpie;
+    } else {
+        sb = isNight ? SFX.soundBuffers.ambientNight : SFX.soundBuffers.ambientDay;
+    }
+
+    SFX.setAmbientSound(sb);
+}
+
 
 function checkAndEndWeatherEffects(ttl = 0, all = false, removeStars = true) {
 
@@ -1961,6 +1973,8 @@ function checkAndEndWeatherEffects(ttl = 0, all = false, removeStars = true) {
         //console.log("- rain")
         particleEffects.rain.ttl = ttl;
         particleEffects.rain = null;
+
+        SFX.setVolume(SFX.rainSound, 0, ttl + 2);
     }
 
     if (removeStars) {
@@ -2009,7 +2023,10 @@ function toggleWeatherEffects() {
             //console.log("Rain " + intensity);
             particleEffects.rain = PTFX.letItRain(scene, intensity, PTFX.generateWind(500));
             particleSystems.push(particleEffects.rain);
-            wIconPath += '_rain';
+            
+            SFX.setVolume(SFX.rainSound, intensity * 0.75, 5);
+
+            wIconPath += '_rain';            
         }
 
     } else if (isNight) {        
@@ -2039,7 +2056,7 @@ function toggleWeatherEffects() {
 
     weatherIcon.src = wIconPath + '.png';
 
-    ANIM.blendProperty(mixer, dirLight, 'intensity', precip ? 0.05 : 0.3, 3);
+    ANIM.blendProperty(mixer, dirLight, 'intensity', precip ? 0.05 : dirLightIntensity, 3);
 
     updateFog();
 }

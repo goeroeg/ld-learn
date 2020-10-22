@@ -44,9 +44,9 @@ export function createGrowAnimation(period) {
     return new THREE.AnimationClip( 'grow', period, [ xTrack, yTrack, zTrack ] );
 }
 
-export function createColorAnimation(period) {
-    var times = [0, period], values = [0, 1];
-    var colorTrack = new THREE.ColorKeyframeTrack('.color', times, values);
+export function createColorAnimation(period, startColor, endColor) {
+    var times = [0, period], values = [startColor.r, startColor.g, startColor.b, endColor.r, endColor.g, endColor.b];
+    var colorTrack = new THREE.ColorKeyframeTrack('.color', times, values, THREE.InterpolateLinear);
     return new THREE.AnimationClip( 'color', period, [ colorTrack ] );
 }
 
@@ -214,4 +214,13 @@ export function blendProperty(mixer, obj, propName, targetValue, duration) {
     let action = mixer.clipAction(createBlendAnimation(currValue, targetValue, '.' + propName), obj);
     action.clampWhenFinished = true;
     action.setLoop(THREE.LoopOnce).setDuration(duration).play();
+}
+
+export function blendColor(mixer, obj, targetColorHex, duration) { 
+    let currColor = obj.color;
+
+    let action = mixer.clipAction(createColorAnimation(duration, currColor, new THREE.Color(targetColorHex)), obj);
+    action.clampWhenFinished = true;
+    action.setLoop(THREE.LoopOnce).play();
+    obj.color.setHex(targetColorHex);
 }

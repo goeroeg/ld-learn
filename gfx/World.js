@@ -2,7 +2,6 @@
 
 import { LDrawLoader } from './LDrawLoader.js';
 import * as ANIM from './Animations.js';
-import { collRaycaster } from '../ld-learn.js';
 
 export const plateSize = 640;
 export const parcelSize = 80;
