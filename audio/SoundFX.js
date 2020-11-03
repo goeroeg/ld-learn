@@ -1,7 +1,7 @@
 export var listener;
 export var ambientSound;
 export var rainSound;
-export var windSound;
+// export var windSound;
 export var sphereSound;
 export var walkSound;
 export var tickSound;

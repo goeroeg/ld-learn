@@ -23,7 +23,7 @@ var particleSystems = [];
 
 //var rayHelper = new THREE.ArrowHelper();
 
-var testMode = false;
+var testMode = true;
 
 var isElectronApp = (navigator.userAgent.toLowerCase().indexOf(' electron/') > -1); // detect whether run as electron app
 
@@ -82,7 +82,7 @@ var resolutions = [{ x: 0, y: 0 }, { x: 320, y: 240 }, {x: 640, y: 480 }, { x: 1
 var resolutionNames  = { 'Auto': 0, '320x240': 1, '640x480': 2, '1024x768': 3, "1280x800": 4, HD: 5 };
 var qualityNames = { High: 1, Low : 2};
 var audioSettings = { enabled : true, volume: 100 };
-var controlSettings = { moveSensitivity: 1, lookSensitivity: 1 };
+var gamepadSettings = { enabled: true, moveSensitivity: 1, lookSensitivity: 1 };
 var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: isTouch ? 0 : 3 , antiAlias: true , showFPS: false};
 var gameSettings = { 
     itemAmount: isTouch ? 20 : 50 , nightEnabled: !isTouch, season : WORLD.seasons.auto,
@@ -499,7 +499,7 @@ function initGUI() {
 
     gui.remember(gfxSettings);
     gui.remember(audioSettings);
-    gui.remember(controlSettings);
+    gui.remember(gamepadSettings);
     gui.remember(gameSettings);
     gui.remember(playerSettings);
 
@@ -561,15 +561,17 @@ function initGUI() {
     setMasterVolume();
 
     controlsFolder = gui.addFolder("Gamepad settings");
-    controlsFolder.add(controlSettings, "moveSensitivity", 0.1, 2).step(0.1).name("Move sensitivity").onChange(function (value) {
+    controlsFolder.add(gamepadSettings, "enabled").name("Enabled").onChange(setGamepadEnabled);
+    controlsFolder.add(gamepadSettings, "moveSensitivity", 0.1, 2).step(0.1).name("Move sensitivity").onChange(function (value) {
         gpControls.moveSensitivity = value;
     });
-    controlsFolder.add(controlSettings, "lookSensitivity", 0.1, 2).step(0.1).name("Look sensitivity").onChange(function (value) {
+    controlsFolder.add(gamepadSettings, "lookSensitivity", 0.1, 2).step(0.1).name("Look sensitivity").onChange(function (value) {
         gpControls.lookSensitivity = value;
     });
 
-    gpControls.moveSensitivity = controlSettings.moveSensitivity;
-    gpControls.lookSensitivity = controlSettings.lookSensitivity;
+    gpControls.moveSensitivity = gamepadSettings.moveSensitivity;
+    gpControls.lookSensitivity = gamepadSettings.lookSensitivity;
+    setGamepadEnabled();
 
     gameFolder = gui.addFolder("Game settings");
     gameFolder.add(gameSettings, "itemAmount", 10, 200).step(10).name("Obj density %");
@@ -669,6 +671,16 @@ function initGUI() {
     guiContainer.appendChild(gui.domElement);
 
     updatePlayerInfo();
+}
+
+function setGamepadEnabled() {
+    if (gpControls) {
+        if (gamepadSettings.enabled && !gpControls.ticking) {
+            gpControls.startPolling();
+        } else if (gpControls.ticking) {
+            gpControls.stopPolling();
+        }
+    }
 }
 
 function setSeason(season) {
