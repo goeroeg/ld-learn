@@ -3,6 +3,7 @@
 import { GUI } from './web_modules/three/examples/jsm/libs/dat.gui.module.js';
 // import { MapControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from './web_modules/three/examples/jsm/controls/PointerLockControls.js';
+
 import { MathExercise } from './exercises/Maths.js';
 import { OperatorType } from './exercises/Maths.js';
 import { GamepadControls } from './controls/GamepadControls.js';
@@ -17,8 +18,7 @@ import { initGuy, BodyParts } from './gfx/Guy.js';
 import { updateMapData, updateMiniMapColors } from './gfx/MiniMap.js';
 import * as TRAIN from './gfx/Train.js';
 
-
-export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject;
+export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject, composer;
 var particleSystems = [];
 
 //var rayHelper = new THREE.ArrowHelper();
@@ -171,6 +171,7 @@ function initControls() {
         
     renderer.domElement.setAttribute('style', "position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; margin: auto");
     document.body.insertBefore( renderer.domElement, document.getElementById( 'blocker' ));
+
 
     // document.body.appendChild(renderer.domElement);
 
@@ -785,7 +786,7 @@ function initScene() {
         //loader.load('./gfx/nightsky.jpg', 
         texture => {
             var skyGeo = new THREE.SphereBufferGeometry(12 * WORLD.plateSize, 160, 160); //, 0, 2*Math.PI, 0, Math.PI/2);
-            var skyMat = new THREE.MeshLambertMaterial({ map: texture, flatShading: true, emissive: 0x8888ff, emissiveIntensity: 0 }); //1
+            var skyMat = new THREE.MeshLambertMaterial({ map: texture, flatShading: true, emissive: 0x5555ff, emissiveIntensity: 0 }); //1
             // var skyMat = new THREE.MeshLambertMaterial({ map: texture, shading: THREE.FlatShading, emissive: 0x00 });
             skyMat.side = THREE.BackSide;
             skyMesh = new THREE.Mesh(skyGeo, skyMat);  
@@ -897,6 +898,13 @@ function addSun() {
     ANIM.blendProperty(mixer, dirLight, 'intensity', dirLightIntensity, 3);
 
     //let action = mixer.clipAction(ANIM.createHighlightAnimation(1, 1), dirLight);
+
+    let sphereGeo = new THREE.SphereBufferGeometry(250, 32, 32);
+    let sphereMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffdd, emissiveIntensity: 1 , roughness: 1});
+    let sphere = new THREE.Mesh(sphereGeo, sphereMat);
+
+    sphere.position.copy(dirLight.position).normalize().multiplyScalar(11.9 * WORLD.plateSize);
+    scene.add(sphere);
 }
 
 function createSky() {
@@ -2083,9 +2091,9 @@ function updateFog() {
 
         let season = WORLD.currentSeason;
         if (season == WORLD.seasons.winter) {
-            newDensity = precip ? 0.0005 : 0.00018;
+            newDensity = precip ? 0.0004 : 0.00016;
         } else if (season == WORLD.seasons.autumn) {
-            newDensity =  precip ? 0.0003 : 0.00015;
+            newDensity =  precip ? 0.0003 : 0.00014;
         } else {
             newDensity = precip ? 0.00025 : 0.00012;        
         }
