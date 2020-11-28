@@ -37,7 +37,7 @@ export function prepareTracks(mixer) {
     }    
 }
 
-export function initTracks(onLoad, onProgress, onError) {
+export function initTracks(onLoad, onProgress, onError, effectFunc) {
     var lDrawLoader = new LDrawLoader();
     lDrawLoader.smoothNormals = WORLD.smoothNormals; 
 
@@ -150,9 +150,14 @@ export function initTracks(onLoad, onProgress, onError) {
 
             WORLD.model.add(track);
 
+            let count = 0;
+
             for (let parcel of WORLD.parcels) {
                 if (parcel.occupied == WORLD.trackPlaceholder) {
                     parcel.mapObjId = WORLD.MapObjectId.track;
+                    if (effectFunc && (count++ % 5 == 0)) {
+                        effectFunc(parcel.x, parcel.z, 200, 15);
+                    }
                 }
             }
 

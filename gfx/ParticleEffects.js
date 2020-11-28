@@ -9,7 +9,8 @@ export const ptfxType = {
     snow: 2,
     stars: 3,
     sstars: 4,
-    fireflies: 5
+    fireflies: 5,
+    parcel: 6
 }
 
 export const starsTtl = 10;
@@ -207,4 +208,48 @@ export function shootingStars(scene, intensity = 1.0) {
 
 export function generateWind(maxValue) {
     return new Partykals.Randomizers.SphereRandomizer(maxValue, 1, new THREE.Vector3(1, 1, 1), new THREE.Vector3(-1, 0, -1), new THREE.Vector3(1, 0, 1)).generate();
+}
+
+export function parcelEffect(scene, x, z, height = 150, time = 10, size = WORLD.parcelSize * 0.25) {
+    let tex = new THREE.TextureLoader().load( './gfx/textures/firefly.png' );
+
+    let system = new Partykals.ParticlesSystem({
+        container: scene,
+        particles: {
+            startSize: new Partykals.Randomizers.MinMaxRandomizer(0.1, 0.4),
+            endSize: new Partykals.Randomizers.MinMaxRandomizer(0.4, 0.8),
+            startSizeChangeAt: 0,
+            texture: tex,
+            //alpha: 1,
+            color: new Partykals.Randomizers.ColorsRandomizer(new THREE.Color(0xbbbb55), new THREE.Color(0xffff99)),                   
+            startAlpha: 0.75,
+            endAlpha: 0,
+            startAlphaChangeAt : 0,
+            blending: 'blend',     
+            velocity: new Partykals.Randomizers.SphereRandomizer(8, 1, new THREE.Vector3(1, 1, 1), new THREE.Vector3(-1, -0.1, -1), new THREE.Vector3(1, 0.1, 1)),    
+            velocityBonus: new THREE.Vector3(0, 25, 0),
+            gravity: -0.02,
+            ttl: height/25,
+            ttlExtra : 1,
+            offset: new Partykals.Randomizers.BoxRandomizer(new THREE.Vector3(-size, 0, -size), new THREE.Vector3(size, 0, size)),
+        },
+        system: {
+            particlesCount: 5000,
+            emitters: new Partykals.Emitter({                    
+                onInterval: size * 0.25,
+                interval: 0.25, //new Partykals.Randomizers.MinMaxRandomizer(0, 0.25),
+                detoretingMinTtl: time * 0.5,
+            }),
+            speed: 1,
+            perspective: true,
+            scale: 10000,
+            ttl: time
+        }
+    });
+
+    system.particleSystem.position.x = x;
+    system.particleSystem.position.z = z;
+
+    system.type = ptfxType.parcel;
+    return system;
 }

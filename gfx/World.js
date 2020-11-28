@@ -65,16 +65,17 @@ export const roadPlaceholder = 2;
 export const trackPlaceholder = 3;
 export const trackDummyPlaceholder = 4;
 
-export function initScene(onLoad, onProgress, onError) {
+
+export function initPlates(onLoad, onProgress, onError) {
     var lDrawLoader = new LDrawLoader();
 
-    lDrawLoader.smoothNormals = smoothNormals; 
+    lDrawLoader.smoothNormals = false; 
 
     lDrawLoader.separateObjects = true;
 
     lDrawLoader
         .setPath( "ldraw/" )
-        .load( "models/ambient.ldr_Packed.mpd", function ( group2 ) {
+        .load( "models/baseplate.ldr_Packed.mpd", function ( group2 ) {
 
             model = group2;
 
@@ -87,7 +88,7 @@ export function initScene(onLoad, onProgress, onError) {
 
             model.traverse( c => { 
                 c.visible = !c.isLineSegments; 
-                c.castShadow = true; 
+                c.castShadow = false; 
                 c.receiveShadow = true; 
             } );
 
@@ -106,25 +107,7 @@ export function initScene(onLoad, onProgress, onError) {
             }
 
             // console.log(parcels);
-            
             plate = model.children[0];
-            plate.traverse( c => { 
-                c.castShadow = false; 
-            } );
-            plate.castShadow = false;
-
-            fence = model.children[1];
-
-            chrystal = model.children[2];
-            chrystal.children[0].material[0].emissive.setHex(0xffffff);
-            chrystal.children[0].material[0].emissiveIntensity = 0.3;
-        
-            sphere = model.children[3];
-
-            // let plants = [];
-            for (let plantIdx = 4; plantIdx < model.children.length; plantIdx++) {
-                plantProtos.push(model.children[plantIdx]);        
-            }
 
             // clear model, keep only first plate
             while(model.children.length > 1) model.remove(model.children[1]);
@@ -132,10 +115,10 @@ export function initScene(onLoad, onProgress, onError) {
             // reserve exercise parcel
             
             //for (let i = 0; i <= 3; i++) {
-                let idx = getParcelIndex(-200, plateSize);
-                let exParcel = parcels[idx];
-                exParcel.occupied = true;
-                exParcel.mapObjId = MapObjectId.exercise;
+            let idx = getParcelIndex(-200, plateSize);
+            let exParcel = parcels[idx];
+            exParcel.occupied = true;
+            exParcel.mapObjId = MapObjectId.exercise;
             //}
 
             worldPlates = 0.5;
@@ -148,11 +131,62 @@ export function initScene(onLoad, onProgress, onError) {
         }, onProgress, onError);
 }
 
+export function initScene(onLoad, onProgress, onError) {
+    var lDrawLoader = new LDrawLoader();
+
+    lDrawLoader.smoothNormals = smoothNormals; 
+
+    lDrawLoader.separateObjects = true;
+
+    lDrawLoader
+        .setPath( "ldraw/" )
+        .load( "models/ambient.ldr_Packed.mpd", function ( group2 ) {
+
+            // Convert from LDraw coordinates: rotate 180 degrees around OX
+            group2.rotateX(-Math.PI);
+
+            // Adjust materials
+
+            // console.log(model);
+
+            group2.traverse( c => { 
+                c.visible = !c.isLineSegments; 
+                c.castShadow = true; 
+                c.receiveShadow = true; 
+            } );
+
+            fence = group2.children[0];
+
+            chrystal = group2.children[1];
+            chrystal.children[0].material[0].emissive.setHex(0xffffff);
+            chrystal.children[0].material[0].emissiveIntensity = 0.3;
+        
+            sphere = group2.children[2];
+            sphere.children[0].material[0].emissiveIntensity = 0.4;
+            sphere.children[0].material[0].emissive.setHex(sphere.children[0].material[0].color.getHex());
+
+            // let plants = [];
+            for (let plantIdx = 3; plantIdx < group2.children.length; plantIdx++) {
+                plantProtos.push(group2.children[plantIdx]);        
+            }
+
+            setSeasonColor(currentSeason);
+
+            onLoad(group2);
+                        
+        }, onProgress, onError);
+}
+
 export function setSeasonColor(season) {
     if (season != seasons.auto) {            
         if (plate) {        
-            plate.children[0].material[0].color.setHex(seasonPlateColor[season]);        
-            plantProtos[0].children[0].material[0].color.setHex(seasonPlantColor[season])
+            plate.children[0].material[0].color.setHex(seasonPlateColor[season]);       
+        }
+        if (plantProtos && plantProtos.length > 0) {            
+            plantProtos[0].children[0].material[0].color.setHex(seasonPlantColor[season]);
+            if (plantProtos.length > 6) {
+                plantProtos[6].children[0].material[0].color.setHex(seasonPlateColor[season]);
+            }
         }
         if (roadPlate) {
             // console.log(roadPlate);
@@ -254,7 +288,7 @@ export function createFences() {
     }
 }
 
-export function populatePlants(min, max, mixer) {
+export function populatePlants(min, max, mixer, effectFunc) {
     // populate world
     for (let plant of plantProtos) {
         let count = min + Math.random() * (max - min);
@@ -276,6 +310,10 @@ export function populatePlants(min, max, mixer) {
 
                 parcel.occupied = newPlant;
                 parcel.mapObjId = MapObjectId.plant;
+
+                if (effectFunc) {
+                    window.setTimeout(function() { effectFunc(newPlant.position.x, newPlant.position.z, newPlant.bbox.max.y, 20); }, i * 1000);
+                }
 
                 newPlant.scale.x = 0;
                 newPlant.scale.y = 0;
@@ -314,7 +352,7 @@ export function prepareRoads(mixer, collObjs) {
 
 // call after obj is added to model
 export function addCollBox(obj) {
-    let bbox = new THREE.Box3().setFromObject(obj).expandByScalar(5);
+    let bbox = new THREE.Box3().setFromObject(obj).expandByScalar(5);    
     obj.bbox = bbox;
     collObjs.add(bbox);
     // model.parent.add(new THREE.Box3Helper(bbox));
@@ -335,13 +373,13 @@ export function reserveParcelAt(x, z, mixer, placeHolder) {
     parcel.mapObjId = MapObjectId.none;
 }
 
-export function initRoads(onLoad, onProgress, onError) {
+export function initRoads(onLoad, onProgress, onError, effectFunc) {
 
     if (!model) return;
 
     var lDrawLoader = new LDrawLoader();
 
-    lDrawLoader.smoothNormals = smoothNormals; 
+    lDrawLoader.smoothNormals = false; 
 
     lDrawLoader.separateObjects = true;
 
@@ -363,17 +401,17 @@ export function initRoads(onLoad, onProgress, onError) {
             let curve = roads.children[0];
             let straight = roads.children[1];      
 
-            replacePlate(curve, roadPlates * plateSize, roadPlates * plateSize);
+            replacePlate(curve, roadPlates * plateSize, roadPlates * plateSize, effectFunc);
             curve.rotateY(-Math.PI/2);
-            replacePlate(curve, -roadPlates * plateSize, roadPlates * plateSize);
+            replacePlate(curve, -roadPlates * plateSize, roadPlates * plateSize, effectFunc);
             curve.rotateY(-Math.PI/2);
-            replacePlate(curve, -roadPlates * plateSize, -roadPlates * plateSize);
+            replacePlate(curve, -roadPlates * plateSize, -roadPlates * plateSize, effectFunc);
             curve.rotateY(-Math.PI/2);
-            replacePlate(curve, roadPlates * plateSize, -roadPlates * plateSize);
+            replacePlate(curve, roadPlates * plateSize, -roadPlates * plateSize, effectFunc);
                 
             for (let x = -roadPlates; x <= roadPlates; x+= 2 * roadPlates) {
                 for (let z = -roadPlates + 1; z <= roadPlates - 1; z++ ) {
-                    replacePlate(straight, x * plateSize, z * plateSize)
+                    replacePlate(straight, x * plateSize, z * plateSize, effectFunc)
                 }
             }
 
@@ -381,7 +419,7 @@ export function initRoads(onLoad, onProgress, onError) {
 
             for (let x = -roadPlates + 1; x <= roadPlates - 1; x++) {
                 for (let z = -roadPlates; z <= roadPlates; z+= 2 * roadPlates ) {
-                    replacePlate(straight, x * plateSize, z * plateSize)
+                    replacePlate(straight, x * plateSize, z * plateSize, effectFunc)
                 }
             }
 
@@ -400,7 +438,7 @@ export function initRoads(onLoad, onProgress, onError) {
         }, onProgress, onError);
 }
 
-function replacePlate(template, x, z) {
+function replacePlate(template, x, z, effectFunc) {
     let newPlate = template.clone();    
     newPlate.position.x = x;
     newPlate.position.z = z;
@@ -409,6 +447,10 @@ function replacePlate(template, x, z) {
     // dispose
     plates[idx] = newPlate;
     model.add(newPlate);
+
+    if (effectFunc) {
+        effectFunc(x, z, 300, 15, plateSize/2);
+    }
 }
 
 export function getPlateIndex( x, z ) {

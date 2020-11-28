@@ -121,10 +121,12 @@ export function addItemSound(item, soundBuffer, loop, volume = 0.7) {
     let sound = new THREE.PositionalAudio(listener);
     
     item.add(sound);    
-    sound.setBuffer(soundBuffer.buffer).setRefDistance(50).setLoop(loop).setVolume(volume).play();
+    sound.setBuffer(soundBuffer.buffer).setRefDistance(50).setDistanceModel('exponential').setRolloffFactor(1.1).setLoop(loop).setVolume(volume);
+    play(sound);
     
     if (loop) {
-        itemSounds.push(sound); 
+        itemSounds.push(sound);
+        sound.item = item;
     } else {         
         item.sound = sound; 
     }
@@ -159,7 +161,7 @@ export function pause() {
     */
     for (let ms of itemSounds) {
         if (ms.isPlaying)
-            ms.pause();
+            ms.pause();            
     }
 }
 
@@ -169,11 +171,12 @@ export function resume(ambient, sphere) {
         play(rainSound);
         // play(windSound);    
     }
+
     if (sphere) {
         play(sphereSound);
     }    
 
-    for (let ms of itemSounds) {
+    for (let ms of itemSounds) {        
         play(ms);
     }
 }

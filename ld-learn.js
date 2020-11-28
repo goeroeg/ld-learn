@@ -79,13 +79,13 @@ var progressBarDiv;
 var isTouch = ('ontouchstart' in window);
 
 var resolutions = [{ x: 0, y: 0 }, { x: 320, y: 240 }, {x: 640, y: 480 }, { x: 1024, y: 768 }, { x: 1280, y: 800 }, { x: 1920, y: 1080 }]
-var resolutionNames  = { 'Auto': 0, '320x240': 1, '640x480': 2, '1024x768': 3, "1280x800": 4, HD: 5 };
+var resolutionNames  = { 'Auto': 0, '320x240': 1, '640x480': 2, '1024x768': 3, "1280x800": 4, "1920x1080": 5 };
 var qualityNames = { High: 1, Low : 2};
 var audioSettings = { enabled : true, volume: 100 };
 var gamepadSettings = { enabled: true, moveSensitivity: 1, lookSensitivity: 1 };
 var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: isTouch ? 0 : 3 , antiAlias: true , showFPS: false};
 var gameSettings = { 
-    itemAmount: isTouch ? 20 : 50 , nightEnabled: !isTouch, season : WORLD.seasons.auto,
+    itemAmount: isTouch ? 20 : 50 , itemEffect: true, nightEnabled: !isTouch, season : WORLD.seasons.auto,
     add : true, addMax : 100, addResMax : 100, addSym: '+',
     sub : true, subMax : 100, subResMax : 100, subSym: '-',
     multi : true, multiMax : 10, multiResMax : 100, multiSym: '·',
@@ -470,25 +470,27 @@ function pauseGame() {
 }
 
 function startGame() {
-    updateBlocker(true);
+    requestAnimationFrame(animate);
 
-    SFX.resume((chrystalCount >= chrActions.plantsMin), (chrystalCount >= chrActions.musicSphere));
+    updateBlocker(true);
 
     document.addEventListener('click', onDocumentClick, false);
     touchCameraControls.addEventListener('click', onDocumentClick, false);
+
     animClock.start();
     walkClock.start();
     gameActive = true;
-    requestAnimationFrame(animate);
+
+    SFX.resume((chrystalCount >= chrActions.plantsMin), (chrystalCount >= chrActions.musicSphere));
 }
 
 function updateBlocker(hide) {
     if (hide) {
         instructions.style.display = 'none';
-        blocker.style.display = 'none';
+        blocker.style.display = 'none';        
     } else {
         blocker.style.display = 'block';
-        instructions.style.display = '';
+        instructions.style.display = '';        
     }
 }
 
@@ -576,6 +578,7 @@ function initGUI() {
 
     gameFolder = gui.addFolder("Game settings");
     gameFolder.add(gameSettings, "itemAmount", 10, 200).step(10).name("Obj density %");
+    gameFolder.add(gameSettings, "itemEffect").name("Item effects");
     gameFolder.add(gameSettings, "nightEnabled").name("Day/Night cycle").onChange(function (value) {
         let shouldBeNight = value && (Math.floor(chrystalCount / chrActions.nightMod) % 2 != 0);
         if (isNight != shouldBeNight) {
@@ -766,6 +769,9 @@ function updateGuyBodyColor(value) {
 
 function initScene() {
 
+    showProgressBar();
+    miniMapDiv.style.display = 'none';
+
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0x606060 );
 
@@ -804,26 +810,24 @@ function initScene() {
     //var light = new THREE.AmbientLight(0x222222);
     //scene.add(light);
 
-    showProgressBar();
-
     if (WORLD.model) {
         scene.remove(WORLD.model);
     }
 
     mixer = new THREE.AnimationMixer(scene);
 
-    WORLD.initScene(function ( newModel ) {
+    WORLD.initPlates(function ( newModel ) {
         scene.add(newModel);        
         
         absMaxDistance = WORLD.worldPlates * WORLD.plateSize - guyOffset;
 
-        // addChrystal();
-
-        hideProgressBar();
-        render();
-        updateBlocker(false);
-
-        updateMapData(miniMap, -Math.PI/2, 0, 0);
+        WORLD.initScene(function(model) {
+                hideProgressBar();
+                render();
+                updateBlocker(false);
+                updateMapData(miniMap, -Math.PI/2, 0, 0);
+                miniMapDiv.style.display = '';
+        }, onProgress, onError);
 
     }, onProgress, onError );
 
@@ -917,6 +921,7 @@ function createSky() {
     addSun();
 
     SFX.play(SFX.newItemSound);
+    walkClock.start();
 }
 
 function addMusicSphere() {
@@ -943,14 +948,14 @@ function addMusicSphere() {
 
         light.visible = isNight;
 
-        light.position.x = parcel.x;
-        light.position.z = parcel.z;
-        light.position.y = -80;
+        //light.position.x = parcel.x;
+        //light.position.z = parcel.z;
+        light.position.y = -90;
         // cLight.target = sphere;
         light.castShadow = true;
 
         //light.attach(sphere);
-        sphere.attach(light);
+        sphere.add(light);
         WORLD.model.add(sphere);
 
         WORLD.addCollBox(sphere);
@@ -960,11 +965,20 @@ function addMusicSphere() {
         sphere.add(SFX.sphereSound);
         SFX.play(SFX.sphereSound);
 
+        addParcelEffect(sphere.position.x, sphere.position.z, 400, 30);
+
         hideProgressBar();
     }
 }
 
+function addParcelEffect(x, z, height, time, size) {
+    if (gameSettings.itemEffect) {
+        particleSystems.push(PTFX.parcelEffect(scene, x, -z, height, time, size));
+    }
+}
+
 function addChrystal() {
+
     let newChrystal = WORLD.chrystal.clone();
 
     if (WORLD.freeParcels.length > 0) {
@@ -1144,7 +1158,7 @@ function hideProgressBar() {
     }
 
     animClock.start();
-    //walkClock.start();
+    walkClock.start();
 }
 
 function updateProgressBar( fraction ) {
@@ -1292,9 +1306,9 @@ function animate() {
         updateVehiclePositions();
         updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);
 
-        if (!walkClock.running && !document.body.contains(progressBarDiv)) {
+       /* if (!walkClock.running && !document.body.contains(progressBarDiv)) {
             walkClock.start();
-        }
+        }*/
     }
 }
 
@@ -1410,6 +1424,7 @@ function checkChrystals() {
 
 function performChrystalAction() {
 
+    // walkClock.stop();
     if (chrystalCount == chrActions.createSky) {
         createSky();
     }
@@ -1423,11 +1438,13 @@ function performChrystalAction() {
     }
 
     if (chrystalCount >= chrActions.plantsMin) {
-        updateAmbientSound();
-        SFX.play(SFX.ambientSound);
+        if (chrystalCount == chrActions.plantsMin) {
+            updateAmbientSound();
+            SFX.play(SFX.ambientSound);
+        }
     
         if ( chrystalCount <= chrActions.plantsMax) {
-            WORLD.populatePlants(Math.round(5 * (gameSettings.itemAmount/100)), Math.round(10 * (gameSettings.itemAmount/100)), mixer);
+            WORLD.populatePlants(Math.round(2 * (gameSettings.itemAmount/100)), Math.round(5 * (gameSettings.itemAmount/100)), mixer, addParcelEffect);
         }
     }
 
@@ -1441,7 +1458,7 @@ function performChrystalAction() {
             hideProgressBar();
             // play transition sound
             SFX.play(SFX.newItemSound);
-        }, onProgress, onError);
+        }, onProgress, onError, addParcelEffect);
     }
 
     if (chrystalCount >= chrActions.carsMin && !isNight && (cars.length <= chrActions.carsMax - chrActions.carsMin)) {
@@ -1465,7 +1482,7 @@ function performChrystalAction() {
         showProgressBar();
         TRAIN.initTracks(function (track) {
             hideProgressBar();
-        } , onProgress, onError);
+        } , onProgress, onError, addParcelEffect);
     }
 
     if (chrystalCount == chrActions.trainMin) {
@@ -1483,6 +1500,7 @@ function performChrystalAction() {
     if (chrystalCount > chrActions.createSky) {
         toggleWeatherEffects();
     }
+    //walkClock.start();
 }
 
 function addAnimal() {
@@ -1612,16 +1630,15 @@ function initTrain() {
 
         loco.anim = action;
 
+        WORLD.model.add(loco);
+
+        hideProgressBar();
+
         SFX.addItemSound(loco, SFX.soundBuffers.trainEngine, true);
         SFX.addItemSound(loco, SFX.soundBuffers.train, true);
         SFX.addItemSound(loco, SFX.soundBuffers.trainHorn, true).setVolume( 10 );
 
         train.push(loco);
-        
-        WORLD.model.add(loco);
-
-        hideProgressBar();
-
     }, onProgress, onError);
 }
 
@@ -1642,7 +1659,7 @@ function addFrontLight(mesh) {
     if (isNight) {
         mesh.material[0].emissive.setHex(fLightsColor);
     }
-    mesh.material[0].emissiveIntensity = 3;
+    mesh.material[0].emissiveIntensity = 2;
 }
 
 function addRearLight(mesh) {
@@ -1737,17 +1754,20 @@ function addCar() {
             car.anims.push(action);
         }
 
-        SFX.addItemSound(car, SFX.soundBuffers.motor, true);
-
-        cars.push(car);
-
         WORLD.model.add(car);
+
+        hideProgressBar();
+
         WORLD.addCollBox(car);
 
         car.frontBbox = new THREE.Box3();
         //scene.add(new THREE.Box3Helper(car.frontBbox, new THREE.Color("red")));
 
-        hideProgressBar();
+        SFX.addItemSound(car, SFX.soundBuffers.motor, true);
+
+        cars.push(car);
+
+        
     } , onProgress, onError);
 }
 
