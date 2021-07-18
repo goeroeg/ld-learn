@@ -7,7 +7,7 @@ This is a collection of various LDraw™-Library and three.js based (mini-)games
 - LD-Flowers [-> Try](https://goeroeg.github.io/ld-learn/apps/flowers/ld-flowers.html)
 - LD-Robot [-> Try](https://goeroeg.github.io/ld-learn/apps/robot/ld-robot.html)
 - (LD-Nativity [-> Try](https://goeroeg.github.io/ld-nativity/nscene.html))
-- (VFireworks [-> Try](https://goeroeg.github.io/vfireworks/fireworks.html))
+- Fireworks [-> Try](https://goeroeg.github.io/ld-learn/apps/fireworks/fireworks.html)
 
 ---
 - Further infos:
