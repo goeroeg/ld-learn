@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>LD-Office minigame</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				background-color: rgb(0, 0, 0);
+				color: #000;
+				margin: 0px;
+  				overflow: hidden;
+			}
+
+			a:link, a:visited {
+				color: white;
+				padding: 5px 5px;
+				text-align: center;
+				text-decoration: none;
+				display: inline-block;
+				}
+
+			a:hover, a:active {
+				background-color: rgba(255,255,255,0.3);
+				}
+
+			kbd {
+				font-size: 75%;
+				border-radius: 3px;
+				box-shadow: 0.5px 0.5px 2px lightcyan;
+				border: 1px solid yellowgreen;
+				display: inline-block;
+				padding: 1px 10px;
+			}
+
+			#blocker {
+				display: none;
+				position: fixed;
+				width: 100%;
+				height: 100%;
+				background-color: rgba(0,0,0,0.7);
+			}
+
+			#instructions span {
+					display: inline-block;
+					line-height: 1.8;
+				}
+
+			#instructions small {
+				font-size: 67%;
+				}
+			#instructions {
+
+				width: 100%;
+				height: 100%;
+
+				display: -webkit-box;
+				display: -moz-box;
+				display: box;
+
+				text-shadow: 0 0 1px cyan, 0 0 5px darkcyan;
+
+				-webkit-box-orient: horizontal;
+				-moz-box-orient: horizontal;
+				box-orient: horizontal;
+
+				-webkit-box-pack: center;
+				-moz-box-pack: center;
+				box-pack: center;
+
+				-webkit-box-align: center;
+				-moz-box-align: center;
+				box-align: center;
+
+				color: #ffffff;
+				text-align: center;
+				font-family: Arial, Helvetica, sans-serif;
+				font-size: 18px;
+				line-height: 22px;
+
+				cursor: pointer;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="blocker">
+			<div id="instructions">
+				<span style="font-size:28px; color: lime">Welcome to my homeoffice in Corona times...</span>
+				<br/>
+				<span style="color: lime; font-family:monospace">v. 0.1.0</span>
+				<br/><br/>
+				<span style="font-size:32px">&#9658; Click to explore</span>
+				<br/><br/>
+				Move:&nbsp;<span><kbd>W</kbd><br/><kbd>A</kbd>&nbsp;<kbd>S</kbd>&nbsp;<kbd>D</kbd></span>
+				&nbsp;or&nbsp;
+				<span><kbd>&#9651;</kbd><br/><kbd>&#9665;</kbd>&nbsp;<kbd>&#9661;</kbd>&nbsp;<kbd>&#9655;</kbd><br/></span>
+				<br/><br/>
+				Jump:&nbsp;<kbd>SPACE</kbd><br/>
+				<br/>
+				Look: &#128432; mouse<br/>
+				<br/>
+				Release controls / Pause:&nbsp;<kbd>ESC</kbd>
+				<br/>
+				Toggle fullscreen:&nbsp;<kbd>F11</kbd>&nbsp;<small><i>(in most browsers)</i></small>
+				<br/><br/>
+				<a href="https://goeroeg.github.io/ld-learn/" target="_blank">&#9432; <i>More info and licenses</i></a>
+			</div>
+		</div>
+		<script type="module" src="./hoffice.js"></script>
+    </body>
+</html>
