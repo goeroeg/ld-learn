@@ -17,14 +17,14 @@ const animalsColor = [140, 90, 60, transparency];
 const msphereColor = [255, 158, 43, transparency]; //#FF800D
 const trainColor = [40, 10, 10, transparency];
 
-const mapObjColors = [ 
-    defaultColor, 
-    exerciseColor, 
-    fenceColor, 
+const mapObjColors = [
+    defaultColor,
+    exerciseColor,
+    fenceColor,
     roadColor,
-    plantColor, 
-    chrystalColor, 
-    carColor, 
+    plantColor,
+    chrystalColor,
+    carColor,
     animalsColor,
     msphereColor,
     trackColor,
@@ -53,13 +53,13 @@ export function updateMapData(canvas, ori, x, y) {
     let tempc = document.createElement('canvas');
     tempc.width = imgWidth;
     tempc.height = imgHeight;
-    
+
     let tempctx = tempc.getContext("2d");
 
     let mapData = tempctx.getImageData( 0, 0, imgWidth, imgHeight );
 
     for (let pIdx = 0; pIdx < WORLD.parcels.length; pIdx++) {
-        
+
         let mIdx = pIdx * 4;
         let color = defaultColor;
 
@@ -72,7 +72,7 @@ export function updateMapData(canvas, ori, x, y) {
             mapData.data[idx] = color[cIdx];
         }
     }
-    
+
     tempctx.putImageData(mapData, 0, 0);
 
     let cwh = canvas.width / 2;

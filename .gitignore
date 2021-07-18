@@ -110,9 +110,8 @@ package-lock.json
 .vscode/
 
 # LDraw lib
-ldraw/p/
-ldraw/parts/
-ldraw/*.ldr
+ldraw/*
+!ldraw/models
 
 # some audio files
 audio/temp/

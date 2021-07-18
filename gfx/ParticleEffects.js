@@ -17,15 +17,15 @@ export const starsTtl = 10;
 
 export function letItSnow(scene, intensity = 1.0, wind) {
 
-    var tex = new THREE.TextureLoader().load( './gfx/textures/snowflake2.png' );
+    var tex = new THREE.TextureLoader().load( '../../gfx/textures/snowflake2.png' );
 
     let system = new Partykals.ParticlesSystem({
         container: scene,
         particles: {
             globalSize: 8,
-            texture: tex,            
+            texture: tex,
             alpha: 1,
-            blending: 'additive',         
+            blending: 'additive',
             ttl: 12,
             velocity: new Partykals.Randomizers.SphereRandomizer(50),
             velocityBonus: new THREE.Vector3(0, -25, 0).add(wind || new THREE.Vector3(10,0,10)),
@@ -35,7 +35,7 @@ export function letItSnow(scene, intensity = 1.0, wind) {
         },
         system: {
             particlesCount: 20000 * intensity,
-            emitters: new Partykals.Emitter({                
+            emitters: new Partykals.Emitter({
                 onInterval: new Partykals.Randomizers.MinMaxRandomizer(5 * intensity, 15 * intensity),
                 interval: 0.01, //new Partykals.Randomizers.MinMaxRandomizer(0, 0.25),
                 detoretingMinTtl: 5
@@ -53,15 +53,15 @@ export function letItSnow(scene, intensity = 1.0, wind) {
 
 export function letItRain(scene, intensity = 1.0, wind) {
 
-    var tex = new THREE.TextureLoader().load( './gfx/textures/raindrop.png' );
+    var tex = new THREE.TextureLoader().load( '../../gfx/textures/raindrop.png' );
 
     let system = new Partykals.ParticlesSystem({
         container: scene,
         particles: {
             globalSize: 6,
-            texture: tex,            
+            texture: tex,
             alpha: 1,
-            blending: 'blend',         
+            blending: 'blend',
             ttl: 1,
             velocity: 0, //new Partykals.Randomizers.SphereRandomizer(2),
             velocityBonus: new THREE.Vector3(0, -750, 0).add(wind || new THREE.Vector3(10,0,10)),
@@ -71,7 +71,7 @@ export function letItRain(scene, intensity = 1.0, wind) {
         },
         system: {
             particlesCount: 25000 * intensity,
-            emitters: new Partykals.Emitter({                
+            emitters: new Partykals.Emitter({
                 onInterval: 250 * intensity, //new Partykals.Randomizers.MinMaxRandomizer(1500, 2500),
                 interval: 0.01, //new Partykals.Randomizers.MinMaxRandomizer(0, 0.25),
                 detoretingMinTtl: 5
@@ -89,7 +89,7 @@ export function letItRain(scene, intensity = 1.0, wind) {
 
 export function fireflies(scene, intensity = 1.0) {
 
-    var tex = new THREE.TextureLoader().load( './gfx/textures/firefly.png' );
+    var tex = new THREE.TextureLoader().load( '../../gfx/textures/firefly.png' );
 
     let system = new Partykals.ParticlesSystem({
         container: scene,
@@ -98,21 +98,21 @@ export function fireflies(scene, intensity = 1.0) {
             texture: tex,
             startColor: new Partykals.Randomizers.ColorsRandomizer(new THREE.Color(0x11aa11), new THREE.Color(0x33ff88)),
             endColor: new Partykals.Randomizers.ColorsRandomizer(new THREE.Color(0x003300), new THREE.Color(0x11aa44)),
-            startColorChangeAt: 0.5,                       
+            startColorChangeAt: 0.5,
             startAlpha: 0,
             endAlpha: 1,
             startAlphaChangeAt : 0,
-            blending: 'blend',         
-            ttl: 1, 
+            blending: 'blend',
+            ttl: 1,
             ttlExtra : 4,
             velocity: new Partykals.Randomizers.SphereRandomizer(30, 10, new THREE.Vector3(1, 1, 1), new THREE.Vector3(-1, -0.4, -1), new THREE.Vector3(1, 0.4, 1)),
             // velocityBonus: new THREE.Vector3(0, -750, 0),
             gravity: -3,
-            offset: new Partykals.Randomizers.BoxRandomizer(new THREE.Vector3(-size, 20, -size), new THREE.Vector3(size, 100, size)),            
+            offset: new Partykals.Randomizers.BoxRandomizer(new THREE.Vector3(-size, 20, -size), new THREE.Vector3(size, 100, size)),
         },
         system: {
             particlesCount: 8000 * intensity,
-            emitters: new Partykals.Emitter({                
+            emitters: new Partykals.Emitter({
                 onInterval: new Partykals.Randomizers.MinMaxRandomizer(1000 * intensity, 4000 * intensity),
                 interval: 0.5, //new Partykals.Randomizers.MinMaxRandomizer(0, 0.25),
                 detoretingMinTtl: 5
@@ -128,7 +128,7 @@ export function fireflies(scene, intensity = 1.0) {
 
 export function starsAbove(scene, intensity = 1.0) {
 
-    let tex = new THREE.TextureLoader().load( './gfx/textures/firefly.png' );
+    let tex = new THREE.TextureLoader().load( '../../gfx/textures/firefly.png' );
 
     let system = new Partykals.ParticlesSystem({
         container: scene,
@@ -139,19 +139,19 @@ export function starsAbove(scene, intensity = 1.0) {
             //color: new THREE.Color(0xeeeeee),
             startColor: new THREE.Color(0xffffff),
             endColor: new THREE.Color(0x222222),
-            startColorChangeAt: starsTtl * 0.75,                       
+            startColorChangeAt: starsTtl * 0.75,
             startAlpha: 0,
             endAlpha: 1,
             startAlphaChangeAt : 0,
-            blending: 'blend',         
-            ttl: starsTtl, 
+            blending: 'blend',
+            ttl: starsTtl,
             ttlExtra : starsTtl,
             offset: new Partykals.Randomizers.SphereRandomizer(7495, 7000) //, new THREE.Vector3(1, 1, 1), new THREE.Vector3(-1, 0, -1), new THREE.Vector3(1, 1, 1))
         },
         system: {
             particlesCount: 5000 * intensity,
-            emitters: new Partykals.Emitter({ 
-                onSpawnBurst: 500 * intensity,               
+            emitters: new Partykals.Emitter({
+                onSpawnBurst: 500 * intensity,
                 onInterval: new Partykals.Randomizers.MinMaxRandomizer(250 / starsTtl * intensity, 500 / starsTtl * intensity),
                 interval: 1, //new Partykals.Randomizers.MinMaxRandomizer(0, 0.25),
                 detoretingMinTtl: 1
@@ -167,7 +167,7 @@ export function starsAbove(scene, intensity = 1.0) {
 }
 
 export function shootingStars(scene, intensity = 1.0) {
-    let tex = new THREE.TextureLoader().load( './gfx/textures/firefly.png' );
+    let tex = new THREE.TextureLoader().load( '../../gfx/textures/firefly.png' );
 
     let height = 6000;
     let skysize = size * 1.5;
@@ -178,20 +178,20 @@ export function shootingStars(scene, intensity = 1.0) {
             globalSize: 75, // new Partykals.Randomizers.MinMaxRandomizer(15, 35),
             texture: tex,
             //alpha: 1,
-            globalColor: new THREE.Color(0xffffff),                    
+            globalColor: new THREE.Color(0xffffff),
             startAlpha: 0,
             endAlpha: 1,
             startAlphaChangeAt : 0,
-            blending: 'blend',     
-            velocity: new Partykals.Randomizers.SphereRandomizer(1800, 2200, new THREE.Vector3(1, 1, 1), new THREE.Vector3(-1, -0.1, -1), new THREE.Vector3(1, 0, 1)),    
+            blending: 'blend',
+            velocity: new Partykals.Randomizers.SphereRandomizer(1800, 2200, new THREE.Vector3(1, 1, 1), new THREE.Vector3(-1, -0.1, -1), new THREE.Vector3(1, 0, 1)),
             gravity: -300,
-            ttl: 2, 
+            ttl: 2,
             ttlExtra : 1,
             offset: new Partykals.Randomizers.BoxRandomizer(new THREE.Vector3(-skysize, height, -skysize), new THREE.Vector3(skysize, height * 1.1, skysize)),
         },
         system: {
             particlesCount: 10 * intensity,
-            emitters: new Partykals.Emitter({                    
+            emitters: new Partykals.Emitter({
                 onInterval: 1,
                 interval: 1 / intensity, //new Partykals.Randomizers.MinMaxRandomizer(0, 0.25),
                 detoretingMinTtl: 1
@@ -211,7 +211,7 @@ export function generateWind(maxValue) {
 }
 
 export function parcelEffect(scene, x, z, height = 150, time = 10, size = WORLD.parcelSize * 0.25) {
-    let tex = new THREE.TextureLoader().load( './gfx/textures/firefly.png' );
+    let tex = new THREE.TextureLoader().load( '../../gfx/textures/firefly.png' );
 
     let system = new Partykals.ParticlesSystem({
         container: scene,
@@ -221,12 +221,12 @@ export function parcelEffect(scene, x, z, height = 150, time = 10, size = WORLD.
             startSizeChangeAt: 0,
             texture: tex,
             //alpha: 1,
-            color: new Partykals.Randomizers.ColorsRandomizer(new THREE.Color(0xbbbb55), new THREE.Color(0xffff99)),                   
-            startAlpha: 0.75,
+            color: new Partykals.Randomizers.ColorsRandomizer(new THREE.Color(0xbbbb55), new THREE.Color(0xffff99)),
+            startAlpha: 0.5,
             endAlpha: 0,
             startAlphaChangeAt : 0,
-            blending: 'blend',     
-            velocity: new Partykals.Randomizers.SphereRandomizer(8, 1, new THREE.Vector3(1, 1, 1), new THREE.Vector3(-1, -0.1, -1), new THREE.Vector3(1, 0.1, 1)),    
+            blending: 'blend',
+            velocity: new Partykals.Randomizers.SphereRandomizer(8, 1, new THREE.Vector3(1, 1, 1), new THREE.Vector3(-1, -0.1, -1), new THREE.Vector3(1, 0.1, 1)),
             velocityBonus: new THREE.Vector3(0, 25, 0),
             gravity: -0.02,
             ttl: height/25,
@@ -235,7 +235,7 @@ export function parcelEffect(scene, x, z, height = 150, time = 10, size = WORLD.
         },
         system: {
             particlesCount: 5000,
-            emitters: new Partykals.Emitter({                    
+            emitters: new Partykals.Emitter({
                 onInterval: size * 0.25,
                 interval: 0.25, //new Partykals.Randomizers.MinMaxRandomizer(0, 0.25),
                 detoretingMinTtl: time * 0.5,
@@ -243,6 +243,7 @@ export function parcelEffect(scene, x, z, height = 150, time = 10, size = WORLD.
             speed: 1,
             perspective: true,
             scale: 10000,
+            depthWrite: false,
             ttl: time
         }
     });
@@ -251,5 +252,46 @@ export function parcelEffect(scene, x, z, height = 150, time = 10, size = WORLD.
     system.particleSystem.position.z = z;
 
     system.type = ptfxType.parcel;
+    return system;
+}
+
+export function explode(parent, cellSize, viewSize, time, cont) {
+    let system = new Partykals.ParticlesSystem({
+        container: parent,
+        particles: {
+            globalSize: 20,
+            //texture: tex,
+            //alpha: 1,
+            startColor: new THREE.Color(0xffffff),
+            endColor: new THREE.Color(0x999999),
+            startAlpha: 0.9,
+            endAlpha: 0,
+            //startAlphaChangeAt : 0,
+            blending: 'blend',
+            velocity: new Partykals.Randomizers.SphereRandomizer(30, 10),
+            velocityBonus: new THREE.Vector3(0, 0, 5),
+            gravity: 0,
+            ttl: time * 1,
+            ttlExtra : time * (cont ? 1.5 : 0.2),
+            offset: new Partykals.Randomizers.BoxRandomizer(new THREE.Vector3(-cellSize/5, -cellSize/5, 0), new THREE.Vector3(cellSize/5, cellSize/5, 20)),
+            worldPosition: true
+        },
+        system: {
+            particlesCount: viewSize * (cont ? 3 : 1),
+            emitters: cont ? new Partykals.Emitter({
+                    onInterval: viewSize * 2 / 100,
+                    interval: time / 100,
+                }) : new Partykals.Emitter({
+                    onSpawnBurst: viewSize
+                }),
+            speed: 1,
+            ttl: time * 1.5,
+            perspective: true,
+            scale: viewSize / 10,
+            depthWrite: false
+        }
+    });
+
+    system.type = ptfxType.sstars;
     return system;
 }

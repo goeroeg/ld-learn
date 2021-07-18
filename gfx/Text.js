@@ -2,7 +2,7 @@
 
 // THREE.Cache.enabled = true;
 
-const fontPath = './web_modules/three/examples/fonts/droid/droid_sans_regular.typeface.json';
+const fontPath = '../../web_modules/three/examples/fonts/droid/droid_sans_regular.typeface.json';
 
 var height = 20,
     size = 70,
@@ -18,8 +18,8 @@ var height = 20,
 
 var textsToUpdate = new Map();
 
-var textEmissive = 0x000000;
-var defaultTextColor = 0xffffff;
+const textEmissive = 0x000000;
+const defaultTextColor = 0xffffff;
 
 export var defaultTextMaterial = new THREE.MeshLambertMaterial( { color: defaultTextColor, emissive: textEmissive, emissiveIntensity : 0.5 } );
 
@@ -29,7 +29,7 @@ function loadFont() {
     loader.load( fontPath, function ( response ) {
 
         font = response;
-        
+
         for (let [key, value] of textsToUpdate) {
             updateText(key, value);
         }
@@ -137,8 +137,8 @@ function updateText(group, updateInfo)
 
     let bbMat = new THREE.MeshBasicMaterial( {color: 0xffffff, transparent:true, opacity : 0.0} );
     let bbMesh = new THREE.Mesh(new THREE.BoxBufferGeometry(bbWidth, bbHeight, bbDepth), bbMat);
- 
-    
+
+
     bbMesh.position.x = textMesh1.position.x + bbWidth / 2;
     bbMesh.position.y = textMesh1.position.y + bbHeight / 2 - 2.5;
     bbMesh.position.z = textMesh1.position.z + bbDepth / 2 - 3;

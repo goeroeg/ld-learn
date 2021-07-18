@@ -8,7 +8,7 @@ An Edu-shooter using three.js and the LDraw™-Library to exercise some maths.
 
 ## Try it online
 
-[You can try the game online here.](https://goeroeg.github.io/ld-learn/ld-learn.html)
+[You can try the game online here.](https://goeroeg.github.io/ld-learn/apps/learn/ld-learn.html)
 
 ## How to play
 
@@ -72,7 +72,7 @@ LDraw™ is a trademark owned and licensed by the Estate of James Jessiman
 
 [three.js](https://threejs.org/) as MIT license (no extra attribution needed, but I think they deserve it :) )
 
-[dat.gui](https://github.com/dataarts/dat.gui) under Apache License 2.0 (js module used from the three.js lib)
+[dat.gui](https://github.com/dataarts/dat.gui) under Apache License 2.0
 
 Sounds from [OrangeFreeSounds](http://www.orangefreesounds.com/) under Attribution-NonCommercial 4.0 International ([CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/))
 

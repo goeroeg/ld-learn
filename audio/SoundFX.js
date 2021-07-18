@@ -12,11 +12,11 @@ export var wrongSounds = [];
 
 var itemSounds = [];
 
-const soundsPath = "./audio/sounds/";
+const soundsPath = "../../audio/sounds/";
 
 export var soundBuffers = {
     ambientDay: { buffer: null, filename: 'ambient_day.ogg' },
-    ambientNight: { buffer: null, filename: 'ambient_night.ogg' }, 
+    ambientNight: { buffer: null, filename: 'ambient_night.ogg' },
     crows: { buffer: null, filename: 'crows.ogg' },
     magpie: { buffer: null, filename: 'magpie.ogg' },
     silence: { buffer: null, filename: 'silence.ogg' },
@@ -26,12 +26,12 @@ export var soundBuffers = {
     collect: { buffer: null, filename: 'collect.ogg' },
     newItem: { buffer: null, filename: 'dream.ogg' },
     tick: { buffer: null, filename: 'tick.ogg' },
-    motor: { buffer: null, filename: 'motor.ogg' } , 
-    train: { buffer: null, filename: 'train_move.ogg' }, 
+    motor: { buffer: null, filename: 'motor.ogg' } ,
+    train: { buffer: null, filename: 'train_move.ogg' },
     trainEngine: { buffer: null, filename: 'train_engine.ogg' },
     trainHorn: { buffer: null, filename: 'train_horn.ogg' },
     horse: { buffer: null, filename: 'horse.ogg' },
-    cow: { buffer: null, filename: 'cow.ogg' }, 
+    cow: { buffer: null, filename: 'cow.ogg' },
     sphere: { buffer: null, filename: 'sphere-music.ogg' }
 }
 
@@ -85,20 +85,20 @@ export function init(camera) {
         audioLoader.load( soundsPath + sb.filename, function( buffer ) {
             sb.buffer = buffer;
             if (callbacks.has(sb)) {
-                callbacks.get(sb)(buffer);                
+                callbacks.get(sb)(buffer);
             }
         });
     }
 
     for (let idx = 1; idx <= 4; idx++)
     {
-        audioLoader.load( soundsPath + 'ok_'+ idx +'.ogg', function(buffer) {        
+        audioLoader.load( soundsPath + 'ok_'+ idx +'.ogg', function(buffer) {
             okSounds.push(new THREE.PositionalAudio(listener).setBuffer(buffer).setRefDistance(100).setVolume(1));
         });
     }
     for (let idx = 1; idx <= 4; idx++)
     {
-        audioLoader.load( soundsPath + 'wrong_'+ idx +'.ogg', function(buffer) {        
+        audioLoader.load( soundsPath + 'wrong_'+ idx +'.ogg', function(buffer) {
             wrongSounds.push(new THREE.PositionalAudio(listener).setBuffer(buffer).setRefDistance(100).setVolume(1));
         });
     }
@@ -119,16 +119,16 @@ export function play(sound, restart) {
 
 export function addItemSound(item, soundBuffer, loop, volume = 0.7) {
     let sound = new THREE.PositionalAudio(listener);
-    
-    item.add(sound);    
+
+    item.add(sound);
     sound.setBuffer(soundBuffer.buffer).setRefDistance(50).setDistanceModel('exponential').setRolloffFactor(1.1).setLoop(loop).setVolume(volume);
     play(sound);
-    
+
     if (loop) {
         itemSounds.push(sound);
         sound.item = item;
-    } else {         
-        item.sound = sound; 
+    } else {
+        item.sound = sound;
     }
 
     return sound;
@@ -161,7 +161,7 @@ export function pause() {
     */
     for (let ms of itemSounds) {
         if (ms.isPlaying)
-            ms.pause();            
+            ms.pause();
     }
 }
 
@@ -169,14 +169,14 @@ export function resume(ambient, sphere) {
     if (ambient) {
         play(ambientSound);
         play(rainSound);
-        // play(windSound);    
+        // play(windSound);
     }
 
     if (sphere) {
         play(sphereSound);
-    }    
+    }
 
-    for (let ms of itemSounds) {        
+    for (let ms of itemSounds) {
         play(ms);
     }
 }
@@ -185,7 +185,7 @@ export function setVolume(audio, volume, time) {
     if (audio) {
         let ctx = audio.context;
         if (!audio.isPlaying) audio.play();
-        // audio.gain.gain.cancelAndHoldAtTime(ctx.currentTime);  
+        // audio.gain.gain.cancelAndHoldAtTime(ctx.currentTime);
         // audio.gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + time);
         audio.gain.gain.setTargetAtTime(volume, ctx.currentTime, time / 5);
     }

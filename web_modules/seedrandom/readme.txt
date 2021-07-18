@@ -1,0 +1,1 @@
+http://davidbau.com/archives/2010/01/30/random_seeds_coded_hints_and_quintillions.html

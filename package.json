@@ -4,17 +4,19 @@
   "version": "0.3.7",
   "main": "main.js",
   "scripts": {
-    "serve": "http-server .",
+    "serve": "http-server ..",
     "start": "electron .",
-    "packldr": "node gfx/packLDrawModel.js gfx/models/"
+    "packldr": "node gfx/packLDrawModel.js ./ldraw/models/"
   },
   "dependencies": {
-    "three": "^0.115.0",
-    "partykals": "^1.0.2"
+    "eslint": "^7.28.0",
+    "partykals": "^1.0.2",
+    "three": "^0.125.0"
   },
   "devDependencies": {
+    "electron": "^13.0.0",
+    "eslint-config-google": "^0.14.0",
     "http-server": "^0.12.3",
-    "electron": "^8.2.0",
     "sync-request": "^6.1.0"
   },
   "build": {
@@ -26,7 +28,7 @@
   },
   "keywords": [],
   "author": "goeroeg",
-  "license": "MIT",
+  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/goeroeg/ld-learn/issues"
   },

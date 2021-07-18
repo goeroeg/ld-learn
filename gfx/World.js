@@ -1,6 +1,6 @@
 // import * as THREE from '../node_modules/three/build/three.module.js';
 
-import { LDrawLoader } from './LDrawLoader.js';
+import * as OBJS from './Objects.js';
 import * as ANIM from './Animations.js';
 
 export const plateSize = 640;
@@ -67,122 +67,83 @@ export const trackDummyPlaceholder = 4;
 
 
 export function initPlates(onLoad, onProgress, onError) {
-    var lDrawLoader = new LDrawLoader();
+    OBJS.loadModel('baseplate', function ( group2 ) {
 
-    lDrawLoader.smoothNormals = false; 
+        model = group2;
 
-    lDrawLoader.separateObjects = true;
+        // Convert from LDraw coordinates: rotate 180 degrees around OX
+        model.rotateX(-Math.PI);
 
-    lDrawLoader
-        .setPath( "ldraw/" )
-        .load( "models/baseplate.ldr_Packed.mpd", function ( group2 ) {
+        let max = plateSize * (plateCounter + 0.5);
+        let min = -max;
 
-            model = group2;
-
-            // Convert from LDraw coordinates: rotate 180 degrees around OX
-            model.rotateX(-Math.PI);
-
-            // Adjust materials
-
-            // console.log(model);
-
-            model.traverse( c => { 
-                c.visible = !c.isLineSegments; 
-                c.castShadow = false; 
-                c.receiveShadow = true; 
-            } );
-
-            //model.castShadow = true;
-            //model.receiveShadow = true;
-
-            let max = plateSize * (plateCounter + 0.5);
-            let min = -max;
-            
-            // create parcels
-            for (let x = min; x <= max; x += parcelSize) {
-                for (let z = min; z <= max; z += parcelSize) {
-                    let newParcel = { x: x, z: z };
-                    parcels.push(newParcel);
-                }
+        // create parcels
+        for (let x = min; x <= max; x += parcelSize) {
+            for (let z = min; z <= max; z += parcelSize) {
+                let newParcel = { x: x, z: z };
+                parcels.push(newParcel);
             }
+        }
 
-            // console.log(parcels);
-            plate = model.children[0];
+        // console.log(parcels);
+        plate = model.children[0];
 
-            // clear model, keep only first plate
-            while(model.children.length > 1) model.remove(model.children[1]);
+        // clear model, keep only first plate
+        while(model.children.length > 1) model.remove(model.children[1]);
 
-            // reserve exercise parcel
-            
-            //for (let i = 0; i <= 3; i++) {
-            let idx = getParcelIndex(-200, plateSize);
-            let exParcel = parcels[idx];
-            exParcel.occupied = true;
-            exParcel.mapObjId = MapObjectId.exercise;
-            //}
+        // reserve exercise parcel
 
-            worldPlates = 0.5;
-            freeParcels = parcels.filter(parcelFilter);                            
+        //for (let i = 0; i <= 3; i++) {
+        let idx = getParcelIndex(-200, plateSize);
+        let exParcel = parcels[idx];
+        exParcel.occupied = true;
+        exParcel.mapObjId = MapObjectId.exercise;
+        //}
 
-            setSeasonColor(currentSeason);
+        worldPlates = 0.5;
+        freeParcels = parcels.filter(parcelFilter);
 
-            onLoad(model);
-                        
-        }, onProgress, onError);
+        setSeasonColor(currentSeason);
+
+        onLoad(model);
+
+    }, onProgress, onError, true);
 }
 
 export function initScene(onLoad, onProgress, onError) {
-    var lDrawLoader = new LDrawLoader();
-
-    lDrawLoader.smoothNormals = smoothNormals; 
-
-    lDrawLoader.separateObjects = true;
-
-    lDrawLoader
-        .setPath( "ldraw/" )
-        .load( "models/ambient.ldr_Packed.mpd", function ( group2 ) {
+    OBJS.loadModel('ambient', function ( group2 ) {
 
             // Convert from LDraw coordinates: rotate 180 degrees around OX
             group2.rotateX(-Math.PI);
-
-            // Adjust materials
-
-            // console.log(model);
-
-            group2.traverse( c => { 
-                c.visible = !c.isLineSegments; 
-                c.castShadow = true; 
-                c.receiveShadow = true; 
-            } );
 
             fence = group2.children[0];
 
             chrystal = group2.children[1];
             chrystal.children[0].material[0].emissive.setHex(0xffffff);
             chrystal.children[0].material[0].emissiveIntensity = 0.3;
-        
+
             sphere = group2.children[2];
             sphere.children[0].material[0].emissiveIntensity = 0.4;
             sphere.children[0].material[0].emissive.setHex(sphere.children[0].material[0].color.getHex());
 
             // let plants = [];
             for (let plantIdx = 3; plantIdx < group2.children.length; plantIdx++) {
-                plantProtos.push(group2.children[plantIdx]);        
+                plantProtos.push(group2.children[plantIdx]);
             }
 
             setSeasonColor(currentSeason);
 
             onLoad(group2);
-                        
+
         }, onProgress, onError);
 }
 
 export function setSeasonColor(season) {
-    if (season != seasons.auto) {            
-        if (plate) {        
-            plate.children[0].material[0].color.setHex(seasonPlateColor[season]);       
+    if (season != seasons.auto) {
+        if (plate) {
+            plate.children[0].material[0].color.setHex(seasonPlateColor[season]);
         }
-        if (plantProtos && plantProtos.length > 0) {            
+        if (plantProtos && plantProtos.length > 0) {
             plantProtos[0].children[0].material[0].color.setHex(seasonPlantColor[season]);
             if (plantProtos.length > 6) {
                 plantProtos[6].children[0].material[0].color.setHex(seasonPlateColor[season]);
@@ -199,7 +160,7 @@ export function setSeasonColor(season) {
 export function createPlates() {
     model.remove(plate);
     for (let x = -plateCounter; x <= plateCounter; x += 1) {
-        for (let z = -plateCounter; z <= plateCounter; z += 1) {            
+        for (let z = -plateCounter; z <= plateCounter; z += 1) {
             let newPlate = plate.clone();
             newPlate.translateX(x * plateSize);
             newPlate.translateZ(z * plateSize);
@@ -212,16 +173,16 @@ export function createPlates() {
 
 export function debugParcel(x, z, color = 0xffffff) {
         let mat = new THREE.MeshBasicMaterial({color: color, transparent: true, opacity:0.5});
-        let geo = new THREE.BoxBufferGeometry(parcelSize, parcelSize, parcelSize);        
+        let geo = new THREE.BoxBufferGeometry(parcelSize, parcelSize, parcelSize);
         let mesh = new THREE.Mesh(geo, mat);
         mesh.position.x = x;
         mesh.position.z = z;
         model.add(mesh);
 }
 
-function parcelFilter(value) { 
+function parcelFilter(value) {
     /*
-    // debug vis 
+    // debug vis
     if (value.occupied) {
         debugParcel(value.x, value.z);
     }
@@ -270,7 +231,7 @@ export function createFences() {
         newFence.position.z = fenceZ;
 
         occupyParcel(parcels[getParcelIndex(fenceX, fenceZ)]);
-        
+
         if (xDir) {
             occupyParcel(parcels[getParcelIndex(fenceX - width, fenceZ)]);
             occupyParcel(parcels[getParcelIndex(fenceX + width, fenceZ)]);
@@ -352,7 +313,7 @@ export function prepareRoads(mixer, collObjs) {
 
 // call after obj is added to model
 export function addCollBox(obj) {
-    let bbox = new THREE.Box3().setFromObject(obj).expandByScalar(5);    
+    let bbox = new THREE.Box3().setFromObject(obj).expandByScalar(5);
     obj.bbox = bbox;
     collObjs.add(bbox);
     // model.parent.add(new THREE.Box3Helper(bbox));
@@ -365,7 +326,7 @@ export function reserveParcelAt(x, z, mixer, placeHolder) {
     if (parcel.occupied && parcel.occupied != placeHolder) {
         model.remove(parcel.occupied);
         if (mixer) {
-            mixer.uncacheRoot(parcel.occupied);                
+            mixer.uncacheRoot(parcel.occupied);
         }
         collObjs.delete(parcel.occupied.bbox);
     }
@@ -377,29 +338,13 @@ export function initRoads(onLoad, onProgress, onError, effectFunc) {
 
     if (!model) return;
 
-    var lDrawLoader = new LDrawLoader();
-
-    lDrawLoader.smoothNormals = false; 
-
-    lDrawLoader.separateObjects = true;
-
-    lDrawLoader
-        .setPath( "ldraw/" )
-        .load( "models/roads.ldr_Packed.mpd", function ( roads ) {
+    OBJS.loadModel('roads', function ( roads ) {
 
             // Convert from LDraw coordinates: rotate 180 degrees around OX
             roads.rotateX(-Math.PI);
 
-            // Adjust materials
-
-            roads.traverse( c => { 
-                c.visible = !c.isLineSegments; 
-                c.castShadow = false; 
-                c.receiveShadow = true; 
-            } );
-            
             let curve = roads.children[0];
-            let straight = roads.children[1];      
+            let straight = roads.children[1];
 
             replacePlate(curve, roadPlates * plateSize, roadPlates * plateSize, effectFunc);
             curve.rotateY(-Math.PI/2);
@@ -408,7 +353,7 @@ export function initRoads(onLoad, onProgress, onError, effectFunc) {
             replacePlate(curve, -roadPlates * plateSize, -roadPlates * plateSize, effectFunc);
             curve.rotateY(-Math.PI/2);
             replacePlate(curve, roadPlates * plateSize, -roadPlates * plateSize, effectFunc);
-                
+
             for (let x = -roadPlates; x <= roadPlates; x+= 2 * roadPlates) {
                 for (let z = -roadPlates + 1; z <= roadPlates - 1; z++ ) {
                     replacePlate(straight, x * plateSize, z * plateSize, effectFunc)
@@ -434,12 +379,12 @@ export function initRoads(onLoad, onProgress, onError, effectFunc) {
             setSeasonColor(currentSeason);
 
             if (onLoad) onLoad(roads);
-                        
-        }, onProgress, onError);
+
+        }, onProgress, onError, true);
 }
 
 function replacePlate(template, x, z, effectFunc) {
-    let newPlate = template.clone();    
+    let newPlate = template.clone();
     newPlate.position.x = x;
     newPlate.position.z = z;
     let idx = getPlateIndex(x, z);

@@ -1,10 +1,11 @@
 const { app, BrowserWindow } = require('electron')
 
 function createWindow () {
+
   // Create the browser window.
   const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1080 / 2,
+    height: 1920 / 2,
     frame: true,
     icon: 'favicon.png',
 //    fullscreen: true,
@@ -23,7 +24,7 @@ function createWindow () {
   })
 
   // and load the index.html of the app.
-  win.loadFile('ld-learn.html')
+  win.loadFile('ld-flowers.html')
 
   // Open all links in external browser
   var handleRedirect = (e, url) => {
@@ -32,7 +33,7 @@ function createWindow () {
       require('electron').shell.openExternal(url)
     }
   }
-  
+
   win.webContents.on('will-navigate', handleRedirect)
   win.webContents.on('new-window', handleRedirect)
 

@@ -1,31 +1,33 @@
-// import * as THREE from './node_modules/three/build/three.module.js';
+import '../../web_modules/three/build/three.min.js';
+
 // import { GUI } from './node_modules/three/examples/jsm/libs/dat.gui.module.js';
-import { GUI } from './web_modules/three/examples/jsm/libs/dat.gui.module.js';
+//import { GUI } from '../ld-framework/web_modules/three/examples/jsm/libs/dat.gui.module.js';
+import { GUI } from '../../web_modules/dat.gui/build/dat.gui.module.js';
 // import { MapControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
-import { PointerLockControls } from './web_modules/three/examples/jsm/controls/PointerLockControls.js';
+import { PointerLockControls } from '../../web_modules/three/examples/jsm/controls/PointerLockControls.js';
 
 import { MathExercise } from './exercises/Maths.js';
 import { OperatorType } from './exercises/Maths.js';
-import { GamepadControls } from './controls/GamepadControls.js';
-import { createText, defaultTextMaterial } from './gfx/Text.js';
-import { addCrossHair } from './controls/CrossHair.js';
-import * as WORLD from './gfx/World.js';
-import * as ANIM from './gfx/Animations.js';
-import * as OBJS from './gfx/Objects.js'
-import * as SFX from './audio/SoundFX.js';
-import * as PTFX from './gfx/ParticleEffects.js';
-import { initGuy, BodyParts } from './gfx/Guy.js';
-import { updateMapData, updateMiniMapColors } from './gfx/MiniMap.js';
-import * as TRAIN from './gfx/Train.js';
+import { GamepadControls } from '../../controls/GamepadControls.js';
+import { createText, defaultTextMaterial } from '../../gfx/Text.js';
+import { addCrossHair } from '../../controls/CrossHair.js';
+import * as WORLD from '../../gfx/World.js';
+import * as ANIM from '../../gfx/Animations.js';
+import * as OBJS from '../../gfx/Objects.js'
+import * as SFX from '../../audio/SoundFX.js';
+import * as PTFX from '../../gfx/ParticleEffects.js';
+import { initGuy, BodyParts } from '../../gfx/Guy.js';
+import { updateMapData, updateMiniMapColors } from '../../gfx/MiniMap.js';
+import * as TRAIN from '../../gfx/Train.js';
 
 export var camera, controls, gpControls, scene, renderer, raycaster, intersectedObject, composer;
 var particleSystems = [];
 
 //var rayHelper = new THREE.ArrowHelper();
 
-var testMode = false;
-
 var isElectronApp = (navigator.userAgent.toLowerCase().indexOf(' electron/') > -1); // detect whether run as electron app
+
+var testMode = isElectronApp;
 
 var fps = [];
 
@@ -53,7 +55,8 @@ var skyMesh;
 var hemiLight;
 var dirLight;
 
-const dirLightIntensity = 0.4;
+const dirLightIntensity = 0.55; //0.45
+const hemiLightIntensity = 0.8; // 0.8;
 
 var isNight = false;
 
@@ -84,7 +87,7 @@ var qualityNames = { High: 1, Low : 2};
 var audioSettings = { enabled : true, volume: 100 };
 var gamepadSettings = { enabled: true, moveSensitivity: 1, lookSensitivity: 1 };
 var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: isTouch ? 0 : 3 , antiAlias: true , showFPS: false};
-var gameSettings = { 
+var gameSettings = {
     itemAmount: isTouch ? 20 : 50 , itemEffect: true, nightEnabled: !isTouch, season : WORLD.seasons.auto,
     add : true, addMax : 100, addResMax : 100, addSym: '+',
     sub : true, subMax : 100, subResMax : 100, subSym: '-',
@@ -133,12 +136,12 @@ const chrActions = {
     createSky : 3,
     plantsMin : 4,
     plantsMax : 20,
-    prepareRoads : 18, //15
-    initRoads : 19, //20
-    carsMin : 20,   //25
-    carsMax : 40,   //41
+    prepareRoads : 18, //18
+    initRoads : 19, //19
+    carsMin : 20,   //20
+    carsMax : 40,   //40
     animalsMin : 12, // 12
-    animalsMax : 20, // 24
+    animalsMax : 20, // 20
     musicSphere : 30, // 30
     prepareTracks : 40, // 40
     initTracks : 43, // 43
@@ -165,10 +168,11 @@ function initControls() {
     // renderer.setPixelRatio( window.devicePixelRatio );
 
     renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.gammaFactor = 2.2;
 
     updateShadows(gameSettings.shadow);
     // renderer.physicallyCorrectLights = true;
-        
+
     renderer.domElement.setAttribute('style', "position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; margin: auto");
     document.body.insertBefore( renderer.domElement, document.getElementById( 'blocker' ));
 
@@ -180,7 +184,7 @@ function initControls() {
     // camera.up = new THREE.Vector3(0, 0, 1);
     // camera.position.set(WORLD.plateSize, 85, WORLD.plateSize );
     camera.position.set(0, 85, WORLD.plateSize / 2);
-    
+
     addCrossHair(camera);
 
     raycaster = new THREE.Raycaster();
@@ -193,16 +197,16 @@ function initControls() {
 
     let gamePadButtonActions = [];
     gamePadButtonActions[6] = jump;
-    gamePadButtonActions[7] = function() { 
-                                            evaluateAnswer(currentHighlight); 
+    gamePadButtonActions[7] = function() {
+                                            evaluateAnswer(currentHighlight);
                                          };
-    gamePadButtonActions[9] = function() { 
+    gamePadButtonActions[9] = function() {
                                             if ( controls.isLocked ) {
                                                 controls.unlock();
                                             } else if (gameActive) {
                                                 pauseGame();
                                             } else {
-                                                controls.lock(); 
+                                                controls.lock();
                                             }
                                          };
     gamePadButtonActions[16] = gamePadButtonActions[9];
@@ -218,9 +222,9 @@ function initControls() {
         instructions.addEventListener( 'touchstart', function (e) {
             openFullscreen();
             window.history.pushState({}, '');
-            startGame();         
+            startGame();
         }, false );
-         
+
         /*
         document.getElementById('clickSpan').addEventListener( 'click', function () {
             startGame();
@@ -327,7 +331,7 @@ function initControls() {
 
     /*
     // controls
-    controls = new MapControls( camera, renderer.domElement );    
+    controls = new MapControls( camera, renderer.domElement );
     //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
     controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
     controls.dampingFactor = 0.05;
@@ -417,7 +421,7 @@ function onCamControlsRelease(e) {
     let touch = e.changedTouches[0];
     if (currentHighlight && ((touchCamPos.x - touch.pageX) * (touchCamPos.y - touch.pageY)) < 10) {
         evaluateAnswer(currentHighlight);
-    }  
+    }
 }
 
 function onMoveControlTouch(e) {
@@ -487,10 +491,10 @@ function startGame() {
 function updateBlocker(hide) {
     if (hide) {
         instructions.style.display = 'none';
-        blocker.style.display = 'none';        
+        blocker.style.display = 'none';
     } else {
         blocker.style.display = 'block';
-        instructions.style.display = '';        
+        instructions.style.display = '';
     }
 }
 
@@ -507,36 +511,36 @@ function initGUI() {
     gui.remember(playerSettings);
 
     gfxFolder = gui.addFolder ("Graphics settings");
-    
+
     gfxFolder.add(gfxSettings, "resolution", resolutionNames).name("Resolution").onChange(function(value) {
-        // update resolution 
+        // update resolution
         onWindowResize();
     });
 
     gfxFolder.add(gfxSettings, "quality", qualityNames).name("Render quality").onChange(function(value) {
-        // update resolution 
+        // update resolution
         onWindowResize();
     });
 
     onWindowResize(false);
 
-    
+
     // does not work when starting fullscreen with F11 :(
     /*
     gfxFolder.add(gfxSettings, "fullScreen").name("Full screen").onChange(function(value) {
-        
+
         if (value) {
             openFullscreen();
         } else {
             closeFullscreen();
         }
-        
+
         //toggleFullScreen();
     }).listen();
     */
 
     gfxFolder.add(gfxSettings, "shadows", 0, 3, 1).name("Shadows").onChange(function(value) {
-        // update shadows        
+        // update shadows
         updateShadows(value);
         render();
     });
@@ -606,7 +610,7 @@ function initGUI() {
     playerSettings.resetColor = function () {
         playerSettings.bodyColor = defaultBodyColor;
         playerSettings.legsColor = defaultLegsColor;
-        
+
         updateGuyBodyColor(playerSettings.bodyColor);
         updateGuyLegsColor(playerSettings.legsColor);
     }
@@ -619,7 +623,7 @@ function initGUI() {
             playerSettings.bodyColor = value;
         }
 
-        updateGuyBodyColor(value);        
+        updateGuyBodyColor(value);
     });
     playersFolder.addColor(playerSettings, "legsColor").name("Legs color").listen().onChange(function(value) {
         if (value[0] === undefined) {
@@ -643,7 +647,7 @@ function initGUI() {
     additionFolder.add(gameSettings, "addMax", [10, 100]).name("Operand max");
     additionFolder.add(gameSettings, "addResMax", [10, 20, 100, 200]).name("Result max");
     additionFolder.open();
-    
+
     var subtractionFolder = exFolder.addFolder("Subtraction (-)");
     subtractionFolder.add(gameSettings, "sub").name("Enabled");
     subtractionFolder.add(gameSettings, "subMax", [10, 20, 100]).name("Operand max");
@@ -656,7 +660,7 @@ function initGUI() {
     multiplicationFolder.add(gameSettings, "multiSym", [ '·', 'x', '*' ]).name("Symbol");
     // multiplicationFolder.add(gameSettings, "multiResMax", [10, 100]).name("Result max");
     multiplicationFolder.open();
-      
+
     var divisionFolder = exFolder.addFolder("Division (/)");
     divisionFolder.add(gameSettings, "div").name("Enabled");
     // divisionFolder.add(gameSettings, "divMax", [10, 100]).name("Operand max");
@@ -697,8 +701,11 @@ function setSeason(season) {
         if (month >= 9 && month <= 11 ) season = WORLD.seasons.autumn;
     }
 
-    WORLD.setSeasonColor(season);    
-    
+    WORLD.setSeasonColor(season);
+
+    // adjust lighting a bit
+    hemiLight.groundColor.setHex(0xB97A20).lerp(new THREE.Color(WORLD.seasonPlateColor[season]), 0.15);
+
     checkAndEndWeatherEffects();
 
     updateFog();
@@ -746,7 +753,7 @@ function setMasterVolume() {
 }
 
 function updateGuyLegsColor(value) {
-    if (playerGuy) {
+    if (playerGuy && value) {
         let r = value[0] / 255;
         let g = value[1] / 255;
         let b = value[2] / 255;
@@ -757,7 +764,7 @@ function updateGuyLegsColor(value) {
 }
 
 function updateGuyBodyColor(value) {
-    if (playerGuy) {
+    if (playerGuy && value) {
         let r = value[0] / 255;
         let g = value[1] / 255;
         let b = value[2] / 255;
@@ -783,19 +790,19 @@ function initScene() {
 
     const skyColor = 0xB1E1FF;  // light blue
     const groundColor = 0xB97A20;  // brownish orange
-    const intensity = 0.8; // 0.8;
-    hemiLight = new THREE.HemisphereLight(skyColor, groundColor, intensity);
+
+    hemiLight = new THREE.HemisphereLight(skyColor, groundColor, hemiLightIntensity);
     scene.add(hemiLight);
 
     var loader = new THREE.TextureLoader();
-    loader.load('./gfx/textures/sky_day.jpg',
-        //loader.load('./gfx/nightsky.jpg', 
+    loader.load('../../gfx/textures/sky_day.jpg',
+        //loader.load('./gfx/nightsky.jpg',
         texture => {
             var skyGeo = new THREE.SphereBufferGeometry(12 * WORLD.plateSize, 160, 160); //, 0, 2*Math.PI, 0, Math.PI/2);
             var skyMat = new THREE.MeshLambertMaterial({ map: texture, flatShading: true, emissive: 0x5555ff, emissiveIntensity: 0 }); //1
             // var skyMat = new THREE.MeshLambertMaterial({ map: texture, shading: THREE.FlatShading, emissive: 0x00 });
             skyMat.side = THREE.BackSide;
-            skyMesh = new THREE.Mesh(skyGeo, skyMat);  
+            skyMesh = new THREE.Mesh(skyGeo, skyMat);
 
         }, xhr => {
             console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
@@ -817,8 +824,9 @@ function initScene() {
     mixer = new THREE.AnimationMixer(scene);
 
     WORLD.initPlates(function ( newModel ) {
-        scene.add(newModel);        
-        
+        scene.add(newModel);
+        newModel.updateMatrixWorld();
+
         absMaxDistance = WORLD.worldPlates * WORLD.plateSize - guyOffset;
 
         WORLD.initScene(function(model) {
@@ -861,7 +869,7 @@ function initPlayerGuyAnim() {
     playerGuy.anims.push(action);
 
     playerGuy.walk = function () {
-        playerGuy.isWalking = true;        
+        playerGuy.isWalking = true;
         for (let anim of playerGuy.anims) {
             if (anim.isRunning()) {
                 anim.fadeIn(0.3);
@@ -925,7 +933,7 @@ function createSky() {
 }
 
 function addMusicSphere() {
-    
+
     let sphere = WORLD.sphere; // .clone();
     if (WORLD.freeParcels.length > 0) {
 
@@ -940,7 +948,7 @@ function addMusicSphere() {
         parcel.mapObjId = WORLD.MapObjectId.msphere;
 
         sphere.position.x = parcel.x;
-        sphere.position.z = parcel.z;        
+        sphere.position.z = parcel.z;
 
         // WORLD.model.add(sphere);
 
@@ -997,7 +1005,7 @@ function addChrystal() {
         newChrystal.parcel = parcel;
 
         /*
-        let light = new THREE.PointLight(0xffffff,  1, 200,  2);        
+        let light = new THREE.PointLight(0xffffff,  1, 200,  2);
         light.position.y = -100;
         light.castShadow = true;
         newChrystal.add(light);
@@ -1030,8 +1038,8 @@ function addChrystal() {
 
         updatePlayerInfo();
     } else {
-        console.log('No free parcel found for chrystal!');     
-        console.log(WORLD.parcels);  
+        console.log('No free parcel found for chrystal!');
+        console.log(WORLD.parcels);
     }
 
 }
@@ -1056,7 +1064,7 @@ function createExercise() {
     }
 
     let rnd = Math.floor(Math.random() * (ops.length));
-    
+
     let op = ops[rnd];
 
     // console.log(op);
@@ -1065,9 +1073,9 @@ function createExercise() {
 
     exerciseGroup = new THREE.Group();
     let xtext = createText(x.description, function(mesh){
-        if (SFX.tickSound)  mesh.add(SFX.tickSound);        
+        if (SFX.tickSound)  mesh.add(SFX.tickSound);
     });
-    xtext.position.y = 120; 
+    xtext.position.y = 120;
 
     exerciseGroup.add(xtext);
     let resultsGroup = new THREE.Group();
@@ -1097,11 +1105,11 @@ function createExercise() {
                 wrongIdx++;
             }
         }
-        
+
 
         rtext.translateX((idx++ * 150) - 300);
         resultsGroup.add(rtext);
-    }    
+    }
     exerciseGroup.add(resultsGroup);
     exerciseGroup.position.y = 200;
     exerciseGroup.position.z = -WORLD.plateSize;
@@ -1134,7 +1142,6 @@ function showProgressBar() {
 
     if (!progressBarDiv) {
         progressBarDiv = document.createElement( 'div' );
-        progressBarDiv.innerText = "Loading...";
         progressBarDiv.style.fontSize = "3em";
         progressBarDiv.style.color = "#888";
         progressBarDiv.style.display = "block";
@@ -1142,6 +1149,7 @@ function showProgressBar() {
         progressBarDiv.style.top = "50%";
         progressBarDiv.style.width = "100%";
         progressBarDiv.style.textAlign = "center";
+        progressBarDiv.innerText = "Loading...";
     }
 
     document.body.appendChild( progressBarDiv );
@@ -1167,16 +1175,16 @@ function updateProgressBar( fraction ) {
 
 }
 
-function onWindowResize(update = true) {    
+function onWindowResize(update = true) {
 
     let res = { x: resolutions[gfxSettings.resolution].x, y: resolutions[gfxSettings.resolution].y };
 
     if (res.x == 0) {
         res.x = window.innerWidth ;
-    } 
+    }
     if (res.y == 0) {
         res.y = window.innerHeight;
-    } 
+    }
 
     res.x = Math.min(res.x, window.innerWidth);
     res.y = Math.min(res.y, window.innerHeight);
@@ -1194,7 +1202,7 @@ function onWindowResize(update = true) {
     var style = window.getComputedStyle(renderer.domElement);
     playerInfo.style.marginLeft = style.marginLeft;
     playerInfo.style.marginTop = style.marginTop;
-    
+
     playerInfo.style.fontSize = res.y / (40 - (30 * (1 - res.y / 1200))) + "px"; // non-linear scale for lower res.
     playerInfo.style.lineHeight = playerInfo.style.fontSize;
 
@@ -1208,7 +1216,7 @@ function onWindowResize(update = true) {
     gfxSettings.fullScreen = (window.screen.width == window.innerWidth); // API not working when triggered with F11
 
     if (update) {
-        updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);  
+        updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);
         render();
     }
 
@@ -1238,12 +1246,12 @@ function evaluateAnswer(obj) {
         obj.parent.children[0].material.color.setHex(obj.parent.isResult ? okColor : wrongColor);
         highlightMesh(obj,  (isNight ? (obj.parent.isResult ? okColor : wrongColor) : textEmissive));
         SFX.play(obj.parent.sound, true);
-        
+
         if (obj.parent.isResult) {
             addChrystal();
         }
         else {
-            
+
             // show solution
             for (let mesh of exerciseMeshes) {
                 if (mesh.parent.isResult) {
@@ -1295,8 +1303,8 @@ function animate() {
         updateControls( walkDelta );
 
         checkExerciseIntersections();
-        
-        particleSystems = particleSystems.filter(function(ps) { 
+
+        particleSystems = particleSystems.filter(function(ps) {
             ps.update(animDelta);
             return !ps.removeAndDisposeIfFinished();
         });
@@ -1321,14 +1329,14 @@ function updateVehiclePositions() {
             updateVehiclePos(car, WORLD.MapObjectId.car, WORLD.MapObjectId.road);
 
             let velVec = car.getWorldDirection(new THREE.Vector3());
-            car.frontBbox.copy(car.bbox).translate(velVec.multiplyScalar(-120)).expandByScalar(-30);            
+            car.frontBbox.copy(car.bbox).translate(velVec.multiplyScalar(-120)).expandByScalar(-30);
         }
         for (let car of cars) {
             if (car.anims && car.anims.length > 0) {
                 let brake = car.frontBbox.intersectsBox(playerBbox);
                 if (!brake) {
                     for (let c of cars) {
-                        if (c !== car) {                            
+                        if (c !== car) {
                             if (car.frontBbox.intersectsBox(c.bbox)) {
                                 if (c.waitFor !== car) { // resolve deadlocks
                                     car.waitFor = c;
@@ -1339,19 +1347,19 @@ function updateVehiclePositions() {
                         }
                     }
                 }
-                
+
                 if (brake) {
                     car.braking = true;
                     for (let anim of car.anims) {
-                        anim.halt(0.1); 
-                    }                    
+                        anim.halt(0.1);
+                    }
                 }
                 else {
                     if (car.braking) {
                         car.braking = false;
                         for (let anim of car.anims) {
-                            anim.setDuration(anim.duration);      
-                            anim.paused = false;              
+                            anim.setDuration(anim.duration);
+                            anim.paused = false;
                         }
                     }
                     car.waitFor = null;
@@ -1377,7 +1385,7 @@ function updateVehiclePositions() {
         }
         if (vehicle.bbox) {
             vehicle.bbox.setFromObject(vehicle);
-        }        
+        }
     }
 }
 
@@ -1417,7 +1425,7 @@ function checkChrystals() {
         // update display
         updatePlayerInfo();
 
-        // actions        
+        // actions
         performChrystalAction();
     }
 }
@@ -1442,7 +1450,7 @@ function performChrystalAction() {
             updateAmbientSound();
             SFX.play(SFX.ambientSound);
         }
-    
+
         if ( chrystalCount <= chrActions.plantsMax) {
             WORLD.populatePlants(Math.round(2 * (gameSettings.itemAmount/100)), Math.round(5 * (gameSettings.itemAmount/100)), mixer, addParcelEffect);
         }
@@ -1514,7 +1522,7 @@ function addAnimal() {
         let freeParcel = WORLD.freeParcels[parcelIdx];
 
         parcels.push(freeParcel);
-        
+
         let parcel = WORLD.parcels[WORLD.getParcelIndex(freeParcel.x, freeParcel.z + WORLD.parcelSize)];
         if (!parcel.occupied) {
             parcels.push(parcel);
@@ -1572,22 +1580,22 @@ function addAnimal() {
             OBJS.initHorse(function (horse) {
 
                 WORLD.model.add(horse);
-    
+
                 for (let parcel of parcels) {
                     parcel.occupied = horse;
                 }
 
                 horse.position.x = x;
                 horse.position.z = z;
-    
+
                 horse.rotateY(Math.floor(Math.random() * 4) * Math.PI / 2);
-    
+
                 var action = mixer.clipAction(ANIM.createHeadAnimation( 1, Math.PI/2, 'x'), horse.head);
                 action.setLoop(THREE.LoopRepeat).setDuration(5).play();
-    
+
                 action = mixer.clipAction(ANIM.createHeadAnimation( 1, -Math.PI * 0.4, 'x'), horse.body);
                 action.setLoop(THREE.LoopOnce).setDuration(8).play();
-    
+
                 SFX.addItemSound(horse, SFX.soundBuffers.horse, true);
 
                 WORLD.addCollBox(horse);
@@ -1599,13 +1607,13 @@ function addAnimal() {
 function initTrain() {
     showProgressBar();
     TRAIN.initLoco(function (loco) {
-        
 
-        for (let mesh of loco.rearLights) {                        
+
+        for (let mesh of loco.rearLights) {
             addRearLight(mesh);
         }
 
-        for (let mesh of loco.frontLights) {                        
+        for (let mesh of loco.frontLights) {
             addFrontLight(mesh);
         }
 
@@ -1617,7 +1625,7 @@ function initTrain() {
         }
 
         let clip = ANIM.createTrackAnimation(TRAIN.linTrackNumber, TRAIN.trackHalfLength * 2, TRAIN.trackCurveRadius, TRAIN.vehicleLength * train.length);
-        var action = mixer.clipAction(clip, loco);                
+        var action = mixer.clipAction(clip, loco);
         let duration =  0.005 * clip.path.getLength();
 
         action.setLoop(THREE.LoopRepeat).setDuration(duration);
@@ -1695,7 +1703,7 @@ function addWaggon(isLast) {
         }
 
         let clip = ANIM.createTrackAnimation(TRAIN.linTrackNumber, TRAIN.trackHalfLength * 2, TRAIN.trackCurveRadius, TRAIN.vehicleLength * train.length);
-        var action = mixer.clipAction(clip, waggon);                
+        var action = mixer.clipAction(clip, waggon);
         let duration =  0.005 * clip.path.getLength();
 
         action.setLoop(THREE.LoopRepeat).setDuration(duration);
@@ -1722,29 +1730,31 @@ function addCar() {
 
     showProgressBar();
     OBJS.initCar(carIdx, function (car) {
-        
-        for (let mesh of car.rLights) {                        
+
+        for (let mesh of car.rLights) {
             addRearLight(mesh);
         }
 
-        for (let mesh of car.fLights) {                        
+        for (let mesh of car.fLights) {
             addFrontLight(mesh);
         }
 
+        let roadCenterFactor = 0.32; // 0.28
+
         let ccw = (chrystalCount % 2 == 0); // every second counter-clockwise
-        let clip = ANIM.createRoadAnimation((WORLD.roadPlates * 2) + (0.28 * (ccw ? 1 : -1)), WORLD.plateSize, WORLD.plateSize / 2 * (1 + 0.28 * (ccw ? 1 : -1)) , ccw);
-        var action = mixer.clipAction(clip, car);            
-        
+        let clip = ANIM.createRoadAnimation((WORLD.roadPlates * 2) + (roadCenterFactor * (ccw ? 1 : -1)), WORLD.plateSize, WORLD.plateSize / 2 * (1 + roadCenterFactor * (ccw ? 1 : -1)) , ccw);
+        var action = mixer.clipAction(clip, car);
+
         action.duration =  0.0025 * clip.path.getLength();
         action.setLoop(THREE.LoopRepeat).setDuration(action.duration).play();
-        
+
         car.anims = [];
         car.anims.push(action);
 
         for (let wheel of car.rWheels) {
             action = mixer.clipAction(ANIM.createRotationAnimation(1, 'z'), wheel);
             action.duration = 0.75;
-            action.setLoop(THREE.LoopRepeat).setDuration(action.duration).play();            
+            action.setLoop(THREE.LoopRepeat).setDuration(action.duration).play();
             car.anims.push(action);
         }
         for (let wheel of car.lWheels) {
@@ -1767,7 +1777,7 @@ function addCar() {
 
         cars.push(car);
 
-        
+
     } , onProgress, onError);
 }
 
@@ -1799,7 +1809,7 @@ function updateControls(delta) {
 
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass    
+    velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
     direction.z = Number(moveActive[moveDir.forward]) - Number(moveActive[moveDir.backward]);
     direction.x = Number(moveActive[moveDir.right]) - Number(moveActive[moveDir.left]);
@@ -1848,10 +1858,10 @@ function updateControls(delta) {
         let testPos = new THREE.Vector3();
         controls.getObject().getWorldPosition(testPos);
         testPos.y -= playerCamHeight / 2;
-    
+
         // let collArr = Array.from(WORLD.collObjs); fix if problems with set
         for (let bbox of WORLD.collObjs) {
-            if (bbox.containsPoint(testPos)) {               
+            if (bbox.containsPoint(testPos)) {
                 testPos = new THREE.Vector3(testPos.x, testPos.y, oldPos.z);
                 if (bbox.containsPoint (testPos)) { // enable sliding to one side
                     pos.x = oldPos.x;
@@ -1866,11 +1876,11 @@ function updateControls(delta) {
     }
 
     if (playerGuy) {
-        if ( lastGuyPos.distanceTo(pos) > 0.1 && playerGuy.walk ) {            
+        if ( lastGuyPos.distanceTo(pos) > 0.1 && playerGuy.walk ) {
             if ( !playerGuy.isWalking ) playerGuy.walk();
             SFX.play(SFX.walkSound);
         } else {
-            if ( playerGuy.isWalking ) playerGuy.stop();                
+            if ( playerGuy.isWalking ) playerGuy.stop();
         }
 
         let euler = controls.getObject().rotation.clone();
@@ -1884,7 +1894,7 @@ function updateControls(delta) {
 
         playerGuy.setRotationFromEuler(euler, "YXZ");
 
-        playerGuy.translateZ(guyOffset); 
+        playerGuy.translateZ(guyOffset);
 
         playerGuy.oriY = euler.y - Math.PI/2;
 
@@ -1907,8 +1917,8 @@ function toggleNight() {
             dirLight.color.setHex(isNight ? 0x222244 : 0xffffff)
         }
 
-        if (hemiLight) {        
-            ANIM.blendProperty(mixer, hemiLight, 'intensity', (isNight ? 0.075 : 0.8), nightChangeDuration);    
+        if (hemiLight) {
+            ANIM.blendProperty(mixer, hemiLight, 'intensity', (isNight ? 0.075 : hemiLightIntensity), nightChangeDuration);
             // hemiLight.intensity = (isNight ? 0.075 : 0.8);// (isNight ? 0.15 : 0.8);
         }
 
@@ -2021,7 +2031,7 @@ function checkAndEndWeatherEffects(ttl = 0, all = false, removeStars = true) {
         for (let ps of particleSystems) {
             if (ps.type == PTFX.ptfxType.stars || ps.type == PTFX.ptfxType.sstars) {
                 if (!isNight) {
-                    ps.removeSelf(); 
+                    ps.removeSelf();
                 } else {
                     ps.update(PTFX.starsTtl);
                 }
@@ -2039,7 +2049,7 @@ function toggleWeatherEffects() {
 
     checkAndEndWeatherEffects(3, true, precip || (!isNight));
 
-    let wIconPath = './gfx/textures/weather/w_' + (isNight ? 'night' : 'day');
+    let wIconPath = '../../gfx/textures/weather/w_' + (isNight ? 'night' : 'day');
 
     if (precip) {
 
@@ -2048,9 +2058,9 @@ function toggleWeatherEffects() {
         } else if (intensity > 1.2) {
             wIconPath += '_heavy';
         }
-    
-        if (WORLD.currentSeason != WORLD.seasons.summer && 
-            ((WORLD.currentSeason == WORLD.seasons.winter && Math.random() < 0.85) 
+
+        if (WORLD.currentSeason != WORLD.seasons.summer &&
+            ((WORLD.currentSeason == WORLD.seasons.winter && Math.random() < 0.85)
                 || (intensity < 1 && Math.random() < 0.2))) {
             //snow
             //console.log("Snow " + intensity);
@@ -2063,13 +2073,13 @@ function toggleWeatherEffects() {
             //console.log("Rain " + intensity);
             particleEffects.rain = PTFX.letItRain(scene, intensity, PTFX.generateWind(500));
             particleSystems.push(particleEffects.rain);
-            
+
             SFX.setVolume(SFX.rainSound, intensity * 0.75, 5);
 
-            wIconPath += '_rain';            
+            wIconPath += '_rain';
         }
 
-    } else if (isNight) {        
+    } else if (isNight) {
         // stars
         //console.log("Stars " + intensity);
         particleEffects.stars = PTFX.starsAbove(scene, intensity);
@@ -2115,7 +2125,7 @@ function updateFog() {
         } else if (season == WORLD.seasons.autumn) {
             newDensity =  precip ? 0.0003 : 0.00014;
         } else {
-            newDensity = precip ? 0.00025 : 0.00012;        
+            newDensity = precip ? 0.00025 : 0.00012;
         }
 
         ANIM.blendProperty(mixer, scene.fog, "density", newDensity, 3);
@@ -2168,10 +2178,10 @@ function closeFullscreen() {
   function toggleFullScreen() {
     var doc = window.document;
     var docEl = doc.body;
-  
+
     var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
     var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
-  
+
     if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
       requestFullScreen.call(docEl);
     }
@@ -2179,4 +2189,3 @@ function closeFullscreen() {
       cancelFullScreen.call(doc);
     }
   }
-  

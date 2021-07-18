@@ -18,7 +18,8 @@
  *
  */
 
-var ldrawPath = './ldraw';
+var localLdrawPath = './ldraw';
+var ldrawPath = '../ld-framework/ldraw';
 var ldrawUrl = 'https://www.ldraw.org/library/official/';
 var materialsFileName = 'LDConfig.ldr';
 
@@ -43,15 +44,15 @@ var tryDownload = function(prefix, fileName) {
 	var fullPath = path.join(ldrawPath, prefix, fileName);
 
 	var res = request('GET', url);
-	
+
 	if (res.statusCode == 200) {
 		if (!fs.existsSync(path.dirname(fullPath))) {
 			fs.mkdirSync(path.dirname(fullPath) , { recursive: true });
 		}
-		fs.writeFileSync(fullPath, res.getBody());	
+		fs.writeFileSync(fullPath, res.getBody());
 		console.log('Downloaded ' + fileName + ' to ' + fullPath);
 	}
-	
+
 	console.log('Statuscode: ' + res.statusCode);
 
 	return (res.statusCode == 200);
@@ -126,7 +127,7 @@ var processFile = function (fileName) {
 	packedContent += "\n";
 
 	// Save output file
-	var outPath = path.join(ldrawPath, '/models', path.basename(fileName)) + "_Packed.mpd";
+	var outPath = path.join(localLdrawPath, '/models/packed', path.basename(fileName)) + "_Packed.mpd";
 	console.log( 'Writing "' + outPath + '"...' );
 	fs.writeFileSync( outPath, packedContent );
 
@@ -172,6 +173,11 @@ var processFile = function (fileName) {
 				break;
 
 			} catch ( e ) {
+
+				if (fileName.endsWith('.ldr')) {
+					console.log( 'Assuming already embedded file... please check output file.' );
+					return;
+				}
 
 				if (attempt === 2 && tryDownload("", fileName)) {
 					objectContent = fs.readFileSync( absoluteObjectPath, { encoding: "utf8" } );
@@ -368,7 +374,7 @@ var processFile = function (fileName) {
 	}
 }
 
-if (!fs.existsSync(path.join(ldrawPath, "models"))) fs.mkdirSync(path.join(ldrawPath, "models") , { recursive: true });
+if (!fs.existsSync(path.join(localLdrawPath, "models"))) fs.mkdirSync(path.join(localLdrawPath, "models") , { recursive: true });
 
 for (var singleFileName of files) {
 	processFile(path.join(sourcePath, singleFileName));

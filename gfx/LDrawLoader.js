@@ -3,7 +3,7 @@
  * @author yomboprime / https://github.com/yomboprime/
  * @author gkjohnson / https://github.com/gkjohnson/
  *
- * 
+ *
  */
 
 //added a small fix for loading steps correctly (line 1408) /goeroeg - using this until fix will be merged
@@ -596,7 +596,7 @@ var LDrawLoader = ( function () {
 			fileLoader.load( url, function ( text ) {
 				/*fileLoader.load('LDConfig.ldr' , function ( config ) {
 					scope.processObject( config + text, onLoad, null, url );
-				}, onProgress, onError); 
+				}, onProgress, onError);
 				*/
 				scope.processObject( text, onLoad, null, url );
 			}, onProgress, onError );
@@ -1334,7 +1334,6 @@ var LDrawLoader = ( function () {
 
 					// Line type 1: Sub-object file
 					case '1':
-
 						var material = parseColourCode( lp );
 
 						var posX = parseFloat( lp.getToken() );
@@ -1393,6 +1392,12 @@ var LDrawLoader = ( function () {
 						startingConstructionStep = false;
 
 						bfcInverted = false;
+
+						if (!currentParseScope.type) { // workaround for LEOCAD Submodels
+							currentParseScope.type = 'Embedded submodel';
+							currentParseScope.groupObject = new THREE.Group();
+							currentParseScope.groupObject.userData.startingConstructionStep = currentParseScope.startingConstructionStep;
+						}
 
 						break;
 
@@ -1704,19 +1709,18 @@ var LDrawLoader = ( function () {
 
 
 					const objGroup = parseScope.groupObject;
-					if ( parseScope.triangles.length > 0 ) {
-
+					if ( parseScope.triangles && parseScope.triangles.length > 0 ) {
 						objGroup.add( createObject( parseScope.triangles, 3 ) );
 
 					}
 
-					if ( parseScope.lineSegments.length > 0 ) {
+					if ( parseScope.lineSegments && parseScope.lineSegments.length > 0 ) {
 
 						objGroup.add( createObject( parseScope.lineSegments, 2 ) );
 
 					}
 
-					if ( parseScope.conditionalSegments.length > 0 ) {
+					if ( parseScope.conditionalSegments && parseScope.conditionalSegments.length > 0 ) {
 
 						objGroup.add( createObject( parseScope.conditionalSegments, 2, true ) );
 

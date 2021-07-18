@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>LD-Flowers</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, height=device-height, user-scalable=0, minimum-scale=1, maximum-scale=1">
+
+		<style>
+			/* todo: replace font with local later */
+			@import url('https://fonts.googleapis.com/css2?family=Indie+Flower');
+
+			@import url('../../../ld-framework/ldstyle.css');
+			@import url('../../../ld-framework/tabstyle.css');
+
+			#playerInfo {
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				width: 50%;
+				text-align: left;
+				z-index: 100;
+				display:block;
+				text-align: left;
+				font-size: 24px;
+			}
+
+			body {
+				background-image: radial-gradient(circle,  rgb(84, 224, 37) , rgb(19, 146, 19));
+				/*background-image: radial-gradient(circle,  rgb(32, 96, 32) , rgb(0, 64, 0));*/
+
+			}
+
+			#startup { /* prevent flickering at startup */
+				display: block;
+				background-color: black;
+			}
+
+			#instructions {
+				font-family: 'Indie Flower', cursive;
+			}
+
+			#main {
+				width: 100%;
+				height: 100%;
+				display: -webkit-box;
+				display: -moz-box;
+				display: box;
+
+				-webkit-box-orient: vertical;
+				-moz-box-orient: vertical;
+				box-orient: vertical;
+
+				-webkit-box-pack: center;
+				-moz-box-pack: center;
+				box-pack: center;
+
+				-webkit-box-align: center;
+				-moz-box-align: center;
+				box-align: center;
+			}
+
+			#topLeft {
+				top:0px;
+				left: 0px;
+			}
+
+			#bottomRight {
+				right: 0px;
+				bottom: 0px;
+			}
+/*
+			#table {
+				top:0px;
+				left: 0px;
+			}
+*/
+		</style>
+	</head>
+
+	<body>
+		<script src="../../../ld-framework/utils.js"></script>
+		<div id="settings"><!--
+			<div id="settingsTab" class="tab">
+				<button class="tablinks" onclick="openTab(event, 'Graphics')">Graphics</button>
+				<button class="tablinks" onclick="openTab(event, 'Audio')">Audio</button>
+				<button class="tablinks" onclick="openTab(event, 'Control')">Control</button>
+				<button class="tablinks" onclick="openTab(event, 'Game')">Game</button>
+			</div>
+			<div id="Graphics" class="tabcontent">
+				<p>Graphics settings...</p>
+			</div>
+			<div id="Audio" class="tabcontent">
+				<p>Audio settings...</p>
+			</div>
+			<div id="Control" class="tabcontent">
+				<p>Control settings...</p>
+			</div>
+			<div id="Game" class="tabcontent">
+				<p>Game settings...</p>
+			</div>-->
+		</div>
+		<div id="playerInfo">FPS:</div>
+		<div id="touchPause">&#x2261;</div>
+		<div id="startup" class="overlay"></div>
+
+		<div id="blocker" class="overlay">
+			<div id="instructions">
+				<span style="font-size: 5vh; line-height: 7vh; color: lime">
+					LD-Flowers
+					<br/>
+					a 'jewels' type game</span>
+				<br/>
+				<span style="font-size: 2vh; color: lime; font-family: monospace"><i>v.&nbsp;0.1.0</i></span>
+				<br/><br/>
+				<span id="clickSpan">&#9658;&nbsp;Click to play</span>
+				<br/><br/>
+				Toggle fullscreen:&nbsp;<kbd>F11</kbd>&nbsp;<small><i>(in most browsers)</i></small>
+				<br/><br/>
+				<a href="https://goeroeg.github.io/ld-learn/" target="_blank">&#9432;&nbsp;More info and licenses</a>
+			</div>
+			<div id="guiContainer"></div>
+		</div>
+		<div id="main">
+			<div id="topLeft"></div>
+			<div id="table"></div>
+			<div id="bottomRight" class="infoPanel"></div>
+		</div>
+		<script type="module" src="ld-flowers.js"></script>
+    </body>
+</html>

@@ -18,9 +18,9 @@ class GamepadControls extends THREE.EventDispatcher {
 		super();
 
 		this.controls = controls;
-		
+
 		this.threshold = .15; // .05
-	
+
 		this.buttonStates = [];
 
 		this.init();
@@ -35,12 +35,12 @@ class GamepadControls extends THREE.EventDispatcher {
 		if (!gamepadSupportAvailable) {
 			console.log( 'Gamepads NOT SUPPORTED' );
 		} else {
-			if ('ongamepadconnected' in window) {
-				window.addEventListener('gamepadconnected', onGamepadConnect.bind( this ), false);
-				window.addEventListener('gamepaddisconnected', gamepadSupport.onGamepadDisconnect.bind( this ), false);
-			} else {
+			/*if ('ongamepadconnected' in window) {
+					window.addEventListener('gamepadconnected', onGamepadConnect.bind( this ), false);
+					window.addEventListener('gamepaddisconnected', gamepadSupport.onGamepadDisconnect.bind( this ), false);
+			} else {*/
 				this.startPolling();
-			}
+			//}
 		}
 	}
 
@@ -90,14 +90,14 @@ class GamepadControls extends THREE.EventDispatcher {
 		if( rawGamepads && rawGamepads[ 0 ] ) {
 
 			var g = rawGamepads[ 0 ];
-			
-			let ax0 = this.filter( g.axes[ 0 ] ) * 6 * this.moveSensitivity;  
+
+			let ax0 = this.filter( g.axes[ 0 ] ) * 6 * this.moveSensitivity;
 			let ax1 = this.filter( g.axes[ 1 ] ) * -6 * this.moveSensitivity;
 
 			let ax2 = this.filter( g.axes[ 2 ] ) * 0.025 * this.lookSensitivity;
 			let ax3 = this.filter( g.axes[ 3 ] ) * 0.025 * this.lookSensitivity;
-			
-			for (let idx=0; idx < g.buttons.length; idx++) {				
+
+			for (let idx=0; idx < g.buttons.length; idx++) {
 				let buttonValue = g.buttons[idx].value > 0 ? 1 : 0;
 				if (buttonValue !== this.buttonStates[idx] ) {
 					this.buttonStates[idx] = buttonValue;

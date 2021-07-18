@@ -36,12 +36,12 @@ export function createScaleAnimation(period, axis) {
     return new THREE.AnimationClip(null, period, [track]);
 }
 
-export function createGrowAnimation(period) {
-    var times = [0, period], values = [0, 1];
-    var xTrack = new THREE.NumberKeyframeTrack('.scale[x]', times, values);
-    var yTrack = new THREE.NumberKeyframeTrack('.scale[y]', times, values);
-    var zTrack = new THREE.NumberKeyframeTrack('.scale[z]', times, values);
-    return new THREE.AnimationClip( 'grow', period, [ xTrack, yTrack, zTrack ] );
+export function createGrowAnimation(period, start = new THREE.Vector3(0, 0, 0), target = new THREE.Vector3(1, 1, 1)) {
+    var times = [0, period], values = [[start.x, target.x], [start.y, target.y], [start.z, target.z]];
+    var xTrack = new THREE.NumberKeyframeTrack('.scale[x]', times, values[0]);
+    var yTrack = new THREE.NumberKeyframeTrack('.scale[y]', times, values[1]);
+    var zTrack = new THREE.NumberKeyframeTrack('.scale[z]', times, values[2]);
+    return new THREE.AnimationClip( 'scale', period, [ xTrack, yTrack, zTrack ] );
 }
 
 export function createColorAnimation(period, startColor, endColor) {
@@ -70,6 +70,38 @@ export function createPathAnimation() {
 
 }
 
+export function createCurveAnimation(origin, target, aux) {
+    let path = new THREE.Path();
+    path.moveTo(origin.x, origin.y);
+    path.quadraticCurveTo(aux.x, aux.y, target.x, target.y);
+
+    let times = []
+    let xvalues = [];
+    let yvalues = [];
+
+    let numSeg = 3;
+
+    for (let t = 0; t <= numSeg; t++) {
+        times.push(t);
+        let time = (t / numSeg);
+        let point = path.getPointAt(time);
+
+        xvalues.push(point.x);
+        yvalues.push(point.y);
+    }
+
+    let xtrack = new THREE.NumberKeyframeTrack('.position[x]', times, xvalues, THREE.InterpolateSmooth);
+    let ytrack = new THREE.NumberKeyframeTrack('.position[y]', times, yvalues, THREE.InterpolateSmooth);
+
+    let vtrack = new THREE.BooleanKeyframeTrack('.visible', [0, 1], [true, true]);
+
+    let clip = new THREE.AnimationClip('road', numSeg, [xtrack, ytrack, vtrack]);
+
+    clip.path = path;
+
+    return clip;
+}
+
 export function createRoundedRectPath(length, width, radius) {
     let x = -length / 2;
     let z = -width / 2;
@@ -82,7 +114,7 @@ export function createRoundedRectPath(length, width, radius) {
     path.absarc( -x - radius, -z - radius, radius, Math.PI/2, 0, true );
     path.absarc( -x - radius, z + radius, radius, 0, -Math.PI/2, true );
     path.absarc( x + radius, z + radius, radius, -Math.PI/2, -Math.PI, true );
-    
+
     //path.closePath();
 
     return path;
@@ -91,13 +123,13 @@ export function createRoundedRectPath(length, width, radius) {
 export function createRoadAnimation(numSegments, segmentSize, radius, ccw) {
     let len = numSegments * segmentSize;
     let path = createRoundedRectPath(len, len, radius);
-    // 
+    //
     let times = []
     let xvalues = [];
     let zvalues = [];
     let rot = [];
     let numSeg = (numSegments - 1) * 32 + (ccw ? numSegments + 1: 0); // for ccw some more points needed for fluent anim
-    for (let t = 0; t <= numSeg; t++) {        
+    for (let t = 0; t <= numSeg; t++) {
         times.push(t);
         let time = (ccw ? numSeg - t : t) / numSeg;
         let point = path.getPointAt(time);
@@ -144,13 +176,13 @@ export function createTrackAnimation (numLinTracks, linTrackLength, radius, offs
     let numSeg = numLinTracks * 2 + 32 + 1;
     let prevAngle = -path.getTangentAt(0).angle();
 
-    for (let t = 0; t <= numSeg; t++) {               
+    for (let t = 0; t <= numSeg; t++) {
         let time = t / numSeg - timeOffset;
         if (time < 0) time += 1;
         if (time > 1) time -= 1;
 
         let point = path.getPointAt(time);
-        
+
         let angle = -path.getTangentAt(time).angle();
 
         if (Math.abs(angle - prevAngle) > Math.PI) {
@@ -194,7 +226,7 @@ export function createTrackAnimation (numLinTracks, linTrackLength, radius, offs
     console.log(xvalues);
     console.log(zvalues);
     */
-   
+
     let xtrack = new THREE.NumberKeyframeTrack('.position[x]', times, xvalues);
     let ztrack = new THREE.NumberKeyframeTrack('.position[z]', times, zvalues);
     let rottrack = new THREE.NumberKeyframeTrack('.rotation[y]', times, rot);
@@ -216,11 +248,26 @@ export function blendProperty(mixer, obj, propName, targetValue, duration) {
     action.setLoop(THREE.LoopOnce).setDuration(duration).play();
 }
 
-export function blendColor(mixer, obj, targetColorHex, duration) { 
+export function blendColor(mixer, obj, targetColorHex, duration) {
     let currColor = obj.color;
 
     let action = mixer.clipAction(createColorAnimation(duration, currColor, new THREE.Color(targetColorHex)), obj);
     action.clampWhenFinished = true;
     action.setLoop(THREE.LoopOnce).play();
     obj.color.setHex(targetColorHex);
+}
+
+export function blendScale(mixer, obj, targetValue, duration) {
+
+    let currScale = new THREE.Vector3(obj.scale.x, obj.scale.y, obj.scale.z);
+    let targetScale = new THREE.Vector3(targetValue, targetValue, targetValue);
+
+    mixer.uncacheRoot(obj);
+    obj.scale.x = currScale.x;
+    obj.scale.y = currScale.y;
+    obj.scale.z = currScale.z;
+
+    let action = mixer.clipAction(createGrowAnimation(1, currScale, targetScale), obj);
+    action.clampWhenFinished = true;
+    action.setLoop(THREE.LoopOnce).setDuration(duration).play();
 }
