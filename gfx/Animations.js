@@ -15,10 +15,10 @@ export function createRotationCcwAnimation(period, axis) {
     return new THREE.AnimationClip(null, period, [track]);
 }
 
-export function createBlendAnimation(startValue, newValue, trackName) {
-    var times = [0, 1], values = [startValue, newValue];
-    var track = new THREE.NumberKeyframeTrack(trackName, times, values);
-    return new THREE.AnimationClip(null, 1, [track]);
+export function createBlendAnimation(startValue, newValue, trackName, duration = 1) {
+    var times = [0, duration], values = [startValue, newValue];
+    var track = new THREE.NumberKeyframeTrack(trackName, times, values, THREE.InterpolateSmooth);
+    return new THREE.AnimationClip(null, duration, [track]);
 }
 
 export function createFallAnimation(period, startY, targetY) {

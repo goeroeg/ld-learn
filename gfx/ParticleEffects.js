@@ -10,7 +10,8 @@ export const ptfxType = {
     stars: 3,
     sstars: 4,
     fireflies: 5,
-    parcel: 6
+    parcel: 6,
+    fireworks: 7
 }
 
 export const starsTtl = 10;
@@ -158,7 +159,8 @@ export function starsAbove(scene, intensity = 1.0) {
             }),
             speed: 1,
             perspective: true,
-            scale: 500
+            scale: 500,
+            depthWrite: false
         }
     });
 
@@ -293,5 +295,47 @@ export function explode(parent, cellSize, viewSize, time, cont) {
     });
 
     system.type = ptfxType.sstars;
+    return system;
+}
+
+export function firework(parent, startColor, size, pos) {
+    let endColor = new THREE.Color().copy(startColor);
+    endColor.r *= 0.3;
+    endColor.g *= 0.1;
+    endColor.b *= 0.1;
+
+    let system = new Partykals.ParticlesSystem({
+        container: parent,
+        particles: {
+            globalSize: 15,
+            //texture: tex,
+            //alpha: 1,
+            startColor: startColor,
+            endColor: endColor,
+            startAlpha: 1,
+            endAlpha: 0,
+            //startAlphaChangeAt : 0,
+            blending: 'blend',
+            velocity: new Partykals.Randomizers.SphereRandomizer(1 * size, 0.8 * size),
+            velocityBonus: new THREE.Vector3(0, 0, 0),
+            gravity: -10,
+            ttl: 0.5,
+            ttlExtra : 3,
+            offset: pos
+        },
+        system: {
+            ttl: 0.1,
+            particlesCount: 2000,
+            emitters: new Partykals.Emitter({
+                onSpawnBurst: 2000
+            }),
+            speed: 1,
+            perspective: true,
+            scale: 100,
+            depthWrite: false
+        }
+    });
+
+    system.type = ptfxType.fireworks;
     return system;
 }

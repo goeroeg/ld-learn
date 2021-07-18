@@ -37,12 +37,15 @@ export function play(sound, restart) {
     }
 }
 
-export function addItemSound(item, soundBuffer, loop, volume = 0.7) {
+export function addItemSound(item, soundBuffer, loop, volume = 0.7, rof = 1.1, autoplay = true) {
     let sound = new THREE.PositionalAudio(listener);
 
     item.add(sound);
-    sound.setBuffer(soundBuffer.buffer).setRefDistance(50).setDistanceModel('exponential').setRolloffFactor(1.1).setLoop(loop).setVolume(volume);
-    play(sound);
+    sound.setBuffer(soundBuffer.buffer).setRefDistance(50).setDistanceModel('exponential').setRolloffFactor(rof).setLoop(loop).setVolume(volume);
+
+    if (autoplay) {
+        play(sound);
+    }
 
     if (loop) {
         itemSounds.push(sound);
