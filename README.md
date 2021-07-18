@@ -3,10 +3,10 @@
 This is a collection of various LDraw™-Library and three.js based (mini-)games:
 
 - [LD-Learn](#ld-learn) [-> Try](https://goeroeg.github.io/ld-learn/apps/learn/ld-learn.html)
-- LD-Office [-> Try](https://goeroeg.github.io/ld-learn/apps/office/ld-office.html)
+- LD-Office [-> Try](https://goeroeg.github.io/ld-learn/apps/office/hoffice.html)
 - LD-Flowers [-> Try](https://goeroeg.github.io/ld-learn/apps/flowers/ld-flowers.html)
 - LD-Robot [-> Try](https://goeroeg.github.io/ld-learn/apps/robot/ld-robot.html)
-- (LD-Nativity [-> Try](https://goeroeg.github.io/ld-nativity/ld-nativity.html))
+- (LD-Nativity [-> Try](https://goeroeg.github.io/ld-nativity/nscene.html))
 - (VFireworks [-> Try](https://goeroeg.github.io/vfireworks/fireworks.html))
 
 ---
