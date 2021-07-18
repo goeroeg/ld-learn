@@ -1,12 +1,12 @@
-import '../../../ld-framework/web_modules/three/build/three.min.js';
+import '../../web_modules/three/build/three.min.js';
 
 // import { GUI } from './node_modules/three/examples/jsm/libs/dat.gui.module.js';
 //import { GUI } from '../ld-framework/web_modules/three/examples/jsm/libs/dat.gui.module.js';
-import { GUI } from '../../../ld-framework/web_modules/dat.gui/build/dat.gui.module.js';
+import { GUI } from '../../web_modules/dat.gui/build/dat.gui.module.js';
 // import { MapControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
 
 import * as ANIM from '../../gfx/Animations.js';
-import * as OBJ from '../../../ld-framework/gfx/Objects.js'
+import * as OBJ from '../../gfx/Objects.js'
 import * as SFX from '../../audio/SoundFX.js';
 import * as PTFX from '../../gfx/ParticleEffects.js';
 
