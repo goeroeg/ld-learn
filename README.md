@@ -1,4 +1,23 @@
-# LD-Learn
+# LD Games
+
+This is a collection of various LDraw™-Library and three.js based (mini-)games:
+
+- [LD-Learn](#ld-learn) [-> Try](https://goeroeg.github.io/ld-learn/apps/learn/ld-learn.html)
+- LD-Office [-> Try](https://goeroeg.github.io/ld-learn/apps/office/ld-office.html)
+- LD-Flowers [-> Try](https://goeroeg.github.io/ld-learn/apps/flowers/ld-flowers.html)
+- LD-Robot [-> Try](https://goeroeg.github.io/ld-learn/apps/robot/ld-robot.html)
+- (LD-Nativity [-> Try](https://goeroeg.github.io/ld-nativity/ld-nativity.html))
+- (VFireworks [-> Try](https://goeroeg.github.io/vfireworks/fireworks.html))
+
+---
+- Further infos:
+  - [Starting for developers](#starting-for-developers)
+  - [Licenses and attributions](#licenses-and-attributions)
+  - [Privacy policy](#privacy-policy)
+
+---
+
+## LD-Learn
 
 An Edu-shooter using three.js and the LDraw™-Library to exercise some maths.
 
@@ -6,11 +25,11 @@ An Edu-shooter using three.js and the LDraw™-Library to exercise some maths.
 
 ---
 
-## Try it online
+### Try it online
 
 [You can try the game online here.](https://goeroeg.github.io/ld-learn/apps/learn/ld-learn.html)
 
-## How to play
+### How to play
 
 Solve the exercise and collect the chrystals. After each collected chrystal a new object is added to the world or something else changes - find out what.
 
@@ -22,7 +41,7 @@ You can also save and load profiles for different players.
 
 ---
 
-## System requirements
+### System requirements
 
 The game should run on all modern PCs or laptops, however a dedicated graphics card is recommended.
 
@@ -32,7 +51,7 @@ Online version tested with Chromium, Firefox and Edge, but you can try others wi
 
 Gamepad support tested with Chrome(-ium), the current versions of Firefox seem a bit buggy there.
 
-## Performance tuning
+### Performance tuning
 
 If you experience low framerates and/or lags you can try the following:
 
@@ -54,7 +73,7 @@ run ```npm install```
 >
 > I recommend unpacking the contents of the [complete LDraw™ library](http://www.ldraw.org/library/updates/complete.zip) into the ```ldraw``` folder first
 
-then run ```npm run serve``` for a browser version - start a browser at ```http://localhost:8080/ld-learn.html```
+then run ```npm run serve``` for a browser version - start a browser at ```http://localhost:8080/```, the apps are in the "apps/[appname]" folder
 
 or run ```npm run start``` or ```electron .``` for a standalone application using electron.
 
