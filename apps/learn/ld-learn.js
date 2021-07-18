@@ -81,6 +81,18 @@ var progressBarDiv;
 
 var isTouch = ('ontouchstart' in window);
 
+var soundBuffers;
+var ambientSound;
+var rainSound;
+// export var windSound;
+var sphereSound;
+var walkSound;
+var tickSound;
+var collectSound;
+var newItemSound;
+var okSounds = [];
+var wrongSounds = [];
+
 var resolutions = [{ x: 0, y: 0 }, { x: 320, y: 240 }, {x: 640, y: 480 }, { x: 1024, y: 768 }, { x: 1280, y: 800 }, { x: 1920, y: 1080 }]
 var resolutionNames  = { 'Auto': 0, '320x240': 1, '640x480': 2, '1024x768': 3, "1280x800": 4, "1920x1080": 5 };
 var qualityNames = { High: 1, Low : 2};
@@ -156,7 +168,7 @@ init();
 function init() {
     initScene();
     initControls();
-    SFX.init(camera);
+    initSound();
     initGUI();
 
     createExercise();
@@ -465,7 +477,7 @@ function pauseGame() {
     gameActive = false;
     updateBlocker(false);
 
-    SFX.pause();
+    pauseSFX();
 
     animClock.stop();
     walkClock.stop();
@@ -485,7 +497,7 @@ function startGame() {
     walkClock.start();
     gameActive = true;
 
-    SFX.resume((chrystalCount >= chrActions.plantsMin), (chrystalCount >= chrActions.musicSphere));
+    resumeSFX((chrystalCount >= chrActions.plantsMin), (chrystalCount >= chrActions.musicSphere));
 }
 
 function updateBlocker(hide) {
@@ -497,6 +509,123 @@ function updateBlocker(hide) {
         instructions.style.display = '';
     }
 }
+
+function initSound() {
+
+    soundBuffers = {
+        ambientNight: { buffer: null, filename: 'ambient_night.ogg' },
+        crows: { buffer: null, filename: 'crows.ogg' },
+        magpie: { buffer: null, filename: 'magpie.ogg' },
+        silence: { buffer: null, filename: 'silence.ogg' },
+        rain: { buffer: null, filename: 'rain.ogg' },
+        // wind: { buffer: null, filename: 'wind.ogg' },
+        walk: { buffer: null, filename: 'walk.ogg' },
+        collect: { buffer: null, filename: 'collect.ogg' },
+        newItem: { buffer: null, filename: 'dream.ogg' },
+        tick: { buffer: null, filename: 'tick.ogg' },
+        motor: { buffer: null, filename: 'motor.ogg' } ,
+        train: { buffer: null, filename: 'train_move.ogg' },
+        trainEngine: { buffer: null, filename: 'train_engine.ogg' },
+        trainHorn: { buffer: null, filename: 'train_horn.ogg' },
+        horse: { buffer: null, filename: 'horse.ogg' },
+        cow: { buffer: null, filename: 'cow.ogg' },
+        sphere: { buffer: null, filename: 'sphere-music.ogg' }
+    }
+
+    let callbacks = new Map();
+
+    callbacks.set(soundBuffers.ambientDay, function(buffer, listener) {
+        ambientSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(true).setVolume(0.2);
+    });
+
+    callbacks.set(soundBuffers.walk, function(buffer, listener) {
+        walkSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(false).setVolume(0.2);
+    });
+
+    callbacks.set(soundBuffers.collect, function(buffer, listener) {
+        collectSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(false).setVolume(0.5);
+    });
+
+    callbacks.set(soundBuffers.newItem, function(buffer, listener) {
+        newItemSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(false).setVolume(0.3);
+    });
+
+    callbacks.set(soundBuffers.tick, function(buffer, listener) {
+        tickSound = new THREE.PositionalAudio(listener).setBuffer(buffer).setRefDistance(100).setVolume(0.8);
+    });
+
+    callbacks.set(soundBuffers.sphere, function(buffer, listener) {
+        sphereSound = new THREE.PositionalAudio(listener).setBuffer(buffer).setLoop(true).setRefDistance(150).setVolume(0.8);
+    });
+
+    /*
+    callbacks.set(soundBuffers.wind, function(buffer) {
+        windSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(true).setVolume(0);
+    });
+    */
+
+    callbacks.set(soundBuffers.rain, function(buffer, listener) {
+        rainSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(true).setVolume(0);
+    });
+
+
+    // ambientDay: { buffer: null, filename: 'ambient_day.ogg' },
+
+    for (let idx = 1; idx <= 4; idx++)
+    {
+        let sb = { buffer: null, filename: 'ok_'+ idx +'.ogg' };
+        soundBuffers["oksound" + idx] = sb;
+        callbacks.set(sb, function(buffer, listener) {
+            okSounds.push(new THREE.PositionalAudio(listener).setBuffer(buffer).setRefDistance(100).setVolume(1));
+        });
+    }
+
+    for (let idx = 1; idx <= 4; idx++)
+    {
+        let sb = { buffer: null, filename: 'wrong_'+ idx +'.ogg' };
+        soundBuffers["wrongsound" + idx] = sb;
+        callbacks.set(sb, function(buffer, listener) {
+            wrongSounds.push(new THREE.PositionalAudio(listener).setBuffer(buffer).setRefDistance(100).setVolume(1));
+        });
+    }
+
+    SFX.init(soundBuffers, callbacks, camera);
+}
+
+function pauseSFX() {
+    if (ambientSound && ambientSound.isPlaying) {
+        ambientSound.pause();
+    }
+    if (sphereSound && sphereSound.isPlaying) {
+        sphereSound.pause();
+    }
+    if (rainSound && rainSound.isPlaying) {
+        rainSound.pause();
+    }
+    /*
+    if (windSound && windSound.isPlaying) {
+        windSound.pause();
+    }
+    */
+
+    SFX.pause();
+}
+
+export function resumeSFX(ambient, sphere) {
+    if (ambient) {
+        SFX.play(ambientSound);
+        SFX.play(rainSound);
+        // play(windSound);
+    }
+
+    if (sphere) {
+        SFX.play(sphereSound);
+    }
+
+    SFX.resume();
+}
+
+
 
 function initGUI() {
 
@@ -928,7 +1057,7 @@ function createSky() {
     // lights
     addSun();
 
-    SFX.play(SFX.newItemSound);
+    SFX.play(newItemSound);
     walkClock.start();
 }
 
@@ -970,8 +1099,8 @@ function addMusicSphere() {
 
         nightLights.push(light);
 
-        sphere.add(SFX.sphereSound);
-        SFX.play(SFX.sphereSound);
+        sphere.add(sphereSound);
+        SFX.play(sphereSound);
 
         addParcelEffect(sphere.position.x, sphere.position.z, 400, 30);
 
@@ -1073,7 +1202,7 @@ function createExercise() {
 
     exerciseGroup = new THREE.Group();
     let xtext = createText(x.description, function(mesh){
-        if (SFX.tickSound)  mesh.add(SFX.tickSound);
+        if (tickSound)  mesh.add(tickSound);
     });
     xtext.position.y = 120;
 
@@ -1094,14 +1223,14 @@ function createExercise() {
 
         if (rtext.isResult) {
             let okIdx = Math.floor(Math.random() * 4);
-            if (SFX.okSounds.length > okIdx) {
-                rtext.add(SFX.okSounds[okIdx]);
-                rtext.sound = SFX.okSounds[okIdx];
+            if (okSounds.length > okIdx) {
+                rtext.add(okSounds[okIdx]);
+                rtext.sound = okSounds[okIdx];
             }
         } else {
-            if (SFX.wrongSounds.length > 0) {
-                rtext.add(SFX.wrongSounds[wrongIdx % SFX.wrongSounds.length]);
-                rtext.sound = SFX.wrongSounds[wrongIdx % SFX.wrongSounds.length];
+            if (wrongSounds.length > 0) {
+                rtext.add(wrongSounds[wrongIdx % wrongSounds.length]);
+                rtext.sound = wrongSounds[wrongIdx % wrongSounds.length];
                 wrongIdx++;
             }
         }
@@ -1418,7 +1547,7 @@ function checkChrystals() {
         parcel.occupied = false;
         WORLD.freeParcels.push[parcel];
 
-        SFX.play(SFX.collectSound, true);
+        SFX.play(collectSound, true);
 
         chrystalCount++;
 
@@ -1448,7 +1577,7 @@ function performChrystalAction() {
     if (chrystalCount >= chrActions.plantsMin) {
         if (chrystalCount == chrActions.plantsMin) {
             updateAmbientSound();
-            SFX.play(SFX.ambientSound);
+            SFX.play(ambientSound);
         }
 
         if ( chrystalCount <= chrActions.plantsMax) {
@@ -1465,7 +1594,7 @@ function performChrystalAction() {
         WORLD.initRoads(function (newModel) {
             hideProgressBar();
             // play transition sound
-            SFX.play(SFX.newItemSound);
+            SFX.play(newItemSound);
         }, onProgress, onError, addParcelEffect);
     }
 
@@ -1571,7 +1700,7 @@ function addAnimal() {
                 var action = mixer.clipAction(ANIM.createHeadAnimation( 1, Math.PI/4, 'x'), cow.head);
                 action.setLoop(THREE.LoopRepeat).setDuration(5).play();
 
-                SFX.addItemSound(cow, SFX.soundBuffers.cow, true);
+                SFX.addItemSound(cow, soundBuffers.cow, true);
 
                 WORLD.addCollBox(cow);
 
@@ -1596,7 +1725,7 @@ function addAnimal() {
                 action = mixer.clipAction(ANIM.createHeadAnimation( 1, -Math.PI * 0.4, 'x'), horse.body);
                 action.setLoop(THREE.LoopOnce).setDuration(8).play();
 
-                SFX.addItemSound(horse, SFX.soundBuffers.horse, true);
+                SFX.addItemSound(horse, soundBuffers.horse, true);
 
                 WORLD.addCollBox(horse);
             }, onProgress, onError);
@@ -1642,9 +1771,9 @@ function initTrain() {
 
         hideProgressBar();
 
-        SFX.addItemSound(loco, SFX.soundBuffers.trainEngine, true);
-        SFX.addItemSound(loco, SFX.soundBuffers.train, true);
-        SFX.addItemSound(loco, SFX.soundBuffers.trainHorn, true).setVolume( 10 );
+        SFX.addItemSound(loco, soundBuffers.trainEngine, true);
+        SFX.addItemSound(loco, soundBuffers.train, true);
+        SFX.addItemSound(loco, soundBuffers.trainHorn, true).setVolume( 10 );
 
         train.push(loco);
     }, onProgress, onError);
@@ -1715,7 +1844,7 @@ function addWaggon(isLast) {
 
         waggon.anim = action;
 
-        SFX.addItemSound(waggon, SFX.soundBuffers.train, true, 1.5);
+        SFX.addItemSound(waggon, soundBuffers.train, true, 1.5);
 
         train.push(waggon);
 
@@ -1773,7 +1902,7 @@ function addCar() {
         car.frontBbox = new THREE.Box3();
         //scene.add(new THREE.Box3Helper(car.frontBbox, new THREE.Color("red")));
 
-        SFX.addItemSound(car, SFX.soundBuffers.motor, true);
+        SFX.addItemSound(car, soundBuffers.motor, true);
 
         cars.push(car);
 
@@ -1795,7 +1924,7 @@ function checkExerciseIntersections() {
             highlightMesh(intersects[0].object, selectedEmissive);
             if (intersects[0].object != currentHighlight)
             {
-                SFX.play(SFX.tickSound, true);
+                SFX.play(tickSound, true);
                 currentHighlight = intersects[0].object;
             }
         } else {
@@ -1878,7 +2007,7 @@ function updateControls(delta) {
     if (playerGuy) {
         if ( lastGuyPos.distanceTo(pos) > 0.1 && playerGuy.walk ) {
             if ( !playerGuy.isWalking ) playerGuy.walk();
-            SFX.play(SFX.walkSound);
+            SFX.play(walkSound);
         } else {
             if ( playerGuy.isWalking ) playerGuy.stop();
         }
@@ -1976,14 +2105,20 @@ function updateAmbientSound() {
     let sb;
 
     if (WORLD.currentSeason == WORLD.seasons.winter) {
-        sb = isNight ? SFX.soundBuffers.silence : SFX.soundBuffers.crows;
+        sb = isNight ? soundBuffers.silence : soundBuffers.crows;
     } else if (WORLD.currentSeason == WORLD.seasons.autumn) {
-        sb = isNight ? SFX.soundBuffers.ambientNight : SFX.soundBuffers.magpie;
+        sb = isNight ? soundBuffers.ambientNight : soundBuffers.magpie;
     } else {
-        sb = isNight ? SFX.soundBuffers.ambientNight : SFX.soundBuffers.ambientDay;
+        sb = isNight ? soundBuffers.ambientNight : soundBuffers.ambientDay;
     }
 
-    SFX.setAmbientSound(sb);
+    if (ambientSound) {
+        ambientSound.setBuffer(sb.buffer);
+        if (ambientSound.isPlaying) {
+            ambientSound.pause();
+            ambientSound.play();
+        }
+    }
 }
 
 
@@ -2024,7 +2159,7 @@ function checkAndEndWeatherEffects(ttl = 0, all = false, removeStars = true) {
         particleEffects.rain.ttl = ttl;
         particleEffects.rain = null;
 
-        SFX.setVolume(SFX.rainSound, 0, ttl + 2);
+        SFX.setVolume(rainSound, 0, ttl + 2);
     }
 
     if (removeStars) {
@@ -2074,7 +2209,7 @@ function toggleWeatherEffects() {
             particleEffects.rain = PTFX.letItRain(scene, intensity, PTFX.generateWind(500));
             particleSystems.push(particleEffects.rain);
 
-            SFX.setVolume(SFX.rainSound, intensity * 0.75, 5);
+            SFX.setVolume(rainSound, intensity * 0.75, 5);
 
             wIconPath += '_rain';
         }
