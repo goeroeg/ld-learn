@@ -10,6 +10,7 @@ This is a collection of various LDraw™-Library and three.js based (mini-)games
 - Fireworks [-> Try](https://goeroeg.github.io/ld-learn/apps/fireworks/fireworks.html)
 
 ---
+
 - Further infos:
   - [Starting for developers](#starting-for-developers)
   - [Licenses and attributions](#licenses-and-attributions)

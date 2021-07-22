@@ -124,7 +124,7 @@ kbd {
     z-index: 250;
 }
 
-#touchPause:hover {
+#touchPause:hover, #touchPause:active {
     background-image: radial-gradient(rgba(255,255,255,0.2) 24%, rgba(255,255,255,0) 72%);
     /*background-color: rgba(255,255,255,0.1);*/
     transform: scale(1.25);

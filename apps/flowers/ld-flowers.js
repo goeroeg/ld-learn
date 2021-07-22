@@ -134,6 +134,13 @@ init();
 //#region Initialization
 
 function init() {
+
+    /* check whether this is needed
+    if (isTouch) {
+        document.body.style.setProperty('height', window.innerHeight + 'px');
+    }
+    */
+
     initScene();
     initRendering();
     initControls();
@@ -346,9 +353,10 @@ function startPausing() {
     document.removeEventListener('mouseup', onDocumentMouseUp);
 
     if (isTouch) {
-        document.removeEventListener('touchmove', onDocumentTouchMove);
-        document.removeEventListener('touchstart', onDocumentTouchStart);
-        document.removeEventListener('touchend', onDocumentTouchEnd);
+        tableDiv.removeEventListener('touchmove', onTableTouchMove);
+        tableDiv.removeEventListener('touchstart', onTableTouchStart);
+        tableDiv.removeEventListener('touchend', onTableTouchEnd);
+        //touchPause.removeEventListener('touchend', onTouchPauseClick);
     }
 
     touchPause.removeEventListener("click", onTouchPauseClick);
@@ -376,12 +384,12 @@ function startGame() {
     document.addEventListener('mouseup', onDocumentMouseUp, false);
 
     if (isTouch) {
-        document.addEventListener('touchmove', onDocumentTouchMove, { passive: false }); // prevent scroll on touch
-        document.addEventListener('touchstart', onDocumentTouchStart, { passive: false }); // prevent scroll on touch
-        document.addEventListener('touchend', onDocumentTouchEnd, { passive: false });
+        tableDiv.addEventListener('touchmove', onTableTouchMove, { passive: false }); // prevent scroll on touch
+        tableDiv.addEventListener('touchstart', onTableTouchStart, { passive: false }); // prevent scroll on touch
+        tableDiv.addEventListener('touchend', onTableTouchEnd, { passive: false });
     }
 
-    touchPause.addEventListener("click", onTouchPauseClick, false);
+    touchPause.addEventListener('click', onTouchPauseClick, false);
 
     SFX.resume();
 
@@ -456,7 +464,7 @@ function onDocumentMouseUp(event) {
     handleRelease();
 }
 
-function onDocumentTouchMove(event) {
+function onTableTouchMove(event) {
     event.preventDefault();
     let touch = event.changedTouches[0];
     mouse.x = touch.pageX;
@@ -469,14 +477,14 @@ function onDocumentTouchMove(event) {
     }
 }
 
-function onDocumentTouchStart(event) {
+function onTableTouchStart(event) {
     //event.preventDefault();
-    onDocumentTouchMove(event);
+    onTableTouchMove(event);
     checkCellIntersections();
     handlePress();
 }
 
-function onDocumentTouchEnd(event) {
+function onTableTouchEnd(event) {
     event.preventDefault();
     handleRelease();
 }
@@ -1830,6 +1838,11 @@ function updateLayout(vertical) {
 }
 
 function onWindowResize(update = true) {
+
+    if (isTouch) {
+        document.body.style.setProperty('height', window.innerHeight + 'px');
+    }
+
 
     let res = { x: resolutions[gfxSettings.resolution].x, y: resolutions[gfxSettings.resolution].y };
 
