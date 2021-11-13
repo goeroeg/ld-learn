@@ -24,6 +24,7 @@
 			}
 
 			#playerInfo {
+				text-shadow: none;
 				position: absolute;
 				top: 10px;
 				left: 10px;
@@ -38,33 +39,10 @@
 	</head>
 
 	<body>
-		<script src="../../utils.js"></script>
-		<div id="settings">
-			<div id="settingsTab" class="tab">
-				<button class="tablinks" onclick="openTab(event, 'Graphics')">Graphics</button>
-				<button class="tablinks" onclick="openTab(event, 'Audio')">Audio</button>
-				<button class="tablinks" onclick="openTab(event, 'Control')">Control</button>
-				<button class="tablinks" onclick="openTab(event, 'Game')">Game</button>
-			</div>
-			<div id="Graphics" class="tabcontent">
-				<p>Graphics settings...</p>
-			</div>
-			<div id="Audio" class="tabcontent">
-				<p>Audio settings...</p>
-			</div>
-			<div id="Control" class="tabcontent">
-				<p>Control settings...</p>
-			</div>
-			<div id="Game" class="tabcontent">
-				<p>Game settings...</p>
-			</div>
-		</div>
 		<div id="playerInfo">Player:</div>
 		<div id="miniMapDiv"><img id="weatherIcon" src="../../gfx/textures/weather/w_null.png"></img><canvas id="miniMap"></canvas></div>
 
 		<div id="blocker" class="overlay">
-
-
 			<div id="instructions">
 				<span style="font-size:28px; color: lime">LD-Learn - a fun learning adventure</span>
 				<br/>

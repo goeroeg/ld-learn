@@ -427,11 +427,11 @@ function onCamControlsTouch(e) {
 }
 
 function onCamControlsRelease(e) {
-    e.preventDefault();
+    //e.preventDefault();
+
     resetTouchControl(touchCameraControls);
 
-    let touch = e.changedTouches[0];
-    if (currentHighlight && ((touchCamPos.x - touch.pageX) * (touchCamPos.y - touch.pageY)) < 10) {
+    if (currentHighlight) {
         evaluateAnswer(currentHighlight);
     }
 }
@@ -1272,6 +1272,7 @@ function showProgressBar() {
     if (!progressBarDiv) {
         progressBarDiv = document.createElement( 'div' );
         progressBarDiv.style.fontSize = "3em";
+        progressBarDiv.style.textShadow = "none";
         progressBarDiv.style.color = "#888";
         progressBarDiv.style.display = "block";
         progressBarDiv.style.position = "absolute";
@@ -1365,6 +1366,13 @@ function onDocumentClick( event ) {
         addChrystal();
     }
 
+    if (isTouch) {
+        let mouseX = ( event.clientX / window.innerWidth ) * 2 - 1;
+	    let mouseY = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+        checkExerciseIntersections( mouseX, mouseY );
+    }
+
     if (currentHighlight) {
         evaluateAnswer(currentHighlight);
     }
@@ -1431,7 +1439,7 @@ function animate() {
 
         updateControls( walkDelta );
 
-        checkExerciseIntersections();
+        checkExerciseIntersections(0, 0);
 
         particleSystems = particleSystems.filter(function(ps) {
             ps.update(animDelta);
@@ -1910,7 +1918,7 @@ function addCar() {
     } , onProgress, onError);
 }
 
-function checkExerciseIntersections() {
+function checkExerciseIntersections(mouseX, mouseY) {
     if (exerciseMeshes.length > 0) {
         for (let mesh of exerciseMeshes) {
             highlightMesh(mesh, textEmissive);
@@ -1918,7 +1926,7 @@ function checkExerciseIntersections() {
 
         exerciseGroup.lookAt(controls.getObject().position);
 
-        raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+        raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
         var intersects = raycaster.intersectObjects(exerciseMeshes);
         if (intersects.length > 0) {
             highlightMesh(intersects[0].object, selectedEmissive);
@@ -2284,7 +2292,6 @@ function updatePlayerInfo() {
 
 /* View in fullscreen */
 function openFullscreen() {
-
     if (document.body.requestFullscreen) {
         document.body.requestFullscreen();
     } else if (document.body.mozRequestFullScreen) { /* Firefox */
