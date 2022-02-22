@@ -15,6 +15,7 @@ const stepCarRightWheels = 1;
 const stepCarLeftWheels = 2;
 const stepCarFrontLights = 3;
 const stepCarRearLights = 4;
+const stepCarFigHead = 5;
 
 const altCowHeadColor = 0x1B2A34; // black
 const altCowColor = 0x543324; // brown
@@ -279,6 +280,9 @@ export function initCar(index, onLoad, onProgress, onError) {
                 }
                 if (c.parent.userData.constructionStep == stepCarRearLights) {
                     car.rLights.push(c);
+                }
+                if (c.parent.userData.constructionStep == stepCarFigHead) {
+                    car.figHead = c;
                 }
             }
         });

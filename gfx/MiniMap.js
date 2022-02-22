@@ -48,6 +48,11 @@ export function updateMiniMapColors(newPlateColor, newPlantColor) {
     // console.log(mapObjColors);
 }
 
+export function updateMapSize() {
+    imgWidth = (WORLD.plateCounter * 2 + 1) * WORLD.plateSize / WORLD.parcelSize + 1;
+    imgHeight = (WORLD.plateCounter * 2 + 1) * WORLD.plateSize / WORLD.parcelSize + 1;
+}
+
 export function updateMapData(canvas, ori, x, y) {
 
     let tempc = document.createElement('canvas');

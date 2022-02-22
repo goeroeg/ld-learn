@@ -137,6 +137,8 @@ const playerCamHeight = 85;
 
 var gameActive = false;
 
+var currentCarRiding = null;
+
 const okColor = 0x00ff00, wrongColor = 0xff0000, selectedEmissive = 0x0000ff;
 const fLightsColor = 0xffffff, rLightsColor = 0xff0000, windowColor = 0xffffbb;
 
@@ -265,33 +267,43 @@ function initControls() {
 
         //console.log("down " + event.keyCode);
 
-        switch ( event.keyCode ) {
+        switch ( event.key ) {
 
-            case 38: // up
-            case 87: // w
+            case "ArrowUp": // up
+            case "w": // w
+            case "Up":
                 toggleMove(true, moveDir.forward, touchMoveForward);
                 break;
 
-            case 37: // left
-            case 65: // a
+            case "ArrowLeft": // left
+            case "a": // a
+            case "Left":
             toggleMove(true, moveDir.left, touchMoveLeft);
                 break;
 
-            case 40: // down
-            case 83: // s
+            case "ArrowDown": // down
+            case "s": // s
+            case "Down":
             toggleMove(true, moveDir.backward, touchMoveBack);
                 break;
 
-            case 39: // right
-            case 68: // d
+            case "ArrowRight": // right
+            case "d": // d
+            case "Right":
             toggleMove(true, moveDir.right, touchMoveRight);
                 break;
 
-            case 32: // space
+            case " ": // space
+            case "Spacebar":
                 jump();
                 break;
 
-            case 8: // backspace
+            case "e":
+            case "Enter":
+                enterOrLeaveCar();
+                break;
+
+            case "Backspace": // backspace
                 if ( animClock.running ) {
                     animClock.stop();
                 } else {
@@ -1437,7 +1449,9 @@ function animate() {
 
         mixer.update( animDelta );
 
-        updateControls( walkDelta );
+        if (!currentCarRiding) {
+            updateControls( walkDelta );
+        }
 
         checkExerciseIntersections(0, 0);
 
@@ -1449,7 +1463,13 @@ function animate() {
         render();
 
         updateVehiclePositions();
-        updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);
+
+        if (currentCarRiding) {
+            updateMapData(miniMap, -currentCarRiding.rotation.y + Math.PI/2, currentCarRiding.position.z / WORLD.parcelSize, currentCarRiding.position.x / WORLD.parcelSize);
+        }
+        else {
+            updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);
+        }
 
        /* if (!walkClock.running && !document.body.contains(progressBarDiv)) {
             walkClock.start();
@@ -1460,8 +1480,6 @@ function animate() {
 function updateVehiclePositions() {
     if (cars.length > 0)
     {
-        let playerBbox = new THREE.Box3().setFromObject(playerGuy);
-
         for (let car of cars) {
             updateVehiclePos(car, WORLD.MapObjectId.car, WORLD.MapObjectId.road);
 
@@ -1470,7 +1488,7 @@ function updateVehiclePositions() {
         }
         for (let car of cars) {
             if (car.anims && car.anims.length > 0) {
-                let brake = car.frontBbox.intersectsBox(playerBbox);
+                let brake = !currentCarRiding && car.frontBbox.intersectsBox(new THREE.Box3().setFromObject(playerGuy));
                 if (!brake) {
                     for (let c of cars) {
                         if (c !== car) {
@@ -1924,7 +1942,7 @@ function checkExerciseIntersections(mouseX, mouseY) {
             highlightMesh(mesh, textEmissive);
         }
 
-        exerciseGroup.lookAt(controls.getObject().position);
+        exerciseGroup.lookAt(controls.getObject().getWorldPosition(new THREE.Vector3()));
 
         raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
         var intersects = raycaster.intersectObjects(exerciseMeshes);
@@ -2020,10 +2038,7 @@ function updateControls(delta) {
             if ( playerGuy.isWalking ) playerGuy.stop();
         }
 
-        let euler = controls.getObject().rotation.clone();
-        euler.reorder("YXZ");
-        euler.x = 0;
-        euler.z = Math.PI;
+        let euler = getXZNormalizedEuler(controls.getObject());
 
         playerGuy.position.x = pos.x;
         playerGuy.position.z = pos.z;
@@ -2037,6 +2052,14 @@ function updateControls(delta) {
 
         lastGuyPos.copy(pos);
     }
+}
+
+function getXZNormalizedEuler(object) {
+    let euler = object.rotation.clone();
+    euler.reorder("YXZ");
+    euler.x = 0;
+    euler.z = Math.PI;
+    return euler;
 }
 
 function toggleNight() {
@@ -2290,6 +2313,58 @@ function updatePlayerInfo() {
     }
 }
 
+function enterOrLeaveCar() {
+    if (!currentCarRiding && cars.length > 0) {
+
+        let car;
+        let minDist = 45000;
+        let cam = controls.getObject();
+
+        for (let c of cars) { // z direction of cam and car is opposed
+            let dist = (c.position.x - cam.position.x) * (c.position.x - cam.position.x) + (c.position.z + cam.position.z) * (c.position.z + cam.position.z);
+            if (dist < minDist) {
+                car = c;
+                minDist = dist;
+            }
+        }
+
+        if (car) {
+            cam.position.x = 0;
+            cam.position.z = 0;
+            cam.position.y = 0;
+
+            cam.rotation.x = 0;
+            cam.rotation.y = Math.PI;
+            cam.rotation.z = 0;
+
+            if (!car.camGroup) {
+                let camGroup = new THREE.Group();
+                camGroup.translateZ(-guyOffset);
+                camGroup.rotateX(Math.PI);
+                camGroup.translateY(-10);
+                car.figHead.add(camGroup);
+                car.camGroup = camGroup;
+            }
+
+            car.camGroup.add(cam);
+
+            scene.remove(playerGuy);
+            currentCarRiding = car;
+        }
+    } else if (currentCarRiding) {
+        let cam = controls.getObject();
+        scene.attach(cam);
+
+        cam.position.y = playerCamHeight;
+        cam.setRotationFromEuler(new THREE.Euler(0, Math.PI - currentCarRiding.rotation.y, 0, "XYZ"));
+
+        velocity.y += jumpInitialVel;
+
+        scene.add (playerGuy);
+        currentCarRiding = null;
+    }
+}
+
 /* View in fullscreen */
 function openFullscreen() {
     if (document.body.requestFullscreen) {
@@ -2303,31 +2378,3 @@ function openFullscreen() {
     }
 }
 
-/* Close fullscreen */
-function closeFullscreen() {
-    console.log("Closing FS");
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if (document.mozCancelFullScreen) { /* Firefox */
-      document.mozCancelFullScreen();
-    } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
-      document.webkitExitFullscreen();
-    } else if (document.msExitFullscreen) { /* IE/Edge */
-      document.msExitFullscreen();
-    }
-  }
-
-  function toggleFullScreen() {
-    var doc = window.document;
-    var docEl = doc.body;
-
-    var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
-    var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
-
-    if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-      requestFullScreen.call(docEl);
-    }
-    else {
-      cancelFullScreen.call(doc);
-    }
-  }
