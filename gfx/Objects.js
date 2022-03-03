@@ -229,6 +229,7 @@ export function initCar(index, onLoad, onProgress, onError) {
         car.lWheels = [];
         car.fLights = [];
         car.rLights = [];
+        car.figHead = [];
 
         let matMap = new Map();
 
@@ -282,9 +283,15 @@ export function initCar(index, onLoad, onProgress, onError) {
                     car.rLights.push(c);
                 }
                 if (c.parent.userData.constructionStep == stepCarFigHead) {
-                    car.figHead = c;
+                    car.figHead.push(c);
                 }
             }
         });
+
+        if (car.figHead.length > 1) {
+            for (let idx = 1; idx < car.figHead.length; idx++){
+                car.figHead[0].attach(car.figHead[idx]);
+            }
+        }
     }
 }
