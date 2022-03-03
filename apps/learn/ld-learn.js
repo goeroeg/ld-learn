@@ -2339,19 +2339,30 @@ function enterOrLeaveCar() {
 
             if (!car.camGroup) {
                 let camGroup = new THREE.Group();
-                camGroup.translateZ(-guyOffset);
+                camGroup.translateZ(-5);
                 camGroup.rotateX(Math.PI);
-                camGroup.translateY(-10);
-                car.figHead.add(camGroup);
+                camGroup.translateY(-9);
+                car.figHead[0].add(camGroup);
+                car.attach(camGroup);
                 car.camGroup = camGroup;
+
+                car.figHead[0].origParent = car.figHead[0].parent;
+                car.figHead[0].origPos = car.figHead[0].position.clone();
+                car.figHead[0].origRot = car.figHead[0].rotation.clone();
             }
 
             car.camGroup.add(cam);
+            cam.attach(car.figHead[0]);
 
             scene.remove(playerGuy);
             currentCarRiding = car;
         }
     } else if (currentCarRiding) {
+
+        currentCarRiding.figHead[0].position.copy(currentCarRiding.figHead[0].origPos);
+        currentCarRiding.figHead[0].rotation.copy(currentCarRiding.figHead[0].origRot);
+        currentCarRiding.figHead[0].origParent.add(currentCarRiding.figHead[0]);
+
         let cam = controls.getObject();
         scene.attach(cam);
 
@@ -2361,6 +2372,7 @@ function enterOrLeaveCar() {
         velocity.y += jumpInitialVel;
 
         scene.add (playerGuy);
+
         currentCarRiding = null;
     }
 }
