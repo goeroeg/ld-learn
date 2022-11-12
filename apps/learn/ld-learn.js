@@ -525,6 +525,7 @@ function updateBlocker(hide) {
 function initSound() {
 
     soundBuffers = {
+        ambientDay: { buffer: null, filename: 'ambient_day.ogg' },
         ambientNight: { buffer: null, filename: 'ambient_night.ogg' },
         crows: { buffer: null, filename: 'crows.ogg' },
         magpie: { buffer: null, filename: 'magpie.ogg' },
@@ -580,8 +581,6 @@ function initSound() {
         rainSound = new THREE.Audio(listener).setBuffer(buffer).setLoop(true).setVolume(0);
     });
 
-
-    // ambientDay: { buffer: null, filename: 'ambient_day.ogg' },
 
     for (let idx = 1; idx <= 4; idx++)
     {
