@@ -96,7 +96,7 @@ var wrongSounds = [];
 var resolutions = [{ x: 0, y: 0 }, { x: 320, y: 240 }, {x: 640, y: 480 }, { x: 1024, y: 768 }, { x: 1280, y: 800 }, { x: 1920, y: 1080 }]
 var resolutionNames  = { 'Auto': 0, '320x240': 1, '640x480': 2, '1024x768': 3, "1280x800": 4, "1920x1080": 5 };
 var qualityNames = { High: 1, Low : 2};
-var audioSettings = { enabled : true, volume: 100 };
+var audioSettings = { enabled : true, volume: 100, ambient : true };
 var gamepadSettings = { enabled: true, moveSensitivity: 1, lookSensitivity: 1 };
 var gfxSettings = { resolution: resolutionNames.Auto, quality: qualityNames.High, fullScreen: false, shadows: isTouch ? 0 : 3 , antiAlias: true , showFPS: false};
 var gameSettings = {
@@ -509,7 +509,7 @@ function startGame() {
     walkClock.start();
     gameActive = true;
 
-    resumeSFX((chrystalCount >= chrActions.plantsMin), (chrystalCount >= chrActions.musicSphere));
+    resumeSFX((chrystalCount >= chrActions.plantsMin && audioSettings.ambient), (chrystalCount >= chrActions.musicSphere));
 }
 
 function updateBlocker(hide) {
@@ -625,9 +625,11 @@ function pauseSFX() {
 export function resumeSFX(ambient, sphere) {
     if (ambient) {
         SFX.play(ambientSound);
-        SFX.play(rainSound);
-        // play(windSound);
     }
+
+    SFX.play(rainSound);
+    // play(windSound);
+
 
     if (sphere) {
         SFX.play(sphereSound);
@@ -698,11 +700,14 @@ function initGUI() {
     */
 
     audioFolder = gui.addFolder("Audio settings");
+    audioFolder.add(audioSettings, "volume", 0, 100).name("Volume").step(1).onChange(function (value) {
+        setMasterVolume();
+    });
     audioFolder.add(audioSettings, "enabled").name("Enabled").onChange(function (value) {
         setMasterVolume();
     });
-    audioFolder.add(audioSettings, "volume", 0, 100).name("Volume").step(1).onChange(function (value) {
-        setMasterVolume();
+    audioFolder.add(audioSettings, "ambient", 0, 100).name("Ambient sound").onChange(function (value) {
+        // noop
     });
 
     setMasterVolume();
@@ -1610,8 +1615,10 @@ function performChrystalAction() {
 
     if (chrystalCount >= chrActions.plantsMin) {
         if (chrystalCount == chrActions.plantsMin) {
-            updateAmbientSound();
-            SFX.play(ambientSound);
+            if (audioSettings.ambient) {
+                updateAmbientSound();
+                SFX.play(ambientSound);
+            }
         }
 
         if ( chrystalCount <= chrActions.plantsMax) {
@@ -2163,9 +2170,12 @@ function updateAmbientSound() {
 
     if (ambientSound) {
         ambientSound.setBuffer(sb.buffer);
+
         if (ambientSound.isPlaying) {
             ambientSound.pause();
-            ambientSound.play();
+            if (audioSettings.ambient) {
+                ambientSound.play();
+            }
         }
     }
 }
