@@ -2,6 +2,8 @@ import * as OBJS from './Objects.js';
 import * as WORLD from './World.js';
 import * as ANIM from './Animations.js';
 
+import { ldrawColors } from './LDrawHelper.js';
+
 const stepTrackSleeper = 0;
 const stepTrackCurved = 1;
 const stepTrackStraight = 2;
@@ -12,9 +14,17 @@ const stepLeftWheels = 2;
 const stepWindows = 3;
 const stepFrontLights = 4;
 const stepRearLights = 5;
+const stepHighlight = 6;
 
-export const vehicleLength =  500;
-const wheelDistance = 300;
+const locoColor = ldrawColors.Dark_Orange; // ldrawColors.Dark_Orange;
+const waggonColor = ldrawColors.Light_Grey; // ldrawColors.Light_Grey;
+const highlightColor = ldrawColors.Green; // ldrawColors.Green;
+
+const defaultLocoIndex = 0; // 0;
+const defaultWaggonIndex = 0; // 0;
+
+export const vehicleLength =  513;
+export const wheelDistance = 300;
 
 export const trackHalfLength = WORLD.plateSize / 4;
 export const trackCurveRadius = trackHalfLength * 5;
@@ -147,120 +157,105 @@ export function initTracks(onLoad, onProgress, onError, effectFunc) {
 }
 
 export function initLoco(onLoad, onProgress, onError) {
-    OBJS.loadModel('train',  function ( model ) {
+    OBJS.loadModel('loco_' + defaultLocoIndex,  function ( model ) {
 
         loco = new THREE.Group();
         loco.add(model);
 
-        loco.body = [];
-        loco.rWheels = [];
-        loco.lWheels = [];
-        loco.windows = [];
-        loco.frontLights = [];
-        loco.rearLights = [];
+        loco.body = model.steps[stepBody];
+        loco.rWheels = model.steps[stepRightWheels];
+        loco.lWheels = model.steps[stepLeftWheels];
+        loco.windows = model.steps[stepWindows];
+        loco.frontLights = model.steps[stepFrontLights];
+        loco.rearLights = model.steps[stepRearLights];
+        loco.highlightStripe = model.steps[stepHighlight];
 
         // Adjust materials
+        let winMatMap = new Map();
+        let lightsMatMap = new Map();
 
-        model.traverse( c => {
-            if (c.isMesh)
-            {
-                switch (c.parent.userData.constructionStep) {
-                    case stepBody:
-                        loco.body.push(c);
-                        break;
-                    case stepRightWheels:
-                        loco.rWheels.push(c);
-                        break;
-                    case stepLeftWheels:
-                        loco.lWheels.push(c);
-                        break;
-                    case stepWindows:
-                        loco.windows.push(c);
-                        break;
-                    case stepFrontLights:
-                        loco.frontLights.push(c);
-                        break;
-                    case stepRearLights:
-                        loco.rearLights.push(c);
-                        break;
+        loco.body.forEach(c => {
+            c.material.forEach(mat => {
+                if(mat.color.getHex() == ldrawColors.Main_Colour.hex) {
+                    mat.color.setHex(locoColor.hex);
                 }
-            }
-        } );
+            })
+        });
 
-        let flmat;
-        for (let mesh of loco.frontLights) {
-            if (!flmat) flmat = mesh.material[0].clone();
-            mesh.material[0] = flmat;
+        if (loco.highlightStripe.length > 0) {
+            loco.highlightStripe[0].material[0].color.setHex(highlightColor.hex);
         }
 
-        let wmat;
-        for (let mesh of loco.windows) {
-            if (!wmat) wmat = mesh.material[0].clone();
-            mesh.material[0] = wmat;
-        }
+        loco.windows.forEach(c => {
+            OBJS.cloneMaterial(c, winMatMap);
+        });
+
+        loco.frontLights.forEach(c => {
+            OBJS.cloneMaterial(c, lightsMatMap);
+        });
+
+        loco.rearLights.forEach(c => {
+            OBJS.cloneMaterial(c, lightsMatMap);
+        });
 
         if (onLoad) onLoad(loco);
-    });
+    }, onProgress, onError);
 }
 
 export function initWaggon(onLoad, onProgress, onError, lastCall) {
-    if (waggon) {
-        // already loaded
+    function cloneAndRaiseOnLoad(obj) {
         if (onLoad) {
-            if (!lastCall) {
-                let clone = waggon.clone();
-                sortWaggonParts(clone);
-                onLoad(clone);
-            } else {
-                sortWaggonParts(waggon);
-                if (onLoad) onLoad(waggon);
-            }
+            let clone = lastCall ? obj : OBJS.cloneModel(obj);
+            sortWaggonParts(clone);
+            onLoad(clone);
         }
-    } else {
-
-        OBJS.loadModel('waggon',  function ( model ) {
-
-            waggon = model;
-
-            if (onLoad) {
-                if (!lastCall) {
-                    let clone = waggon.clone();
-                    sortWaggonParts(clone);
-                    onLoad(clone);
-                } else {
-                    sortWaggonParts(waggon);
-                    onLoad(waggon);
-                }
-            }
-        });
     }
 
-    function sortWaggonParts(group) {
-        group.body = [];
-        group.rWheels = [];
-        group.lWheels = [];
-        group.windows = [];
-        group.frontLights = [];
-        group.rearLights = [];
+    if (waggon) {
+        // already loaded
+        cloneAndRaiseOnLoad(waggon);
+    } else {
+        OBJS.loadModel('waggon_' + defaultWaggonIndex,  function ( model ) {
+            waggon = model;
+            cloneAndRaiseOnLoad(waggon);
+        }, onProgress, onError);
+    }
+
+    function sortWaggonParts(waggon) {
+        waggon.body = waggon.steps[stepBody];
+        waggon.rWheels = waggon.steps[stepRightWheels];
+        waggon.lWheels = waggon.steps[stepLeftWheels];
+        waggon.windows = waggon.steps[stepWindows];
+        waggon.frontLights = waggon.steps[stepFrontLights];
+        waggon.rearLights = waggon.steps[stepRearLights];
+        waggon.highlightStripe = waggon.steps[stepHighlight];
 
         // Adjust materials
-        group.traverse(c => {
-            if (c.isMesh) {
-                switch (c.parent.userData.constructionStep) {
-                    case stepBody:
-                        group.body.push(c);
-                        break;
-                    case stepRightWheels:
-                        group.rWheels.push(c);
-                        break;
-                    case stepLeftWheels:
-                        group.lWheels.push(c);
-                        break;
-                    case stepWindows:
-                        group.windows.push(c);
-                        break;
+
+        waggon.body.forEach(c => {
+            c.material.forEach(mat => {
+                if(mat.color.getHex() == ldrawColors.Main_Colour.hex) {
+                    mat.color.setHex(waggonColor.hex);
                 }
-            }
+            })
+        });
+
+        if (waggon.highlightStripe.length > 0) {
+            waggon.highlightStripe[0].material[0].color.setHex(highlightColor.hex);
+        }
+
+        let winMatMap = new Map();
+        let lightsMatMap = new Map();
+
+        waggon.windows.forEach(c => {
+            OBJS.cloneMaterial(c, winMatMap);
+        });
+
+        waggon.frontLights.forEach(c => {
+            OBJS.cloneMaterial(c, lightsMatMap);
+        });
+        waggon.rearLights.forEach(c => {
+            OBJS.cloneMaterial(c, lightsMatMap);
         });
     }
 }

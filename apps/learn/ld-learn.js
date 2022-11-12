@@ -845,13 +845,13 @@ function setSeason(season) {
     WORLD.setSeasonColor(season);
 
     // adjust lighting a bit
-    hemiLight.groundColor.setHex(0xB97A20).lerp(new THREE.Color(WORLD.seasonPlateColor[season]), 0.15);
+    hemiLight.groundColor.setHex(0xB97A20).lerp(new THREE.Color(WORLD.seasonPlateColor[season].hex), 0.15);
 
     checkAndEndWeatherEffects();
 
     updateFog();
 
-    updateMiniMapColors(WORLD.seasonPlateColor[season], WORLD.seasonPlantColor[season]);
+    updateMiniMapColors(WORLD.seasonPlateColor[season].hex, WORLD.seasonPlantColor[season].hex);
 
     updateAmbientSound();
 }
@@ -1030,7 +1030,7 @@ function initPlayerGuyAnim() {
 
 function addSun() {
     dirLight = new THREE.DirectionalLight(0xffffff, 0); //1);
-    dirLight.position.set(2500, 5000, 1000);
+    dirLight.position.set(0, 11.9 * WORLD.plateSize, 0);
     dirLight.castShadow = true;
     let size = WORLD.plateSize * WORLD.plateCounter;
     dirLight.shadow.camera.left = -size;
@@ -1056,8 +1056,10 @@ function addSun() {
     let sphereMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffdd, emissiveIntensity: 1 , roughness: 1});
     let sphere = new THREE.Mesh(sphereGeo, sphereMat);
 
-    sphere.position.copy(dirLight.position).normalize().multiplyScalar(11.9 * WORLD.plateSize);
+    sphere.position.copy(dirLight.position);//.normalize().multiplyScalar(11.9 * WORLD.plateSize);
+    sphere.attach(dirLight);
     scene.add(sphere);
+    skyMesh.attach(sphere);
 }
 
 function createSky() {
@@ -1069,13 +1071,20 @@ function createSky() {
     // lights
     addSun();
 
+    skyMesh.rotateZ(25 * Math.PI/180);
+
+    skyMesh.rotateX(15 * Math.PI/180);
+/*
+    let action = mixer.clipAction(ANIM.createRotationCcwAnimation(1, 'x'), skyMesh);
+    action.setLoop(THREE.LoopRepeat).setDuration(600).play();
+*/
     SFX.play(newItemSound);
     walkClock.start();
 }
 
 function addMusicSphere() {
 
-    let sphere = WORLD.sphere; // .clone();
+    let sphere = OBJS.sphereProto; // .clone(); // re-add if multiple spheres needed
     if (WORLD.freeParcels.length > 0) {
 
         showProgressBar();
@@ -1128,7 +1137,7 @@ function addParcelEffect(x, z, height, time, size) {
 
 function addChrystal() {
 
-    let newChrystal = WORLD.chrystal.clone();
+    let newChrystal = OBJS.chrystalProto.clone();
 
     if (WORLD.freeParcels.length > 0) {
 
@@ -1357,7 +1366,7 @@ function onWindowResize(update = true) {
 
     gfxSettings.fullScreen = (window.screen.width == window.innerWidth); // API not working when triggered with F11
 
-    if (update) {
+    if (update && playerGuy) {
         updateMapData(miniMap, playerGuy.oriY, -playerGuy.position.z / WORLD.parcelSize, playerGuy.position.x / WORLD.parcelSize);
         render();
     }
@@ -1449,7 +1458,7 @@ function animate() {
 
         mixer.update( animDelta );
 
-        if (!currentCarRiding) {
+        if (currentCarRiding == null) {
             updateControls( walkDelta );
         }
 
@@ -1464,7 +1473,7 @@ function animate() {
 
         updateVehiclePositions();
 
-        if (currentCarRiding) {
+        if (currentCarRiding != null) {
             updateMapData(miniMap, -currentCarRiding.rotation.y + Math.PI/2, currentCarRiding.position.z / WORLD.parcelSize, currentCarRiding.position.x / WORLD.parcelSize);
         }
         else {
@@ -1488,7 +1497,7 @@ function updateVehiclePositions() {
         }
         for (let car of cars) {
             if (car.anims && car.anims.length > 0) {
-                let brake = !currentCarRiding && car.frontBbox.intersectsBox(new THREE.Box3().setFromObject(playerGuy));
+                let brake = (currentCarRiding == null) && car.frontBbox.intersectsBox(new THREE.Box3().setFromObject(playerGuy));
                 if (!brake) {
                     for (let c of cars) {
                         if (c !== car) {
@@ -1649,7 +1658,7 @@ function performChrystalAction() {
     }
 
     if (chrystalCount == chrActions.trainMin) {
-        initTrain();
+        initLoco();
     }
 
     if (chrystalCount > chrActions.trainMin && chrystalCount <= chrActions.trainMax) {
@@ -1759,7 +1768,7 @@ function addAnimal() {
     }
 }
 
-function initTrain() {
+function initLoco() {
     showProgressBar();
     TRAIN.initLoco(function (loco) {
 
@@ -1850,6 +1859,16 @@ function addWaggon(isLast) {
 
         // console.log(waggon);
 
+        waggon.frontLights = [];
+
+        if (isLast) {
+            for (let mesh of waggon.rearLights) {
+                addRearLight(mesh);
+            }
+        } else {
+            waggon.rearLights = [];
+        }
+
         for (let mesh of waggon.windows) {
             if (isNight) {
                 mesh.material[0].emissive.setHex(windowColor);
@@ -1897,7 +1916,7 @@ function addCar() {
         let roadCenterFactor = 0.32; // 0.28
 
         let ccw = (chrystalCount % 2 == 0); // every second counter-clockwise
-        let clip = ANIM.createRoadAnimation((WORLD.roadPlates * 2) + (roadCenterFactor * (ccw ? 1 : -1)), WORLD.plateSize, WORLD.plateSize / 2 * (1 + roadCenterFactor * (ccw ? 1 : -1)) , ccw);
+        let clip = ANIM.createRoadAnimation((WORLD.roadPlates * 2) + (roadCenterFactor * (ccw ? 1 : -1)), WORLD.plateSize, WORLD.plateSize / 2 * (1 + roadCenterFactor * (ccw ? 1 : -1)) , ccw, 80);
         var action = mixer.clipAction(clip, car);
 
         action.duration =  0.0025 * clip.path.getLength();
@@ -2314,7 +2333,7 @@ function updatePlayerInfo() {
 }
 
 function enterOrLeaveCar() {
-    if (!currentCarRiding && cars.length > 0) {
+    if ((currentCarRiding == null) && cars.length > 0) {
 
         let car;
         let minDist = 45000;
@@ -2357,7 +2376,7 @@ function enterOrLeaveCar() {
             scene.remove(playerGuy);
             currentCarRiding = car;
         }
-    } else if (currentCarRiding) {
+    } else if (currentCarRiding != null) {
 
         currentCarRiding.figHead[0].position.copy(currentCarRiding.figHead[0].origPos);
         currentCarRiding.figHead[0].rotation.copy(currentCarRiding.figHead[0].origRot);

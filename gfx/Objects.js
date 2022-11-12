@@ -1,6 +1,11 @@
 import { LDrawLoader } from './LDrawLoader.js';
+import { ldrawColors } from './LDrawHelper.js';
+
+export const studSize = 20;
+export const flatSize = 8;
 
 export const availableCarModels = 4;
+
 
 const stepCowBody = 0;
 const stepCowHead = 1;
@@ -17,16 +22,20 @@ const stepCarFrontLights = 3;
 const stepCarRearLights = 4;
 const stepCarFigHead = 5;
 
-const altCowHeadColor = 0x1B2A34; // black
-const altCowColor = 0x543324; // brown
+const altCowHeadColor = ldrawColors.Black.hex;
+const altCowColor = ldrawColors.Brown.hex;
 
-const altHorseColors = [altCowColor, 0x000000];
+const altHorseColors = [ldrawColors.Brown.hex, ldrawColors.Black.hex];
 
 var carCache = [];
+export var plantProtos = [];
+export var fenceProto;
+export var chrystalProto;
+export var sphereProto;
 
 //todo: cache also for animals
 
-export function loadModel(name, onLoad, onProgress, onError, isBasePlate = false) {
+export function loadModel(name, onLoad, onProgress, onError, isBasePlate = false, hideColor = undefined) {
     var lDrawLoader = new LDrawLoader();
     lDrawLoader.smoothNormals = !isBasePlate;
     lDrawLoader.separateObjects = true;
@@ -38,7 +47,7 @@ export function loadModel(name, onLoad, onProgress, onError, isBasePlate = false
             // obj.rotateX(-Math.PI);
 
             let steps = [];
-            let defaultMaterial;
+            let edgeMaterial;
 
             obj.traverse( c => {
                 c.visible = !c.isLineSegments;
@@ -47,13 +56,15 @@ export function loadModel(name, onLoad, onProgress, onError, isBasePlate = false
                     c.castShadow = !isBasePlate;
                     c.receiveShadow = true;
 
-                    if (!defaultMaterial) {
-                        if (c.material[0].color.getHex() == 0xFFFF80) {
-                            defaultMaterial = c.material[0];
+                    if (hideColor) {
+                        if (!edgeMaterial) {
+                            if (c.material[0].color.getHex() == hideColor.hex) {
+                                edgeMaterial = c.material[0];
+                            }
                         }
-                    }
-                    if (c.material[0] === defaultMaterial) {
-                        c.visible = false;
+                        if (c.material[0] === edgeMaterial) {
+                            c.visible = false;
+                        }
                     }
 
                     let step = c.parent.userData.constructionStep;
@@ -71,6 +82,51 @@ export function loadModel(name, onLoad, onProgress, onError, isBasePlate = false
             if (onLoad) onLoad(obj);
 
         }, onProgress, onError);
+}
+
+export function cloneModel(model) {
+
+    let clone = model.clone();
+    let steps = [];
+
+    let matMap = new Map();
+
+    clone.traverse( c => {
+        if (c.isMesh) {
+            cloneMaterial(c, matMap);
+
+            let step = c.parent.userData.constructionStep;
+            if (!steps[step]) {
+                steps[step] = [];
+            }
+            steps[step].push(c);
+        }
+    } );
+
+    clone.steps = steps;
+
+    return clone;
+}
+
+export function cloneMaterial(mesh, matMap = new Map()) {
+
+    function mapOrCloneMaterial(oldMat) {
+        let newMat;
+        if (matMap.has(oldMat)) {
+            newMat = matMap.get(oldMat);
+        } else {
+            newMat = oldMat.clone();
+            matMap.set(oldMat, newMat);
+        }
+        return newMat;
+    }
+
+    if (mesh.material instanceof THREE.Material) {
+        mesh.material = mapOrCloneMaterial(mesh.material);
+    }
+    else {
+        mesh.material = mesh.material.map(mat => mapOrCloneMaterial(mat));
+    }
 }
 
 export function initCow(onLoad, onProgress, onError) {
@@ -173,7 +229,7 @@ export function initHorse(onLoad, onProgress, onError) {
                         bodyParts.push(c);
                     }
 
-                    if (c.parent.userData.constructionStep == stepCowHorns) {
+                    if (c.parent.userData.constructionStep == stepHorseHead) {
                         headParts.push(c);
                     }
                 }
@@ -203,19 +259,19 @@ export function initHorse(onLoad, onProgress, onError) {
 export function initCar(index, onLoad, onProgress, onError) {
     if (carCache[index]) {
         if (onLoad) {
-            let clone = carCache[index].clone();
+            let clone = cloneModel(carCache[index]);
             sortCarParts(clone);
             onLoad(clone);
         }
     } else {
-        loadModel('car_' + index, function ( model ) {
+        loadModel('car_' + index, function (model) {
 
             let car = model; //new THREE.Group();
 
                 carCache[index] = car;
 
                 if (onLoad) {
-                    let clone = car.clone();
+                    let clone = cloneModel(car);
                     sortCarParts(clone);
                     onLoad(clone);
                 }
@@ -224,68 +280,28 @@ export function initCar(index, onLoad, onProgress, onError) {
     }
 
     function sortCarParts(car) {
-        car.body = [];
-        car.rWheels = [];
-        car.lWheels = [];
-        car.fLights = [];
-        car.rLights = [];
-        car.figHead = [];
+        car.body = car.steps[stepCarBody];
+        car.rWheels = car.steps[stepCarRightWheels];
+        car.lWheels = car.steps[stepCarLeftWheels];
+        car.fLights = car.steps[stepCarFrontLights];
+        car.rLights = car.steps[stepCarRearLights];
+        car.figHead = car.steps[stepCarFigHead];
 
-        let matMap = new Map();
+        let r = Math.random();
+        let g = Math.random();
+        let b = Math.random();
 
-        let colorChanged = false;
+        car.body.forEach(c => {
+            c.material[0].color.setRGB(r, g, b);
+        });
 
-        car.traverse(c => {
-            if (c.isMesh) {
-                // Clone materials
+        let lightsMatMap = new Map();
+        car.fLights.forEach(c => {
+            cloneMaterial(c, lightsMatMap);
+        });
 
-                if (c.material instanceof THREE.Material) {
-                    c.material = c.material.clone();
-                }
-                else {
-                    let newMats = [];
-                    for (let oldMat of c.material) {
-                        let newMat;
-                        if (matMap.has(oldMat)) {
-                            newMat = matMap.get(oldMat);
-                        } else {
-                            newMat = oldMat.clone();
-                            matMap.set(oldMat, newMat);
-                        }
-                        newMats.push(newMat);
-                    }
-                    c.material = newMats;
-                }
-
-                if (c.parent.userData.constructionStep == stepCarBody) {
-                    car.body.push(c);
-
-                    if (!colorChanged) {
-                        let r = Math.random();
-                        let g = Math.random();
-                        let b = Math.random();
-
-                        c.material[0].color.setRGB(r, g, b);
-                        colorChanged = true;
-                    }
-                }
-
-                if (c.parent.userData.constructionStep == stepCarRightWheels) {
-                    car.rWheels.push(c);
-                }
-                if (c.parent.userData.constructionStep == stepCarLeftWheels) {
-                    car.lWheels.push(c);
-                }
-                if (c.parent.userData.constructionStep == stepCarFrontLights) {
-                    car.fLights.push(c);
-                }
-                if (c.parent.userData.constructionStep == stepCarRearLights) {
-                    car.rLights.push(c);
-                }
-                if (c.parent.userData.constructionStep == stepCarFigHead) {
-                    car.figHead.push(c);
-                }
-            }
+        car.rLights.forEach(c => {
+            cloneMaterial(c, lightsMatMap);
         });
 
         if (car.figHead.length > 1) {
@@ -294,4 +310,33 @@ export function initCar(index, onLoad, onProgress, onError) {
             }
         }
     }
+}
+
+export function initAmbient(onLoad, onProgress, onError) {
+    loadModel('ambient', obj => {
+        // Convert from LDraw coordinates: rotate 180 degrees around OX
+        //obj.rotateX(-Math.PI);
+
+        fenceProto = obj.children[0];
+        chrystalProto = obj.children[1];
+        sphereProto = obj.children[2];
+
+        for (let plantIdx = 3; plantIdx < obj.children.length; plantIdx++) {
+            obj.children[plantIdx].position.x = 0;
+            obj.children[plantIdx].position.z = 0;
+            plantProtos.push(obj.children[plantIdx]);
+        }
+
+        let newBush = plantProtos[4].clone();
+        newBush.add(plantProtos[5].clone().translateY(-flatSize));
+        plantProtos.splice(6, 0, newBush);
+
+        for (let fIdx = 8; fIdx < 12; fIdx++) {
+            let newFlower = plantProtos[7].clone();
+            newFlower.add(plantProtos[fIdx].clone().rotateY(Math.PI));
+            plantProtos.push(newFlower);
+        }
+
+        if (onLoad) onLoad(obj);
+    }, onProgress, onError);
 }

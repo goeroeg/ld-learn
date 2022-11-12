@@ -3,19 +3,17 @@
 import * as OBJS from './Objects.js';
 import * as ANIM from './Animations.js';
 
-export const plateSize = 640;
-export const parcelSize = 80;
-export const plateCounter = 7;
+import { ldrawColors } from './LDrawHelper.js';
 
+export const plateSize = 32 * OBJS.studSize;
+export const parcelSize = 4 * OBJS.studSize;
+
+export var plateCounter = 7;
 export var worldPlates = 4.5;
 
-export const roadPlates = worldPlates - 0.5;
+export var roadPlates = worldPlates - 0.5;
 
 export var model;
-
-export var chrystal;
-
-export var sphere;
 
 export var sky;
 export var sunSphere;
@@ -55,8 +53,8 @@ export const seasons = {
 
 export var currentSeason = seasons.auto;
 
-export const seasonPlateColor = [ 0x58AB41, 0x00852B, 0x91501C, 0xBCB4A5 ]; // old autumn: 0x91501C
-export const seasonPlantColor = [ 0x00852B, 0x00451A, 0x77774E, 0x708E7C ];
+export const seasonPlateColor = [ ldrawColors.Bright_Green, ldrawColors.Green, ldrawColors.Orange, ldrawColors.Very_Light_Grey ]; // old autumn: Dark_Orange
+export const seasonPlantColor = [ ldrawColors.Green, ldrawColors.Dark_Green, ldrawColors.Olive_Green, ldrawColors.Sand_Green ];
 
 export const smoothNormals = true; // test this later, but takes longer for testing
 
@@ -64,7 +62,6 @@ export const fencePlaceholder = 1;
 export const roadPlaceholder = 2;
 export const trackPlaceholder = 3;
 export const trackDummyPlaceholder = 4;
-
 
 export function initPlates(onLoad, onProgress, onError) {
     OBJS.loadModel('baseplate', function ( group2 ) {
@@ -74,34 +71,15 @@ export function initPlates(onLoad, onProgress, onError) {
         // Convert from LDraw coordinates: rotate 180 degrees around OX
         model.rotateX(-Math.PI);
 
-        let max = plateSize * (plateCounter + 0.5);
-        let min = -max;
-
-        // create parcels
-        for (let x = min; x <= max; x += parcelSize) {
-            for (let z = min; z <= max; z += parcelSize) {
-                let newParcel = { x: x, z: z };
-                parcels.push(newParcel);
-            }
-        }
-
         // console.log(parcels);
         plate = model.children[0];
 
         // clear model, keep only first plate
         while(model.children.length > 1) model.remove(model.children[1]);
 
-        // reserve exercise parcel
-
-        //for (let i = 0; i <= 3; i++) {
-        let idx = getParcelIndex(-200, plateSize);
-        let exParcel = parcels[idx];
-        exParcel.occupied = true;
-        exParcel.mapObjId = MapObjectId.exercise;
-        //}
-
         worldPlates = 0.5;
-        freeParcels = parcels.filter(parcelFilter);
+
+        resetParcels();
 
         setSeasonColor(currentSeason);
 
@@ -110,54 +88,59 @@ export function initPlates(onLoad, onProgress, onError) {
     }, onProgress, onError, true);
 }
 
+function resetParcels() {
+    let max = plateSize * (plateCounter + 0.5);
+    let min = -max;
+
+    parcels = [];
+
+    // create parcels
+    for (let x = min; x <= max; x += parcelSize) {
+        for (let z = min; z <= max; z += parcelSize) {
+            let newParcel = { x: x, z: z };
+            parcels.push(newParcel);
+        }
+    }
+
+    // reserve exercise parcel
+    let idx = getParcelIndex(-200, plateSize);
+    let exParcel = parcels[idx];
+    exParcel.occupied = true;
+    exParcel.mapObjId = MapObjectId.exercise;
+
+    freeParcels = parcels.filter(parcelFilter);
+}
+
 export function initScene(onLoad, onProgress, onError) {
-    OBJS.loadModel('ambient', function ( group2 ) {
-
-            // Convert from LDraw coordinates: rotate 180 degrees around OX
-            group2.rotateX(-Math.PI);
-
-            fence = group2.children[0];
-
-            chrystal = group2.children[1];
-            chrystal.children[0].material[0].emissive.setHex(0xffffff);
-            chrystal.children[0].material[0].emissiveIntensity = 0.3;
-
-            sphere = group2.children[2];
-            sphere.children[0].material[0].emissiveIntensity = 0.4;
-            sphere.children[0].material[0].emissive.setHex(sphere.children[0].material[0].color.getHex());
-
-            // let plants = [];
-            for (let plantIdx = 3; plantIdx < group2.children.length; plantIdx++) {
-                plantProtos.push(group2.children[plantIdx]);
-            }
-
+    OBJS.initAmbient(function ( group2 ) {
+            plantProtos = OBJS.plantProtos;
+            fence = OBJS.fenceProto;
             setSeasonColor(currentSeason);
-
             onLoad(group2);
-
         }, onProgress, onError);
 }
 
 export function setSeasonColor(season) {
     if (season != seasons.auto) {
         if (plate) {
-            plate.children[0].material[0].color.setHex(seasonPlateColor[season]);
+            plate.children[0].material[0].color.setHex(seasonPlateColor[season].hex);
         }
         if (plantProtos && plantProtos.length > 0) {
-            plantProtos[0].children[0].material[0].color.setHex(seasonPlantColor[season]);
-            if (plantProtos.length > 6) {
-                plantProtos[6].children[0].material[0].color.setHex(seasonPlateColor[season]);
+            plantProtos[0].children[0].material[0].color.setHex(seasonPlantColor[season].hex);
+            if (plantProtos.length > 7) {
+                plantProtos[7].children[0].material[0].color.setHex(seasonPlateColor[season].hex);
             }
         }
         if (roadPlate) {
             // console.log(roadPlate);
-            roadPlate.children[0].material[2].color.setHex(seasonPlateColor[season]);
+            roadPlate.children[0].material[2].color.setHex(seasonPlateColor[season].hex);
         }
         currentSeason = season;
     }
 }
 
-export function createPlates() {
+export function createPlates(numPlates = plateCounter, numWorldPlates = 4.5) {
+    plateCounter = numPlates;
     model.remove(plate);
     for (let x = -plateCounter; x <= plateCounter; x += 1) {
         for (let z = -plateCounter; z <= plateCounter; z += 1) {
@@ -168,7 +151,9 @@ export function createPlates() {
             plates.push(newPlate);
         }
     }
-    worldPlates = 4.5;
+    worldPlates = numWorldPlates;
+
+    resetParcels();
 }
 
 export function debugParcel(x, z, color = 0xffffff) {

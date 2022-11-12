@@ -1,5 +1,7 @@
 import * as OBJS from '../../../gfx/Objects.js';
 
+import { ldrawColors } from '../../../gfx/LDrawHelper.js';
+
 export class BaseRobot {
     constructor() {
         this.description = "Abstract Robot";
@@ -29,6 +31,6 @@ export class BaseRobot {
                 self.model = model;
 
                 if (onLoad) onLoad(model);
-            });
+            }, onProgress, onError, false, ldrawColors.Main_Colour);
     }
 }

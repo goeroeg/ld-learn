@@ -2,13 +2,14 @@ import '../../web_modules/three/build/three.min.js';
 
 // import { GUI } from './node_modules/three/examples/jsm/libs/dat.gui.module.js';
 //import { GUI } from '../ld-framework/web_modules/three/examples/jsm/libs/dat.gui.module.js';
-import { GUI } from '../../web_modules/dat.gui/build/dat.gui.module.js';
+import { GUI as DatGUI } from '../../web_modules/dat.gui/build/dat.gui.module.js';
 // import { MapControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
 
 import * as ANIM from '../../gfx/Animations.js';
 import * as OBJ from '../../gfx/Objects.js'
 import * as SFX from '../../audio/SoundFX.js';
 import * as PTFX from '../../gfx/ParticleEffects.js';
+import * as GUI from '../../gui/guiutils.js'
 
 var camera, scene, renderer, composer;
 var particleSystems = [];
@@ -145,7 +146,7 @@ function init() {
     initRendering();
     initControls();
     //SFX.init(camera);
-    initGUI();
+    initDatGUI();
 }
 
 function initScene() {
@@ -571,9 +572,9 @@ function addParcelEffect(x, z, height, time, size) {
 
 //#region Settings GUI
 
-function initGUI() {
+function initDatGUI() {
 
-    gui = new GUI({ autoPlace: false });
+    gui = new DatGUI({ autoPlace: false });
 
     gui.useLocalStorage = true;
 
@@ -1891,48 +1892,6 @@ function onWindowResize(update = true) {
     }
 
     // playerInfo.innerHTML =  window.innerWidth + " x " + window.innerHeight + " (" + window.screen.width + " x " + window.screen.height + ")";
-}
-
-/* View in fullscreen */
-export function openFullscreen() {
-    if (document.body.requestFullscreen) {
-        document.body.requestFullscreen();
-    } else if (document.body.mozRequestFullScreen) { /* Firefox */
-        document.body.mozRequestFullScreen();
-    } else if (document.body.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-        document.body.webkitRequestFullscreen();
-    } else if (document.body.msRequestFullscreen) { /* IE/Edge */
-        document.body.msRequestFullscreen();
-    }
-}
-
-/* Close fullscreen */
-function closeFullscreen() {
-    console.log("Closing FS");
-    if (document.exitFullscreen) {
-        document.exitFullscreen();
-    } else if (document.mozCancelFullScreen) { /* Firefox */
-        document.mozCancelFullScreen();
-    } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
-        document.webkitExitFullscreen();
-    } else if (document.msExitFullscreen) { /* IE/Edge */
-        document.msExitFullscreen();
-    }
-}
-
-function toggleFullScreen() {
-    var doc = window.document;
-    var docEl = doc.body;
-
-    var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
-    var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
-
-    if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-        requestFullScreen.call(docEl);
-    }
-    else {
-        cancelFullScreen.call(doc);
-    }
 }
 
 //#endregion

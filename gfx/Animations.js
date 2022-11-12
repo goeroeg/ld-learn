@@ -66,9 +66,6 @@ export function createHeadAnimation(period, angle, axis) {
     return new THREE.AnimationClip('head', period, [track]);
 }
 
-export function createPathAnimation() {
-
-}
 
 export function createCurveAnimation(origin, target, aux) {
     let path = new THREE.Path();
@@ -120,35 +117,104 @@ export function createRoundedRectPath(length, width, radius) {
     return path;
 }
 
-export function createRoadAnimation(numSegments, segmentSize, radius, ccw) {
-    let len = numSegments * segmentSize;
-    let path = createRoundedRectPath(len, len, radius);
-    //
+export function createCCWRoundedRectPath(length, width, radius) {
+    let x = -length / 2;
+    let z = -width / 2;
+
+    let path = new THREE.Path();
+    path.moveTo( x, z + radius );
+
+    path.absarc( x + radius, z + radius, radius, -Math.PI, -Math.PI/2, false );
+    path.absarc( -x - radius, z + radius, radius, -Math.PI/2, 0, false );
+    path.absarc( -x - radius, -z - radius, radius, 0, Math.PI/2, false );
+    path.absarc( x + radius, -z - radius, radius, Math.PI/2, Math.PI, false );
+
+    path.lineTo( x, z + radius );
+
+    //path.closePath();
+
+    return path;
+}
+
+const corrTimeStep = 0.00005;
+
+function clipToRange(value, min, max) {
+    let step = Math.abs(max-min);
+
+    while(value < min) { value += step; }
+    while(value > max) { value -= step; }
+
+    return value;
+}
+
+export function createPathAnimation (path, offset, wheelDist = 0) {
+    let pathLen = path.getLength();
+
+    let timeOffset = offset / pathLen;
+
+    let wheelDelta = (wheelDist / 2) / pathLen;
+
     let times = []
     let xvalues = [];
     let zvalues = [];
     let rot = [];
-    let numSeg = (numSegments - 1) * 32 + (ccw ? numSegments + 1: 0); // for ccw some more points needed for fluent anim
-    for (let t = 0; t <= numSeg; t++) {
-        times.push(t);
-        let time = (ccw ? numSeg - t : t) / numSeg;
-        let point = path.getPointAt(time);
+    let numSeg = Math.ceil(pathLen / 80); // numLinTracks * 2 + 32 + 1;
 
-        xvalues.push(point.x);
-        zvalues.push(point.y);
+    console.log(numSeg);
 
-        let angle = -path.getTangentAt(time).angle() + (ccw ? Math.PI/2 : -Math.PI/2);
-        if (ccw) {
-            while (angle < 0) angle += Math.PI * 2;
-            while (angle > 2 * Math.PI) angle -= Math.PI * 2;
-        } else {
-            while (angle < -Math.PI) angle += Math.PI * 2;
-            while (angle > Math.PI) angle -= Math.PI * 2;
-        }
-        rot.push(angle);
+    let prevAngle;
+
+    function getValuesAt(time) {
+        let p1 = path.getPointAt(clipToRange(time - wheelDelta, 0, 1));
+        let p2 = path.getPointAt(clipToRange(time + wheelDelta, 0, 1));
+
+        return {
+            point: new THREE.Vector2((p1.x + p2.x) / 2, (p1.y + p2.y) / 2),
+            angle: -(wheelDist == 0 ? path.getTangentAt(time).angle() : Math.atan2(p2.y - p1.y, p2.x - p1.x)) - Math.PI/2
+        };
     }
 
-    // console.log(rot);
+    for (let t = 0; t <= numSeg; t++) {
+        let time = clipToRange(t / numSeg - timeOffset, 0, 1);
+
+        // let point = path.getPointAt(time);
+        // let angle = -path.getTangentAt(time).angle();
+
+        let values = getValuesAt(time);
+
+        // prevent 'dancing'
+        if (Math.abs(values.angle - prevAngle) > Math.PI) {
+            let tempTime = time;
+            let tempValues = values;
+            let lastValues, lastTime;
+
+            do { // find the tipping point
+                lastValues = tempValues;
+                lastTime = tempTime;
+
+                tempTime -= corrTimeStep;
+                if (tempTime < 0) tempTime += 1;
+
+                tempValues = getValuesAt(tempTime);
+            } while (Math.abs(tempValues.angle - prevAngle) > Math.PI);
+
+            times.push((tempTime + timeOffset) * numSeg);
+            times.push((lastTime + timeOffset) * numSeg);
+
+            [tempValues, lastValues].forEach(values => {
+                rot.push (values.angle);
+                xvalues.push(values.point.x);
+                zvalues.push(values.point.y);
+            });
+        }
+
+        times.push(t);
+        xvalues.push(values.point.x);
+        zvalues.push(values.point.y);
+        rot.push(values.angle);
+
+        prevAngle = values.angle;
+    }
 
     let xtrack = new THREE.NumberKeyframeTrack('.position[x]', times, xvalues);
     let ztrack = new THREE.NumberKeyframeTrack('.position[z]', times, zvalues);
@@ -161,81 +227,16 @@ export function createRoadAnimation(numSegments, segmentSize, radius, ccw) {
     return clip;
 }
 
-const corrTimeStep = 0.00005;
-
-export function createTrackAnimation (numLinTracks, linTrackLength, radius, offset) {
+export function createTrackAnimation (numLinTracks, linTrackLength, radius, offset, wheelDist = 0) {
     let len = (numLinTracks * linTrackLength) + (radius * 2);
-    let path = createRoundedRectPath(len, len, radius);
+    return createPathAnimation(createRoundedRectPath(len, len, radius), offset, wheelDist);
+}
 
-    let timeOffset = offset / path.getLength();
+export function createRoadAnimation(numSegments, segmentSize, radius, ccw, wheelDist = 0) {
+    let len = numSegments * segmentSize;
+    let path = ccw ? createCCWRoundedRectPath(len, len, radius) : createRoundedRectPath(len, len, radius);
 
-    let times = []
-    let xvalues = [];
-    let zvalues = [];
-    let rot = [];
-    let numSeg = numLinTracks * 2 + 32 + 1;
-    let prevAngle = -path.getTangentAt(0).angle();
-
-    for (let t = 0; t <= numSeg; t++) {
-        let time = t / numSeg - timeOffset;
-        if (time < 0) time += 1;
-        if (time > 1) time -= 1;
-
-        let point = path.getPointAt(time);
-
-        let angle = -path.getTangentAt(time).angle();
-
-        if (Math.abs(angle - prevAngle) > Math.PI) {
-            let tempTime = time;
-            let tempAngle;
-
-            do { // find the tipping point
-                tempTime -= corrTimeStep;
-                if (time < 0) time += 1;
-                tempAngle = -path.getTangentAt(tempTime).angle();
-            } while (Math.abs(tempAngle - prevAngle) > Math.PI);
-
-            times.push((tempTime + timeOffset) * numSeg);
-            rot.push (tempAngle);
-            let tempPoint = path.getPointAt(tempTime);
-            xvalues.push(tempPoint.x);
-            zvalues.push(tempPoint.y);
-
-            tempTime += corrTimeStep;
-            if (time > 1) time -= 1;
-            tempAngle = -path.getTangentAt(tempTime).angle();
-
-            times.push((tempTime + timeOffset) * numSeg);
-            rot.push(tempAngle);
-            tempPoint = path.getPointAt(tempTime);
-            xvalues.push(tempPoint.x);
-            zvalues.push(tempPoint.y);
-        }
-
-        prevAngle = angle;
-
-        times.push(t);
-        xvalues.push(point.x);
-        zvalues.push(point.y);
-        rot.push(angle);
-    }
-
-    /*
-    console.log(times);
-    console.log(rot);
-    console.log(xvalues);
-    console.log(zvalues);
-    */
-
-    let xtrack = new THREE.NumberKeyframeTrack('.position[x]', times, xvalues);
-    let ztrack = new THREE.NumberKeyframeTrack('.position[z]', times, zvalues);
-    let rottrack = new THREE.NumberKeyframeTrack('.rotation[y]', times, rot);
-
-    let clip = new THREE.AnimationClip('road', numSeg, [xtrack, ztrack, rottrack]);
-
-    clip.path = path;
-
-    return clip;
+    return createPathAnimation(path, 0, wheelDist);
 }
 
 export function blendProperty(mixer, obj, propName, targetValue, duration) {

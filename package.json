@@ -1,20 +1,27 @@
 {
   "name": "ld-learn",
-  "description": "An Edu-shooter using LDRAW objects.",
-  "version": "0.3.7",
-  "main": "main.js",
+  "description": "A collection of browser (mini-)games using three.js and LDRAW objects.",
+  "version": "0.4.0",
+  "main": "./apps/learn/main.js",
   "scripts": {
     "serve": "http-server ..",
-    "start": "electron .",
+    "farming": "electron ./apps/farming/main.js",
+    "learn": "electron ./apps/learn/main.js",
+    "story": "electron ./apps/story/main.js",
+    "nativity": "electron ./apps/nativity/main.js",
+    "office": "electron ./apps/office/main.js",
+    "robot": "electron ./apps/robot/main.js",
+    "fireworks": "electron ./apps/fireworks/main.js",
     "packldr": "node gfx/packLDrawModel.js ./ldraw/models/"
   },
   "dependencies": {
     "eslint": "^7.28.0",
     "partykals": "^1.0.2",
-    "three": "^0.125.0"
+    "three": "^0.125.0",
+    "flag-icons": "^6.1.1"
   },
   "devDependencies": {
-    "electron": "^13.0.0",
+    "electron": "^13.6.9",
     "eslint-config-google": "^0.14.0",
     "http-server": "^0.12.3",
     "sync-request": "^6.1.0"
