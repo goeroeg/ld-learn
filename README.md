@@ -3,6 +3,7 @@
 This is a collection of various LDraw™-Library and three.js based (mini-)games:
 
 - [LD-Learn](#ld-learn) [-> Try](https://goeroeg.github.io/ld-learn/apps/learn/ld-learn.html)
+- LD-Chess [-> Try](https://goeroeg.github.io/ld-learn/apps/chess/ld-chess.html)
 - LD-Office [-> Try](https://goeroeg.github.io/ld-learn/apps/office/hoffice.html)
 - LD-Flowers [-> Try](https://goeroeg.github.io/ld-learn/apps/flowers/ld-flowers.html)
 - LD-Robot [-> Try](https://goeroeg.github.io/ld-learn/apps/robot/ld-robot.html)
@@ -91,6 +92,8 @@ The [LDraw™ library](https://www.ldraw.org/) under Creative Commons Attributio
 LDraw™ is a trademark owned and licensed by the Estate of James Jessiman
 
 [three.js](https://threejs.org/) as MIT license (no extra attribution needed, but I think they deserve it :) )
+
+[js-chess-engine](https://github.com/josefjadrny/js-chess-engine) by josefjadrny used in the chess game, MIT license
 
 [dat.gui](https://github.com/dataarts/dat.gui) under Apache License 2.0
 

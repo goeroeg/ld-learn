@@ -44,9 +44,9 @@ export function createGrowAnimation(period, start = new THREE.Vector3(0, 0, 0), 
     return new THREE.AnimationClip( 'scale', period, [ xTrack, yTrack, zTrack ] );
 }
 
-export function createColorAnimation(period, startColor, endColor) {
+export function createColorAnimation(period, startColor, endColor, propName = 'color') {
     var times = [0, period], values = [startColor.r, startColor.g, startColor.b, endColor.r, endColor.g, endColor.b];
-    var colorTrack = new THREE.ColorKeyframeTrack('.color', times, values, THREE.InterpolateLinear);
+    var colorTrack = new THREE.ColorKeyframeTrack('.' + propName, times, values, THREE.InterpolateLinear);
     return new THREE.AnimationClip( 'color', period, [ colorTrack ] );
 }
 
@@ -160,8 +160,6 @@ export function createPathAnimation (path, offset, wheelDist = 0) {
     let rot = [];
     let numSeg = Math.ceil(pathLen / 80); // numLinTracks * 2 + 32 + 1;
 
-    console.log(numSeg);
-
     let prevAngle;
 
     function getValuesAt(time) {
@@ -249,13 +247,15 @@ export function blendProperty(mixer, obj, propName, targetValue, duration) {
     action.setLoop(THREE.LoopOnce).setDuration(duration).play();
 }
 
-export function blendColor(mixer, obj, targetColorHex, duration) {
-    let currColor = obj.color;
+export function blendColor(mixer, obj, targetColorHex, duration, propName = 'color') {
+    let currColor = obj[propName];
 
-    let action = mixer.clipAction(createColorAnimation(duration, currColor, new THREE.Color(targetColorHex)), obj);
+    mixer.uncacheRoot(obj);
+
+    let action = mixer.clipAction(createColorAnimation(duration, currColor, new THREE.Color(targetColorHex), propName), obj);
     action.clampWhenFinished = true;
     action.setLoop(THREE.LoopOnce).play();
-    obj.color.setHex(targetColorHex);
+    obj[propName].setHex(targetColorHex);
 }
 
 export function blendScale(mixer, obj, targetValue, duration) {
