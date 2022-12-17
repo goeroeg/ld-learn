@@ -3,7 +3,7 @@ import '../../web_modules/three/build/three.min.js';
 // import { GUI } from './node_modules/three/examples/jsm/libs/dat.gui.module.js';
 //import { GUI } from '../ld-framework/web_modules/three/examples/jsm/libs/dat.gui.module.js';
 import { GUI as DatGUI } from '../../web_modules/dat.gui/build/dat.gui.module.js';
-import { MapControls } from '../../web_modules/three/examples/jsm/controls/OrbitControls.js';
+import { OrbitControls } from '../../web_modules/three/examples/jsm/controls/OrbitControls.js';
 
 import * as ANIM from '../../gfx/Animations.js';
 
@@ -17,7 +17,7 @@ import * as GUI from '../../gui/guiutils.js'
 
 import { ldrawColors } from '../../gfx/LDrawHelper.js';
 
-export var camera, mapControls, lockControls, gamepadControls, scene, renderer, raycaster, intersectedObject, composer;
+var camera, mapControls, scene, renderer, raycaster;
 
 
 const playerLevels = {
@@ -61,27 +61,39 @@ var playerSettings = { name:'Player' }
 
 var gui, gfxFolder, audioFolder, gameFolder;
 
-var playerInfo = document.getElementById('playerInfo');
-var blocker = document.getElementById( 'blocker' );
-var instructions = document.getElementById( 'instructions' );
-var clickSpan = document.getElementById( 'clickSpan' );
-var settings = document.getElementById( 'settings' );
+const playerInfo = document.getElementById('playerInfo');
+const blocker = document.getElementById( 'blocker' );
+const instructions = document.getElementById( 'instructions' );
+const clickSpan = document.getElementById( 'clickSpan' );
+const settings = document.getElementById( 'settings' );
+
+const restartGameControl = document.getElementById('restartGame');
+const undoMoveControl = document.getElementById('undoMove');
+const showHintControl = document.getElementById('showHint');
+const fullScreenControl = document.getElementById('fullScreen');
+const showSettingsControl = document.getElementById('showSettings');
+const exitToMenuControl = document.getElementById('exitToMenu');
+const toggleAudioControl = document.getElementById('toggleAudio');
+
+const confirmRestartDialog = document.getElementById('confirmDialog');
 
 var fromCell, toCell;
 
 var intersectMeshes = new Set();
 var highlightedSelectableCells = [];
 var highlightedPossibleCells = [];
+var highlightedHintCells = [];
 
 var touchCamPos = new THREE.Vector2();
 
 var dirLight;
 
 var gameActive = false;
+var undoPossible = false;
 
-const noEmissive = 0x000000, possibleEmissive = 0x003300, dangerEmissive = 0xff0000, selectedEmissive = 0x000066, selectableEmissive = 0x003333;
-const noColor = 0x000000, possibleColor = 0x00ff00, dangerColor = 0xff0000, selectedColor = 0x0000ff, selectableColor = 0x00ffff;
-const possibleMat = new Set(), dangerMat = new Set(), selectedMat = new Set(), selectableMat = new Set();
+const noEmissive = 0x000000, possibleEmissive = 0x003300, dangerEmissive = 0x660000, selectedEmissive = 0x000066, selectableEmissive = 0x003333, hintEmissive = 0x660066;
+const noColor = 0x000000, possibleColor = 0x00ff00, dangerColor = 0xff0000, selectedColor = 0x0000ff, selectableColor = 0x00ffff, hintColor = 0xff00ff;
+const possibleMat = new Set(), dangerMat = new Set(), selectedMat = new Set(), selectableMat = new Set(), hintMat = new Set();
 const highlightDuration = 0.15, moveDuration = 0.2;
 
 var game, status, lastCastling = {};
@@ -95,8 +107,109 @@ function init() {
     initControls();
     // initSound();
     // initDatGUI();
-
+    initGUI();
     // createExercise();
+}
+
+function initGUI() {
+    fullScreenControl.addEventListener('click', toggleFullScreen);
+    GUI.setDisabled(fullScreenControl, false);
+
+    exitToMenuControl.addEventListener('click', function(e) {
+        if (gameActive) {
+            pauseGame();
+        }
+    });
+
+    const okButton = confirmRestartDialog.querySelector('#ok');
+    const cancelButton = confirmRestartDialog.querySelector('#cancel');
+
+    okButton.addEventListener('click', function(e) {
+        resetPlayerHints();
+        initGame();
+        confirmRestartDialog.close();
+    });
+
+    cancelButton.addEventListener('click', function(e) {
+        confirmRestartDialog.close();
+    });
+
+    confirmRestartDialog.addEventListener('close', function(e) {
+        startGame(false);
+    });
+
+    restartGameControl.addEventListener('click', function(e) {
+        tryRestartGame();
+    });
+
+
+    undoMoveControl.addEventListener('click', function(e) {
+        if (undoPossible) {
+            undoMove();
+        }
+    });
+
+    showHintControl.addEventListener('click', function(e) {
+        if (!showHintControl.classList.contains('disabled')) {
+            showAIMoveHint();
+        }
+    });
+
+    if (isTouch) {
+        instructions.addEventListener( 'touchstart', function (e) {
+            GUI.openFullscreen();
+            window.history.pushState({}, '');
+            startGame();
+        }, false );
+
+        /*
+        document.getElementById('clickSpan').addEventListener( 'click', function () {
+            startGame();
+        }, false );
+        */
+
+        window.addEventListener('popstate', function() {
+            pauseGame();
+        });
+
+    } else {
+        instructions.querySelector('a').addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        instructions.addEventListener( 'click', function (e) {
+            startGame();
+        });
+    }
+
+    window.addEventListener('keydown', onWindowKeypress, false);
+    window.addEventListener('resize', onWindowResize, false);
+}
+
+function tryRestartGame() {
+    pauseGame(false);
+    confirmRestartDialog.showModal();
+}
+
+function onWindowKeypress(e) {
+    switch (e.which) {
+        case 27: //ESC
+            if (isUserFullscreen()) {
+                setFullScreenControl(true);
+            } else if (gameActive){
+                pauseGame();
+            }
+            break;
+        case 122: // F11
+            toggleFullScreenControl();
+            break;
+        case 90: // Z
+            if (e.ctrlKey && undoPossible) {
+                undoMove();
+            }
+        default:
+            // console.log(e);
+            break;
+    }
 }
 
 function initControls() {
@@ -105,7 +218,7 @@ function initControls() {
     // renderer.setPixelRatio( window.devicePixelRatio );
 
     renderer.setSize( window.innerWidth, window.innerHeight );
-    renderer.gammaFactor = 2.2;
+    // renderer.gammaFactor = 2.2;
 
     updateShadows(gfxSettings.shadows);
     // renderer.physicallyCorrectLights = true;
@@ -126,16 +239,10 @@ function initControls() {
     scene.add (camera);
     camera.add (new THREE.CameraHelper(dirLight.shadow.camera));
 */
-    // addCrossHair(camera);
 
     raycaster = new THREE.Raycaster();
 
-    // raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, -1, 0 ), 0 , 1000);
-
-    var onKeyDown, onKeyUp;
-
-
-    mapControls = new MapControls ( camera, document.body )
+    mapControls = new OrbitControls(camera, document.body); // new MapControls ( camera, document.body )
 
     mapControls.screenSpacePanning = false;
 
@@ -146,88 +253,16 @@ function initControls() {
     mapControls.enableDamping = true;
 
     mapControls.enabled = false;
-
-    var onKeyDown = function ( event ) {
-
-        //console.log("down " + event.keyCode);
-
-        switch ( event.keyCode ) {
-
-            case 8: // backspace
-                if ( animClock.running ) {
-                    animClock.stop();
-                } else {
-                    animClock.start();
-                }
-                break;
-        }
-
-    };
-
-    var onKeyUp = function ( event ) {
-
-        //console.log("up " + event.keyCode);
-
-        switch ( event.keyCode ) {
-
-            case 27: //ESC
-                if (gameActive){
-                    pauseGame();
-                }
-                break;
-
-        }
-    };
-
-    if (isTouch) {
-        instructions.addEventListener( 'touchstart', function (e) {
-            GUI.openFullscreen();
-            window.history.pushState({}, '');
-            startGame();
-        }, false );
-
-        /*
-        document.getElementById('clickSpan').addEventListener( 'click', function () {
-            startGame();
-        }, false );
-        */
-
-        window.addEventListener('popstate', function() {
-            pauseGame();
-        });
-
-    } else {
-        clickSpan.addEventListener( 'click', function () {
-            startGame();
-        }, false );
-    }
-
-    document.addEventListener( 'keydown', onKeyDown, false );
-    document.addEventListener( 'keyup', onKeyUp, false );
-
-    /*
-    // controls
-    controls = new MapControls( camera, renderer.domElement );
-    //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
-    controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-    controls.dampingFactor = 0.05;
-    controls.screenSpacePanning = false;
-    controls.minDistance = 100;
-    controls.maxDistance = 2500;
-    controls.maxPolarAngle = Math.PI / 2;
-
-    */
-    //
-    window.addEventListener( 'resize', onWindowResize, false );
-    // document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 }
 
-function pauseGame() {
+function pauseGame(blocker = true) {
     gameActive = false;
 
-    mapControls.enabled = false;
+    updateGUIControls();
 
-    updateBlocker(false);
+    if (blocker) {
+        updateBlocker(false);
+    }
 
     //pauseSFX();
 
@@ -236,10 +271,20 @@ function pauseGame() {
     document.removeEventListener( 'mousemove', onDocumentMouseMove);
 }
 
-function startGame() {
-    requestAnimationFrame(animate);
+function updateGUIControls() {
+    mapControls.enabled = gameActive;
 
-    updateBlocker(true);
+    GUI.setDisabled(exitToMenuControl, !gameActive);
+    GUI.setDisabled(restartGameControl, !gameActive);
+    GUI.setDisabled(undoMoveControl,  !(gameActive && undoPossible));
+    GUI.setDisabled(showHintControl, !(gameActive && gameSettings[status.turn] == playerLevels.human));
+}
+
+function startGame(blocker = true) {
+    requestAnimationFrame(animate);
+    if (blocker) {
+        updateBlocker(true);
+    }
 
     document.addEventListener('click', onDocumentClick, false);
     document.addEventListener('mousemove', onDocumentMouseMove, false );
@@ -250,7 +295,7 @@ function startGame() {
 
     // resumeSFX((chrystalCount >= chrActions.plantsMin) && audioSettings.ambient, (chrystalCount >= chrActions.musicSphere));
 
-    mapControls.enabled = true;
+    updateGUIControls();
 }
 
 function updateBlocker(hide) {
@@ -483,14 +528,16 @@ function initScene() {
     showProgressBar();
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color( 0x606060 );
+    scene.background = new THREE.Color( 0x202020 );
 
     var loader = new THREE.TextureLoader();
     //loader.load('../../gfx/textures/panorama.jpg',
     loader.load('../../gfx/textures/sky_day.jpg',
         texture => {
             scene.background = texture;
-
+            if (renderer) {
+                render();
+            }
         }, xhr => {
             console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
         }, error => { console.log("An error happened" + error); });
@@ -513,6 +560,10 @@ function initScene() {
 
         initGame();
         startGame();
+
+        /*if (renderer) {
+            render();
+        }*/
 
     }, onProgress, onError );
 
@@ -551,9 +602,7 @@ function initLights() {
     // scene.add (new THREE.CameraHelper(dirLight.shadow.camera));
 
     scene.add(dirLight);
-
 }
-
 
 function addParcelEffect(x, z, height, time, size) {
     if (gameSettings.itemEffect) {
@@ -640,6 +689,10 @@ function onWindowResize(update = true) {
 
     gfxSettings.fullScreen = (window.screen.width == window.innerWidth); // API not working when triggered with F11
 
+    if (!gameActive && renderer) {
+        render();
+    }
+
     // playerInfo.innerHTML =  window.innerWidth + " x " + window.innerHeight + " (" + window.screen.width + " x " + window.screen.height + ")";
 }
 
@@ -655,12 +708,16 @@ function onDocumentClick( event ) {
     checkIntersections();
 
     function markAsPossibleCell(cell) {
-        highlightCell(cell, possibleColor, possibleEmissive, possibleMat);
+        if (!highlightedHintCells.includes(cell)) {
+            highlightCell(cell, possibleColor, possibleEmissive, possibleMat);
+        }
+
         addToIntersect(cell.box);
         addToIntersect(cell.figure);
         highlightedPossibleCells.push(cell);
     }
 
+    //resetHintHighlights();
     resetPossibleHighlights();
 
     if (currentHighlight) {
@@ -668,6 +725,10 @@ function onDocumentClick( event ) {
 
         if (status.moves[currentHighlight.id]) {
             fromCell = currentHighlight;
+
+            if (!highlightedHintCells.includes(fromCell)){
+                resetHintHighlights();
+            }
 
             markAsPossibleCell(currentHighlight);
 
@@ -682,6 +743,8 @@ function onDocumentClick( event ) {
                 if (move[fromCell.id] != currentHighlight.id) {
                     console.log("Something went wrong. Please restart.")
                 }
+                undoPossible = false;
+                GUI.setDisabled(undoMoveControl, true);
 
                 resetPlayerHints();
                 performAnimatedMove(move);
@@ -918,7 +981,9 @@ function highlightMaterial(mat, colorHex, set, box = false) {
 
         }
      } else {
-        if (set != possibleMat && possibleMat.has(mat)) {
+        if (set != hintMat && hintMat.has(mat)) {
+            colorHex = box ? hintColor : hintEmissive;
+        } else if (set != possibleMat && possibleMat.has(mat)) {
             colorHex = box ? possibleColor : possibleEmissive;
         } else if (set != selectableMat && selectableMat.has(mat)) {
             colorHex = box ? selectableColor : selectableEmissive;
@@ -968,24 +1033,107 @@ function updateCastlingStatus() {
     }
 }
 
+function undoMove() {
+
+    resetPlayerHints();
+    let history = game.getHistory();
+
+    // console.log(history);
+
+    while (history.length > 0) {
+        let lastMove = history[history.length - 1];
+        let pieces = lastMove.configuration.pieces;
+
+        let move = {};
+        move[lastMove.from] = lastMove.to;
+
+        for (let prop of ['isFinished', 'check', 'checkMate', 'enPassant', 'fullMove', 'halfMove', 'turn']) {
+            game.board.configuration[prop] = lastMove.configuration[prop];
+        }
+
+        for (let prop in lastMove.configuration.castling) {
+            lastCastling[prop] = lastMove.configuration.castling[prop];
+            status.castling[prop] = lastCastling[prop];
+        }
+        checkCastling(move);
+
+        for (let from in move) {
+            let to = move[from];
+
+            let fromCell = OBJS.cells[from];
+            let toCell = OBJS.cells[to];
+
+            if (to == lastMove.configuration.enPassant) {
+                let enp = to.charAt(0) + (Number(to.charAt(1)) + ((lastMove.configuration.turn == 'black') ? 1 : -1)).toString();
+                if (pieces[enp]) {
+                    game.setPiece(enp, pieces[enp]);
+                    let enpCell = OBJS.cells[enp];
+                    OBJS.clearCell(enpCell);
+                    OBJS.initFigure(enpCell, pieces[enp], scene);
+                }
+            }
+
+            OBJS.clearCell(toCell);
+            OBJS.clearCell(fromCell);
+            // scene.remove(toCell.figure);
+
+            if (pieces[to]) {
+                game.setPiece(to, pieces[to]);
+                OBJS.initFigure(toCell, pieces[to], scene);
+            } else{
+                game.removePiece(to);
+            }
+
+            game.setPiece(from, pieces[from]);
+            OBJS.initFigure(fromCell, pieces[from], scene);
+        }
+
+        history.splice(history.length - 1);
+
+        if (gameSettings[lastMove.configuration.turn] == playerLevels.human) {
+            break;
+        }
+    }
+    moveNext();
+}
+
 function moveNext() {
     status = game.exportJson();
     // console.log(status);
 
+    let playerLevel = gameSettings[status.turn];
+
+    undoPossible = game.getHistory().length > 0 && (status.isFinished || playerLevel == playerLevels.human);
+    GUI.setDisabled(undoMoveControl, !undoPossible);
+
     if (!status.isFinished) {
-
-        let playerLevel = gameSettings[status.turn];
-
         if (playerLevel == playerLevels.human) {
             initNextPlayerMove();
         } else {
             let move = game.aiMove(playerLevel);
             performAnimatedMove(move);
         }
-}
+    } else {
+        if (status.checkMate) {
+            // find lost king
+            let figLetter = OBJS.figLetters[6][(status.turn == 'white' ? 0 : 1)];
+            for (let cellId in OBJS.cells) {
+                let cell = OBJS.cells[cellId];
+                if (cell.figure && cell.figure.name == figLetter) {
+                    highlightCell(cell, dangerColor, dangerEmissive, dangerMat);
+                    highlightedHintCells.push(cell);
+                    break;
+                }
+            }
+        }
+    }
+
 }
 
 function initNextPlayerMove() {
+
+    GUI.setDisabled(showHintControl, false);
+
     for (let id in status.moves) {
         let cell = OBJS.cells[id];
         highlightCell(cell, selectableColor, selectableEmissive, selectableMat);
@@ -996,7 +1144,32 @@ function initNextPlayerMove() {
     }
 }
 
+function showAIMoveHint() {
+    let move = game.board.calculateAiMove(2);
+
+    console.log(move);
+
+    let fromCell = OBJS.cells[move.from];
+    let toCell = OBJS.cells[move.to];
+
+    resetHintHighlights();
+
+    highlightedHintCells.push(fromCell);
+    highlightedHintCells.push(toCell);
+
+    highlightCell(fromCell, hintColor, hintEmissive, hintMat);
+    highlightCell(toCell, hintColor, hintEmissive, hintMat);
+}
+
+function resetHintHighlights() {
+    highlightedHintCells.forEach(c => {
+        highlightCell(c, noColor, noEmissive, hintMat);
+    });
+    highlightedHintCells = [];
+}
+
 function resetPlayerHints() {
+
     highlightedSelectableCells.forEach(c => {
         highlightCell(c, noColor, noEmissive, selectableMat);
         removeFromIntersect(c.box);
@@ -1005,6 +1178,7 @@ function resetPlayerHints() {
     highlightedSelectableCells = [];
 
     resetPossibleHighlights();
+    resetHintHighlights();
 
     for (let m of dangerMat.values()) {
         highlightMaterial(m, noEmissive, dangerMat);
@@ -1060,3 +1234,46 @@ function createMoveAnimation(startPos, endPos, height) {
 
     return new THREE.AnimationClip(null, riseTime * 2 + movetime, [xTrack, yTrack, zTrack]);
 }
+
+
+// full-screen handling - a bit weird due to a complex API (thanks to F11)
+
+function isUserFullscreen() {
+    let doc = window.document;
+    return doc.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement;
+}
+
+function toggleFullScreenControl() {
+    if (fullScreenControl.innerHTML.charCodeAt(0) == 0xE5D0) {
+        // if full-screen entered with F11 not possible to return with API
+
+        //fullScreenControl.style.display = "none";
+        GUI.setDisabled(fullScreenControl, true);
+        setFullScreenControl(false);
+    } else {
+        //fullScreenControl.style.display = "";
+        GUI.setDisabled(fullScreenControl, false);
+        setFullScreenControl(true);
+    }
+}
+
+function setFullScreenControl(fs) {
+    fullScreenControl.innerHTML = fs ? '&#xE5D0': '&#xE5D1';
+}
+
+function toggleFullScreen(e) {
+    e.preventDefault();
+    let doc = window.document;
+    let docEl = doc.body;
+
+    let requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+    let cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+
+    if(!isUserFullscreen()) {
+        setFullScreenControl(false);
+        requestFullScreen.call(docEl);
+    } else {
+        cancelFullScreen.call(doc);
+        setFullScreenControl(true);
+    }
+  }

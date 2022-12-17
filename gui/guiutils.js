@@ -28,16 +28,24 @@ export function closeFullscreen() {
   }
 
 export function toggleFullScreen() {
-var doc = window.document;
-var docEl = doc.body;
+  var doc = window.document;
+  var docEl = doc.body;
 
-var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
-var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+  var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+  var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
 
-if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-    requestFullScreen.call(docEl);
+  if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+      requestFullScreen.call(docEl);
+  }
+  else {
+      cancelFullScreen.call(doc);
+  }
 }
-else {
-    cancelFullScreen.call(doc);
-}
+
+export function setDisabled(element, disable = true) {
+  if (disable) {
+      element.classList.add('disabled');
+  } else {
+      element.classList.remove('disabled');
+  }
 }

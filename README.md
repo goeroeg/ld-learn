@@ -97,6 +97,8 @@ LDraw™ is a trademark owned and licensed by the Estate of James Jessiman
 
 [dat.gui](https://github.com/dataarts/dat.gui) under Apache License 2.0
 
+[Material Symbols](https://fonts.google.com/icons) under Apache License 2.0
+
 Sounds from [OrangeFreeSounds](http://www.orangefreesounds.com/) under Attribution-NonCommercial 4.0 International ([CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/))
 
 LEGO® is a registered trademark of the [LEGO Group](https://www.lego.com/), which does not sponsor, endorse, or authorize this project.

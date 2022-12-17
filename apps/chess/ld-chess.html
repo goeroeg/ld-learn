@@ -8,24 +8,52 @@
 		<style>
 			@import url('../../css/ldstyle.css');
 			@import url('../../css/tabstyle.css');
+			@import url('../../gui/fonts/material-icons.css');
 
-			#miniMapDiv {
-				position: absolute;
-				top: 50px;
-				left: 10px;
-				z-index: 100;
+			dialog {
+				background-color: rgba(200, 200, 200, 1);
+				border-color: #444444;
+				border-radius: 2vh;
+				box-shadow: 4px 4px 4px 2px rgba(0, 0, 0, 0.5);
+				text-align: center;
 			}
 
-			#weatherIcon {
-				position: absolute;
-				top: -2px;
-				left: -2px;
-				width: 18%;
-				height: 18%;
-				background-image: radial-gradient(circle,  rgba(255,255,255,0.25) 55%, rgba(200, 200, 255, 0.8), rgba(0,0,0,0) 66%);
+			dialog::backdrop {
+  				background-color: rgba(0, 0, 0, 0.5);
+			}
+
+			dialog button {
+				background-color: rgba(255, 255, 255, 0.75);
+
+				transition: transform 200ms ease;
+
+				border-radius: 1vh;
+				border-color: #444444;
+
+				margin: 2vh;
+				font-size: 6vh;
+				line-height: 8vh;
+				width: 15vh;
+			}
+
+			dialog button:hover {
+				transform: scale(1.05);
+				background-color: rgba(255, 255, 255, 0.95);
+			}
+
+			dialog span {
+				font-size: 4vh;
+				color: #444444;
+				text-shadow: none;
+			}
+
+			.disabled {
+				color: #444444;
+				text-shadow: none;
 			}
 
 			#playerInfo {
+				color: lightgray;
 				position: absolute;
 				top: 10px;
 				left: 10px;
@@ -35,6 +63,39 @@
 				display:block;
 				text-align: left;
 				font-size: 24px;
+			}
+
+			#controlButtons span:not(.disabled):hover, #controlButtons span:not(.disabled):active {
+				background-image: radial-gradient(rgba(255,255,255,0.2) 24%, rgba(255,255,255,0) 72%);
+				transform: scale(1.2);
+			}
+
+			#controlButtons span:not(.disabled) {
+				transition: transform 150ms ease;
+			}
+
+			#controlButtons span {
+				display: inline-block;
+
+				height: 4vh;
+
+				padding: 3px 0px;
+
+				line-height: 4vh;
+
+				font-size: 4.5vh;
+				text-align: center;
+
+				margin: 0vh 0.5vh;
+			}
+
+			#controlButtons {
+				position: absolute;
+				top: 1vh;
+				z-index: 250;
+				right: 2vw;
+
+				color: lightgray;
 			}
 		</style>
 
@@ -57,7 +118,6 @@
 		<script src="../../utils.js"></script>
 
 		<div id="playerInfo">Player:</div>
-
 
 		<div class="dialog" id="settings">
 				<div id="settingsTab" class="tab">
@@ -84,38 +144,40 @@
 			<div id="instructions">
 				<span style="font-size:28px; color: lime">LD-Chess</span>
 				<br/>
-				<span style="color: lime; font-family:'Roboto Mono', monospace">v. 0.1.0</span>
+				<span style="color: lime; font-family:'Roboto Mono', monospace">v. 0.2.0</span>
 				<br/><br/>
-				<button id="clickSpan" style="font-size:32px">&#9658; Click to play</button>
-				<br/>
-				<!--
-				<br/>
-				Move:&nbsp;<span><kbd>W</kbd><br/><kbd>A</kbd>&nbsp;<kbd>S</kbd>&nbsp;<kbd>D</kbd></span>
-				&nbsp;or&nbsp;
-				<span><kbd>&#9651;</kbd><br/><kbd>&#9665;</kbd>&nbsp;<kbd>&#9661;</kbd>&nbsp;<kbd>&#9655;</kbd><br/></span>
+				<span id="clickSpan" style="font-size:32px;">&#9658; Click to continue</span>
 				<br/><br/>
-				Jump:&nbsp;<kbd>SPACE</kbd><br/>
-				<br/>
-				Look: &#128432; mouse<br/>
-				Fire (select): left-click<br/>
-				-->
-				<br/>
-				Release controls / Pause:&nbsp;<kbd>ESC</kbd>
+				Pause:&nbsp;<kbd>ESC</kbd>
 				<br/>
 				Toggle fullscreen:&nbsp;<kbd>F11</kbd>&nbsp;<small><i>(in most browsers)</i></small>
-				<br/><br/>
+				<br/><br/><br/>
 				<a href="https://goeroeg.github.io/ld-learn/" target="_blank">&#9432; <i>More info and licenses</i></a>
 			</div>
-			<div id="guiContainer"></div>
 		</div>
-		<div id="touchControls">
-			<div id="movementControls">
-				<kbd id="touchForward">&#9651;</kbd></br><span><kbd id="touchLeft">&#9665;</kbd>&nbsp;<kbd id="touchBack">&#9661;</kbd>&nbsp;<kbd id="touchRight">&#9655;</kbd></span>
-			</div>
-			<div id="cameraControls">
-				<div >&#9652;</div><span><div>&#9666;</div><div>&#9656;</div></span><div>&#9662;</div>
-			</div>
+
+		<div id="controlButtons">
+			<span id ="undoMove" class="material-icons disabled">&#xE166;</span>
+			<span id ="showHint" class="material-icons disabled">&#xF8EA;</span>
+			<span id ="restartGame" class="material-icons disabled">&#xE042;</span>
+			<span></span>
+
+			<!-- <span id="toggleAudio" class="material-icons disabled">&#xE050;</span> -->  <!-- &#xE04F zo close -->
+			<!-- <span id="showSettings" class="material-icons disabled">&#xE8B8;</span> -->
+			<span id="fullScreen" class="material-icons disabled">&#xE5D0;</span> <!-- &#xE5D1 zo close -->
+			<span id="exitToMenu" class="material-icons disabled">&#xE88E;</span>
 		</div>
+
+		<dialog id="confirmDialog">
+			<form method="dialog">
+				<span>Restart game?</span>
+				<div>
+					<button id="cancel" class="material-icons" style="color: red;">&#xE5C9;</button>
+					<button id="ok" class="material-icons" style="color: green;">&#xE5CA;</button>
+			  	</div>
+			</form>
+		</dialog>
+
 		<script type="module" src="ld-chess.js"></script>
     </body>
 </html>

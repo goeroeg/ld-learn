@@ -1,0 +1,15 @@
+@font-face {
+    font-family: Material Icons;
+    src: url('./MaterialSymbolsOutlined[FILL\,GRAD\,opsz\,wght].ttf');
+    /* font-weight: bold; */
+}
+
+.material-icons {
+    font-family: 'Material Icons';
+
+    font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 48;
+}
