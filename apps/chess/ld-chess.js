@@ -1121,7 +1121,7 @@ function moveNext() {
                 let cell = OBJS.cells[cellId];
                 if (cell.figure && cell.figure.name == figLetter) {
                     highlightCell(cell, dangerColor, dangerEmissive, dangerMat);
-                    highlightedHintCells.push(cell);
+                    highlightedSelectableCells.push(cell);
                     break;
                 }
             }
@@ -1171,6 +1171,7 @@ function resetHintHighlights() {
 function resetPlayerHints() {
 
     highlightedSelectableCells.forEach(c => {
+        highlightCell(c, noColor, noEmissive, dangerMat);
         highlightCell(c, noColor, noEmissive, selectableMat);
         removeFromIntersect(c.box);
         removeFromIntersect(c.figure);
