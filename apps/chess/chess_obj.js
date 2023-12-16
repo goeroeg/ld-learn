@@ -3,14 +3,16 @@ import { ldrawColors } from '../../gfx/LDrawHelper.js';
 
 export const cellSize = OBJS.studSize * 4;
 
-const defaultTableColor = ldrawColors.Light_Grey.hex;
-const defaultWhiteColor = ldrawColors.White.hex;
-const defaultBlackColor = ldrawColors.Black.hex;
+const modelWhiteColor = ldrawColors.White.hex;
+const modelBlackColor = ldrawColors.Black.hex;
+const modelTableColor = ldrawColors.Light_Grey.hex
 
-const defaultWhiteCellColor = defaultWhiteColor;
-const defaultBlackCellColor = defaultBlackColor;
-
-export const colors = { whiteColor: defaultWhiteColor, blackColor: defaultBlackColor, tableColor: defaultTableColor };
+// color hex values
+export const colors = { whiteColor: ldrawColors.White.hex,
+                        blackColor: ldrawColors.Black.hex,
+                        whiteCellColor: ldrawColors.Light_Nougat.hex,
+                        blackCellColor: ldrawColors.Dark_Nougat.hex,
+                        tableColor: ldrawColors.Nougat.hex };
 
 const cellLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 export const figLetters = [['C', 'c'], ['P', 'p'], ['R', 'r'], ['N', 'n'], ['B', 'b'], ['Q', 'q'], ['K', 'k']];
@@ -45,8 +47,6 @@ const templates = {
 
 export const cells = {};
 
-export var base, frame;
-
 export function load(onLoad, onProgress, onError) {
 
     OBJS.loadModel('chess_base', function(baseModel) {
@@ -55,11 +55,9 @@ export function load(onLoad, onProgress, onError) {
 
         templates.base = new THREE.Group();
         baseModel.steps[chessSteps.base].forEach(c => templates.base.attach(c));
-        base = templates.base;
 
         templates.frame = new THREE.Group();
         baseModel.steps[chessSteps.frame].forEach(c => templates.frame.attach(c));
-        frame = templates.frame;
 
         OBJS.loadModel('chess', function(model) {
 
@@ -74,7 +72,8 @@ export function load(onLoad, onProgress, onError) {
                 obj = OBJS.cloneModel(obj);
                 obj.rotateY(Math.PI);
 
-                updateColors(obj, defaultBlackColor, defaultWhiteColor);
+                // reverse white & black
+                updateBWColors(obj, modelBlackColor, modelWhiteColor);
 
                 templates[figLetters[step][1]] = obj; // black
             }
@@ -97,16 +96,34 @@ export function load(onLoad, onProgress, onError) {
     }, onProgress, onError, true);
 }
 
-function updateColors(obj, whiteColor, blackColor) {
+function updateModelColor(obj, modelColor, newColor)
+{
+    let matCache = [];
+    obj.traverse(c => {
+        if (c.isMesh) {
+            c.material.forEach(m => {
+                if (m.color.getHex() == modelColor) {
+                    matCache.push(m);
+                }
+            });
+        }
+    });
+
+    matCache.forEach(m => {
+        m.color.setHex(newColor);
+    });
+}
+
+function updateBWColors(obj, whiteColor, blackColor) {
     let whiteMat = [];
     let blackMat = [];
 
     obj.traverse(c => {
         if (c.isMesh) {
             c.material.forEach(m => {
-                if (m.color.getHex() == defaultWhiteColor) {
+                if (m.color.getHex() == modelWhiteColor) {
                     whiteMat.push(m);
-                } else if (m.color.getHex() == defaultBlackColor) {
+                } else if (m.color.getHex() == modelBlackColor) {
                     blackMat.push(m);
                 }
             });
@@ -125,6 +142,12 @@ export function createTable(scene) {
 
     let table = new THREE.Group();
 
+    let base = OBJS.cloneModel(templates.base);
+    let frame = OBJS.cloneModel(templates.frame);
+
+    updateModelColor(base, modelTableColor, colors.tableColor);
+    updateModelColor(frame, modelTableColor, colors.tableColor);
+
     table.add(base);
     table.add(frame);
 
@@ -136,6 +159,10 @@ export function createTable(scene) {
             let newCell = OBJS.cloneModel(templates[figLetters[chessSteps.cell][counter++ % 2]]);
             newCell.position.x = start + col * OBJS.studSize * 4;
             newCell.position.z = -start - row * OBJS.studSize * 4;
+
+            if (colors.whiteCellColor != modelWhiteColor || colors.blackCellColor != modelBlackColor) {
+                updateBWColors(newCell, colors.whiteCellColor, colors.blackCellColor);
+            }
 
             let cellId = cellLetters[col] + (row + 1);
 
@@ -158,6 +185,7 @@ export function createTable(scene) {
 
             cells[cellId] = cell;
             newCell.cell = cell;
+
 
             table.add(newCell);
         }
@@ -200,15 +228,15 @@ export function initFigure(cell, name, scene) {
     let fig = OBJS.cloneModel(templates[name]);
     fig.position.copy(cell.position);
 
+    if (colors.whiteColor != modelBlackColor || colors.blackColor != modelBlackColor) {
+        updateBWColors(fig, colors.whiteColor, colors.blackColor);
+    }
+
     cell.figure = fig;
 
     fig.name = name;
 
     fig.cell = cell;
-
-    if (colors.whiteColor != defaultWhiteColor || colors.blackColor != defaultBlackColor) {
-        updateColors(fig, colors.whiteColor, colors.blackColor);
-    }
 
     scene.add(fig);
 }
